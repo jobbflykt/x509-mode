@@ -20,7 +20,7 @@ Install the `x509-mode` package from MELPA.
 
 ![Certificate](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-cert.png)
 
-**Certifcate revocation list**
+**Certificate revocation list**
 
 ![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-crl.png)
 

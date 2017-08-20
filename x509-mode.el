@@ -1,15 +1,16 @@
-;;; x509-mode.el --- Decode certificates, CRLs and keys using OpenSSL -*- lexical-binding: t; -*-
+;;; x509-mode.el --- Decode certificates, CRLs and keys using OpenSSL. -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmai.com>
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmai.com>
-;; Version: 0.1
-;; Package-Version:
 ;; Package-Requires: ((emacs "24.1"))
+
+;; This file is not part of GNU Emacs.
+
 
 ;; This file is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
-;; as published by the Free Software Foundation; either version 3
+;; as published by the Free Software Foundation; either version 2
 ;; of the License, or (at your option) any later version.
 
 ;; This file is distributed in the hope that it will be useful,
@@ -40,7 +41,10 @@
 
 (defcustom x509-openssl-cmd "openssl"
   "Path to OpenSSL binary.
-For example \"/usr/bin/openssl\" or \"C:/Program Files/Git/mingw64/bin/openssl\""
+
+Example:
+\"/usr/bin/openssl\" or just \"openssl\" on Linux
+\"C:/Program Files/Git/mingw64/bin/openssl\" on Windows."
   :type 'string
   :group 'x509-mode)
 
@@ -129,19 +133,23 @@ buffer position that bounds the search."
 (defconst x509--constants
   (regexp-opt
    '("TRUE" "FALSE"
-     ;; openssl-1.0.2/crypto/objects/objects.h
      "Code Signing" "E-mail Protection" "Invalidity Date"
      "Microsoft Commercial Code Signing" "Microsoft Encrypted File System"
      "Microsoft Individual Code Signing" "Microsoft Server Gated Crypto"
+     "Netscape Server Gated Crypto" "OCSP Signing" "DVCS"
+     "Any Extended Key Usage"
      "Microsoft Smartcardlogin" "Microsoft Trust List Signing"
      "Netscape Server Gated Crypto" "Strong Extranet ID"
      "TLS Web Client Authentication" "TLS Web Server Authentication"
      "Time Stamping" "X509v3 Delta CRL Indicator"
-     ;; /openssl-1.0.2/crypto/x509v3/v3_bitst.c
+
      "Digital Signature" "Non Repudiation" "Key Encipherment"
      "Data Encipherment" "Key Agreement" "Certificate Sign" "CRL Sign"
      "Encipher Only" "Decipher Only"
-     ;; CRL X509v3 reason code:
+
+     "Unspecified" "Key Compromise" "CA Compromise" "Affiliation Changed"
+     "Superseded" "Cessation Of Operation" "Certificate Hold"
+     "Remove From CRL" "Privilege Withdrawn" "AA Compromise"
      "Superseded" "Affiliation Changed" "Cessation Of Operation")
    'words))
 
@@ -248,7 +256,8 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
 
 ;;;###autoload
 (defun x509-viewcert ()
-  "Parse current buffer as a certificate file and display result in another buffer."
+  "Parse current buffer as a certificate file.
+Display result in another buffer."
   (interactive)
   (x509--process-buffer "x509" "-text" "-noout"
                         "-inform" (x509--buffer-encoding))
@@ -256,7 +265,8 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
 
 ;;;###autoload
 (defun x509-viewcrl ()
-  "Parse current buffer as a CRL file and display result in another buffer."
+  "Parse current buffer as a CRL file.
+Display result in another buffer."
   (interactive)
   (x509--process-buffer "crl" "-text" "-noout"
                         "-inform" (x509--buffer-encoding))
@@ -264,7 +274,8 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
 
 ;;;###autoload
 (defun x509-viewdh ()
-  "Parse current buffer as a DH-parameter file and display result in another buffer."
+  "Parse current buffer as a DH-parameter file.
+Display result in another buffer."
   (interactive)
   (x509--process-buffer "dhparam" "-text" "-noout"
                         "-inform" (x509--buffer-encoding))
@@ -276,7 +287,8 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
 ;;;###autoload
 (defun x509-viewkey (&optional passphrase)
   "Display x509 private key using the OpenSSL pkey command.
-With C-u prefix, you can set the pass-phrase as -passin pass:PASSPHRASE."
+With \\[universal-argument] \\[x509-viewkey], you are prompted
+for the key pass-phrase (openssl pkey -passin pass:PASSPHRASE)."
   (interactive
    (if (equal current-prefix-arg '(4)) ; C-u
        (list (read-from-minibuffer "Passphrase: "))))
@@ -355,7 +367,7 @@ With C-u prefix, you can set the pass-phrase as -passin pass:PASSPHRASE."
 
 ;;;###autoload
 (defun x509-viewasn1 ()
-  "Decode as ASN.1 and display result in another buffer."
+ "Parse current buffer as ASN.1. Display result in another buffer."
   (interactive)
   (x509--process-buffer "asn1parse" "-inform" (x509--buffer-encoding))
   (x509-asn1-mode))

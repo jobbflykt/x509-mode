@@ -142,7 +142,7 @@ buffer position that bounds the search."
      "Data Encipherment" "Key Agreement" "Certificate Sign" "CRL Sign"
      "Encipher Only" "Decipher Only"
      ;; CRL X509v3 reason code:
-     "Superseded" "Affiliation Changed")
+     "Superseded" "Affiliation Changed" "Cessation Of Operation")
    'words))
 
 ;; Keyword: constant

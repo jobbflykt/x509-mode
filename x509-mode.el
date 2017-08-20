@@ -27,7 +27,7 @@
 ;; Uses OpenSSL for viewing PEM and DER encoded PKI entities.
 
 ;; While in a buffer displaying a certificate, use M-x x509-viewcert to create
-;; a new buffer that displays the decoded certificate. Use M-x x509-viewcrl,
+;; a new buffer that displays the decoded certificate.  Use M-x x509-viewcrl,
 ;; M-X x509-viewasn1, M-x x509-viewkey M-x x509-viewdh in a similar manner.
 
 ;;; Code:
@@ -39,8 +39,8 @@
   :link '(emacs-library-link :tag "Lisp File" "x509-mode.el"))
 
 (defcustom x509-openssl-cmd "openssl"
-  "Path to OpenSSL binary, for example \"/usr/bin/openssl\" or
-\"C:/Program Files/Git/mingw64/bin/openssl\""
+  "Path to OpenSSL binary.
+For example \"/usr/bin/openssl\" or \"C:/Program Files/Git/mingw64/bin/openssl\""
   :type 'string
   :group 'x509-mode)
 
@@ -60,11 +60,12 @@
   :group 'x509-mode-faces)
 
 (defun x509--match-date (cmp bound)
-  "Return true if it can find a date that CMP to current
-  time. Indented to search for dates in form \"Jun 11 00:00:01
-  2014 GMT\" and compare them to the current time. Return
-  non-nil, move point, and set ‘match-data’ appropriately if it
-  succeeds; like ‘re-search-forward’ would."
+  "Return true if it can find a date that CMP to current time.
+Indented to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
+and compare them to the current time. Return non-nil, move point,
+and set ‘match-data’ appropriately if it succeeds; like
+‘re-search-forward’ would.  The argument BOUND is a buffer
+position that bounds the search."
   (let ((mdata (match-data))
         (p (point)))
     (if (re-search-forward
@@ -86,19 +87,21 @@
       nil)))
 
 (defun x509--match-date-in-past (bound)
-  "Return true if it can find a date that is the past. Indented
-  to search for dates in form \"Jun 11 00:00:01 2014 GMT\" and
-  compare them to the current time. Return non-nil, move point,
-  and set ‘match-data’ appropriately if it succeeds; like
-  ‘re-search-forward’ would."
+  "Return true if it can find a date that is the past.
+Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
+and compare them to the current time. Return non-nil, move point,
+and set ‘match-data’ appropriately if it succeeds; like
+‘re-search-forward’ would.  The optional argument BOUND is a
+buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (time-less-p d1 d2)) bound))
 
 (defun x509--match-date-in-future (bound)
-  "Return true if it can find a date that is the future. Indented
-  to search for dates in form \"Jun 11 00:00:01 2014 GMT\" and
-  compare them to the current time. Return non-nil, move point,
-  and set ‘match-data’ appropriately if it succeeds; like
-  ‘re-search-forward’ would."
+  "Return true if it can find a date that is the future.
+Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
+and compare them to the current time. Return non-nil, move point,
+and set ‘match-data’ appropriately if it succeeds; like
+‘re-search-forward’ would.  The optional argument BOUND is a
+buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (not (time-less-p d1 d2))) bound))
 
 (defconst x509--keywords
@@ -205,7 +208,7 @@
    '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$" .
      'x509-hex-string-face)
    )
-  "openssl x509 highlighting")
+  "OpenSSL x509 highlighting.")
 
 (defun x509-mode--kill-buffer()
   (interactive)
@@ -245,8 +248,7 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
 
 ;;;###autoload
 (defun x509-viewcert ()
-  "Parse current buffer as a certificate file and display result
-in another buffer."
+  "Parse current buffer as a certificate file and display result in another buffer."
   (interactive)
   (x509--process-buffer "x509" "-text" "-noout"
                         "-inform" (x509--buffer-encoding))
@@ -254,8 +256,7 @@ in another buffer."
 
 ;;;###autoload
 (defun x509-viewcrl ()
-  "Parse current buffer as a CRL file and display result in
-another buffer."
+  "Parse current buffer as a CRL file and display result in another buffer."
   (interactive)
   (x509--process-buffer "crl" "-text" "-noout"
                         "-inform" (x509--buffer-encoding))
@@ -263,8 +264,7 @@ another buffer."
 
 ;;;###autoload
 (defun x509-viewdh ()
-  "Parse current buffer as a DH-parameter file and display result
-in another buffer."
+  "Parse current buffer as a DH-parameter file and display result in another buffer."
   (interactive)
   (x509--process-buffer "dhparam" "-text" "-noout"
                         "-inform" (x509--buffer-encoding))
@@ -296,8 +296,6 @@ With C-u prefix, you can set the pass-phrase as -passin pass:PASSPHRASE."
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)
     (x509-mode)))
-
-(provide 'x509-mode)
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode
@@ -363,5 +361,6 @@ With C-u prefix, you can set the pass-phrase as -passin pass:PASSPHRASE."
   (x509-asn1-mode))
 
 (provide 'x509-asn1-mode)
+(provide 'x509-mode)
 
 ;;; x509-mode.el ends here

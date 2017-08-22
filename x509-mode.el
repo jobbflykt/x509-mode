@@ -12,22 +12,22 @@
 ;; Copyright (c) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
 ;;
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
-;; of this software and associated documentation files (the "Software"), to deal
-;; in the Software without restriction, including without limitation the rights
-;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-;; copies of the Software, and to permit persons to whom the Software is
+;; of this software and associated documentation files (the "Software"), to
+;; deal in the Software without restriction, including without limitation the
+;; rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+;; sell copies of the Software, and to permit persons to whom the Software is
 ;; furnished to do so, subject to the following conditions:
 ;;
-;; The above copyright notice and this permission notice shall be included in all
-;; copies or substantial portions of the Software.
+;; The above copyright notice and this permission notice shall be included in
+;; all copies or substantial portions of the Software.
 ;;
 ;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 ;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-;; SOFTWARE.
+;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+;; IN THE SOFTWARE.
 
 
 ;;; Commentary:
@@ -58,6 +58,31 @@ Example:
 \"/usr/bin/openssl\" or just \"openssl\" on Linux
 \"C:/Program Files/Git/mingw64/bin/openssl\" on Windows."
   :type 'string
+  :group 'x509-mode)
+
+(defcustom x509-x509-cmd-arguments '("-text" "-noout")
+  "Extra arguments to the openssl x509 command"
+  :type 'list
+  :group 'x509-mode)
+
+(defcustom x509-crl-cmd-arguments '("-text" "-noout")
+  "Extra arguments to the openssl crl command"
+  :type 'list
+  :group 'x509-mode)
+
+(defcustom x509-dhparam-cmd-arguments '("-text" "-noout")
+  "Extra arguments to the openssl dhparam command"
+  :type 'list
+  :group 'x509-mode)
+
+(defcustom x509-pkey-cmd-arguments '("-text" "-noout")
+  "Extra arguments to the openssl pkey command"
+  :type 'list
+  :group 'x509-mode)
+
+(defcustom x509-asn1parse-cmd-arguments '()
+  "Extra arguments to the openssl asn1parse command"
+  :type 'list
   :group 'x509-mode)
 
 (defgroup x509-mode-faces nil
@@ -135,7 +160,8 @@ buffer position that bounds the search."
      "X509v3 CRL Reason Code:" "X509v3 Certificate Policies:"
      "X509v3 Extended Key Usage:" "X509v3 Subject Alternative Name:"
      "X509v3 Subject Key Identifier:" "X509v3 extensions:" "keyid:"
-     "pathlen:" "pub:" "serial:"
+     "pathlen:" "pub:" "serial:" "Netscape Cert Type:"
+     "X509v3 Issuer Alternative Name:"
      ;; openssl pkey
      "Private-Key:" "modulus:" "publicExponent:" "privateExponent:"
      "prime1:" "prime2:" "exponent1:" "exponent2:" "coefficient:"
@@ -157,7 +183,7 @@ buffer position that bounds the search."
 
      "Digital Signature" "Non Repudiation" "Key Encipherment"
      "Data Encipherment" "Key Agreement" "Certificate Sign" "CRL Sign"
-     "Encipher Only" "Decipher Only"
+     "Encipher Only" "Decipher Only" "S/MIME CA" "SSL CA"
 
      "Unspecified" "Key Compromise" "CA Compromise" "Affiliation Changed"
      "Superseded" "Cessation Of Operation" "Certificate Hold"
@@ -251,7 +277,7 @@ buffer position that bounds the search."
           "PEM"
         "DER"))))
 
-(defun x509--process-buffer(&rest openssl-arguments)
+(defun x509--process-buffer(openssl-arguments)
   "Create new buffer named \"*x-[buffer-name]*\" and pass content of
 current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
   (interactive)
@@ -271,8 +297,8 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
   "Parse current buffer as a certificate file.
 Display result in another buffer."
   (interactive)
-  (x509--process-buffer "x509" "-text" "-noout"
-                        "-inform" (x509--buffer-encoding))
+  (x509--process-buffer (append (list "x509" "-inform" (x509--buffer-encoding))
+                                x509-x509-cmd-arguments))
   (x509-mode))
 
 ;;;###autoload
@@ -280,8 +306,8 @@ Display result in another buffer."
   "Parse current buffer as a CRL file.
 Display result in another buffer."
   (interactive)
-  (x509--process-buffer "crl" "-text" "-noout"
-                        "-inform" (x509--buffer-encoding))
+  (x509--process-buffer (append (list "crl" "-inform" (x509--buffer-encoding))
+                                x509-crl-cmd-arguments))
   (x509-mode))
 
 ;;;###autoload
@@ -289,8 +315,9 @@ Display result in another buffer."
   "Parse current buffer as a DH-parameter file.
 Display result in another buffer."
   (interactive)
-  (x509--process-buffer "dhparam" "-text" "-noout"
-                        "-inform" (x509--buffer-encoding))
+  (x509--process-buffer (append (list "dhparam"
+                                      "-inform" (x509--buffer-encoding))
+                                x509-dhparam-cmd-arguments))
   (x509-mode))
 
 ;; Special. pkey cannot read from stdin so we need to use buffer's file.
@@ -308,9 +335,9 @@ for the key pass-phrase (openssl pkey -passin pass:PASSPHRASE)."
                                     (format "*x-%s*" (buffer-name)))))
          (args (append (list (point-min) (point-max)
                              x509-openssl-cmd
-                             nil buf nil
-                             "pkey" "-text" "-noout" "-inform"
-                             (x509--buffer-encoding))
+                             nil buf nil "pkey"
+                             "-inform" (x509--buffer-encoding))
+                       x509-pkey-cmd-arguments
                        (if (not (null passphrase))
                            (list "-passin" (format "pass:%s" passphrase)))
                        (list (buffer-file-name)))))
@@ -381,7 +408,9 @@ for the key pass-phrase (openssl pkey -passin pass:PASSPHRASE)."
 (defun x509-viewasn1 ()
  "Parse current buffer as ASN.1. Display result in another buffer."
   (interactive)
-  (x509--process-buffer "asn1parse" "-inform" (x509--buffer-encoding))
+  (x509--process-buffer (append (list "asn1parse"
+                                      "-inform" (x509--buffer-encoding))
+                                x509-asn1parse-cmd-arguments))
   (x509-asn1-mode))
 
 (provide 'x509-asn1-mode)

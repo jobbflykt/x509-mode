@@ -354,7 +354,7 @@ for the key pass-phrase (openssl pkey -passin pass:PASSPHRASE)."
 (defconst x509--asn1-primitives-keywords
   (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"
                 "OCTET_STRING" "OCTET STRING" "NULL" "OID"
-                "UTCTIME" "GENERALIZEDTIME")))
+                "UTCTIME" "GENERALIZEDTIME" "ENUMERATED")))
 
 (defconst x509--asn1-cons-keywords
   (regexp-opt '("cons" "SEQUENCE" "SET")))
@@ -382,7 +382,9 @@ for the key pass-phrase (openssl pkey -passin pass:PASSPHRASE)."
    ;; SET, SEQUENCE and such
    `(,x509--asn1-cons-keywords . 'font-lock-regexp-grouping-backslash)
    ;; Like SET and SEQUENCE
-   '("cont \\[.*?\\]" . 'font-lock-regexp-grouping-backslash)
+   '("\\(cont\\|\\appl\\|priv\\) \\[\\(.*?\\)\\]"
+     (1 'font-lock-keyword-face)
+     (2 'font-lock-regexp-grouping-backslash))
    ;; Parsing error messages
    '("error:.*\\|Error in encoding" . 'font-lock-warning-face)
    ;; String type + string value

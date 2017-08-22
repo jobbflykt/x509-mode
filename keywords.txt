@@ -1,0 +1,93 @@
+# openssl/crypto/x509/t_x509.c
+Certificate:
+Data:
+Version:
+Serial Number:
+#Signature Algorithm:
+Issuer:
+Validity:
+Subject:
+Subject Public Key Info:
+#Public Key Algorithm:
+Issuer Unique ID:
+Subject Unique ID:
+X509v3 extensions
+Subject OCSP hash:
+Public key OCSP hash:
+Trusted Uses:
+No Trusted Uses.
+Rejected Uses:
+No Rejected Uses.
+Alias:
+Key Id:
+keyid:
+
+# openssl/crypto/x509v3/v3_cpols.c
+User Notice:
+Explicit Text:
+Full Name:
+CSP:
+Unknown Qualifier:
+Organization:
+
+# Keys
+Public-Key:
+Modulus:
+Exponent:
+
+# X509v3 extensions
+X509v3 Subject Directory Attributes:
+X509v3 Subject Key Identifier:
+X509v3 Key Usage:
+X509v3 Private Key Usage Period:
+X509v3 Subject Alternative Name:
+X509v3 Issuer Alternative Name:
+#X509v3 Basic Constraints:
+X509v3 CRL Number:
+X509v3 CRL Reason Code:
+Invalidity Date:
+X509v3 Delta CRL Indicator:
+X509v3 Issuing Distribution Point:
+X509v3 Certificate Issuer:
+X509v3 Name Constraints:
+X509v3 CRL Distribution Points:
+X509v3 Certificate Policies:
+X509v3 Any Policy:
+X509v3 Policy Mappings:
+X509v3 Authority Key Identifier:
+X509v3 Policy Constraints:
+#X509v3 Extended Key Usage:
+X509v3 Freshest CRL:
+X509v3 Inhibit Any Policy:
+X509v3 AC Targeting:
+X509v3 No Revocation Available:
+
+# PKIX Private Extensions
+Authority Information Access:
+Biometric Info:
+Subject Information Access:
+Proxy Certificate Information:
+TLS Feature:
+
+# access descriptors for authority info access extension
+OCSP
+CA Issuers
+AD Time Stamping
+ad dvcs
+CA Repository
+
+# pkey
+Private-Key:
+modulus:
+publicExponent:
+privateExponent:
+prime1:
+prime2:
+exponent1:
+exponent2:
+coefficient:
+
+# openssl dhparam
+PKCS#3 DH Parameters:
+prime:
+generator:

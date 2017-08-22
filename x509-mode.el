@@ -145,63 +145,32 @@ and set ‘match-data’ appropriately if it succeeds; like
 buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (not (time-less-p d1 d2))) bound))
 
+(defun x509--load-data-file (filename)
+  (with-temp-buffer
+    (insert-file-contents
+     (if (null load-file-name) filename
+       (expand-file-name filename (file-name-directory load-file-name))))
+    (remove-if (lambda (s) (or (string-match-p "^ *#" s)
+                               (string-match-p "^ *$" s)))
+               (split-string (buffer-string) "\n"))))
+
 (defconst x509--keywords
-  (regexp-opt
-   '("Authority Information Access:" "CA Issuers" "CA:" "CPS:"
-     "CRL entry extensions" "CRL extensions"
-     "Certificate Revocation List (CRL)" "Certificate:" "Data:" "DirName:"
-     "Explicit Text:" "Exponent:" "Full Name:" "Issuer:" "Last Update"
-     "Modulus:" "Next Update" "OCSP" "Public-Key:" "Revocation Date"
-     "No Revoked Certificates" "Revoked Certificates"
-     "Salt Length:" "Serial Number:"
-     "Subject Public Key Info:" "Subject:" "Trailer Field:" "Trusted Uses"
-     "User Notice:" "Version:" "X509v3 Authority Key Identifier:"
-     "X509v3 CRL Distribution Points:" "X509v3 CRL Number:"
-     "X509v3 CRL Reason Code:" "X509v3 Certificate Policies:"
-     "X509v3 Extended Key Usage:" "X509v3 Subject Alternative Name:"
-     "X509v3 Subject Key Identifier:" "X509v3 extensions:" "keyid:"
-     "pathlen:" "pub:" "serial:" "Netscape Cert Type:"
-     "X509v3 Issuer Alternative Name:"
-     ;; openssl pkey
-     "Private-Key:" "modulus:" "publicExponent:" "privateExponent:"
-     "prime1:" "prime2:" "exponent1:" "exponent2:" "coefficient:"
-     ;; openssl dhparam
-     "PKCS#3 DH Parameters:" "prime:" "generator:")))
+  (eval-when-compile
+    (regexp-opt
+     (x509--load-data-file "keywords.txt"))))
 
 (defconst x509--constants
-  (regexp-opt
-   '("TRUE" "FALSE"
-     "Code Signing" "E-mail Protection" "Invalidity Date"
-     "Microsoft Commercial Code Signing" "Microsoft Encrypted File System"
-     "Microsoft Individual Code Signing" "Microsoft Server Gated Crypto"
-     "Netscape Server Gated Crypto" "OCSP Signing" "DVCS"
-     "Any Extended Key Usage"
-     "Microsoft Smartcardlogin" "Microsoft Trust List Signing"
-     "Netscape Server Gated Crypto" "Strong Extranet ID"
-     "TLS Web Client Authentication" "TLS Web Server Authentication"
-     "Time Stamping" "X509v3 Delta CRL Indicator"
-
-     "Digital Signature" "Non Repudiation" "Key Encipherment"
-     "Data Encipherment" "Key Agreement" "Certificate Sign" "CRL Sign"
-     "Encipher Only" "Decipher Only" "S/MIME CA" "SSL CA"
-
-     "Unspecified" "Key Compromise" "CA Compromise" "Affiliation Changed"
-     "Superseded" "Cessation Of Operation" "Certificate Hold"
-     "Remove From CRL" "Privilege Withdrawn" "AA Compromise"
-     "Superseded" "Affiliation Changed" "Cessation Of Operation")
-   'words))
+  (eval-when-compile
+    (regexp-opt (x509--load-data-file "constants.txt") 'words)))
 
 ;; Keyword: constant
 ;; E.g. "Signature Algorithm: sha1WithRSAEncryption"
 (defconst x509--keyword-w-constant
-      (concat (regexp-opt
-               ;; Keyword:
-               '("ASN1 OID" "Alias" "Hash Algorithm" "Mask Algorithm" "Policy"
-                 "Public Key Algorithm" "Signature Algorithm"
-                 "X509v3 Basic Constraints" "X509v3 Key Usage")
-               t )  ; t = enclose in \\( \\) for easy subexpr reference
-              ;; Followed by ": constant"
-              ": *\\(.*\\)"))
+  (eval-when-compile
+    (concat (regexp-opt
+             (x509--load-data-file "keyword+constant.txt") t)
+            ;; Followed by ": constant"
+            ": *\\(.*\\)")))
 
 (defconst x509-font-lock-keywords
   (list

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmai.com>
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmai.com>
-;; Package-Requires: ((emacs "24.1"))
+;;  Package-Requires: ((emacs "24.1") cl-seq)
 
 ;; This file is not part of GNU Emacs.
 
@@ -145,30 +145,33 @@ and set ‘match-data’ appropriately if it succeeds; like
 buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (not (time-less-p d1 d2))) bound))
 
+(eval-when-compile
+  (require 'cl-seq))
+
 (defun x509--load-data-file (filename)
   (with-temp-buffer
     (insert-file-contents
      (if (null load-file-name) filename
        (expand-file-name filename (file-name-directory load-file-name))))
-    (remove-if (lambda (s) (or (string-match-p "^ *#" s)
+    (cl-remove-if (lambda (s) (or (string-match-p "^ *#" s)
                                (string-match-p "^ *$" s)))
                (split-string (buffer-string) "\n"))))
 
 (defconst x509--keywords
   (eval-when-compile
     (regexp-opt
-     (x509--load-data-file "keywords/keywords.txt"))))
+     (x509--load-data-file "keywords.txt"))))
 
 (defconst x509--constants
   (eval-when-compile
-    (regexp-opt (x509--load-data-file "keywords/constants.txt") 'words)))
+    (regexp-opt (x509--load-data-file "constants.txt") 'words)))
 
 ;; Keyword: constant
 ;; E.g. "Signature Algorithm: sha1WithRSAEncryption"
 (defconst x509--keyword-w-constant
   (eval-when-compile
     (concat (regexp-opt
-             (x509--load-data-file "keywords/keyword+constant.txt") t)
+             (x509--load-data-file "keyword+constant.txt") t)
             ;; Followed by ": constant"
             ": *\\(.*\\)")))
 

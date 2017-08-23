@@ -195,7 +195,7 @@ buffer position that bounds the search."
 
 
    ;; URI:string, email:string CPS: string
-   '("\\<\\(URI:\\|email:\\|CPS: \\)\\(.*\\)"
+   '("\\<\\(URI:\\|DNS:\\|email:\\|CPS: \\)\\(.*\\)"
      (1 'font-lock-builtin-face)
      (2 'link))
 
@@ -204,6 +204,9 @@ buffer position that bounds the search."
    '("\\(Not Before\\): " (1 'font-lock-builtin-face)
      (x509--match-date-in-future nil nil (0 'font-lock-warning-face)))
    '("\\(Not After\\) : " (1 'font-lock-builtin-face)
+     (x509--match-date-in-past nil nil (0 'font-lock-warning-face)))
+   ;; For CRL's when Next Update is in the past
+   '("\\(Next Update\\): " (1 'font-lock-builtin-face)
      (x509--match-date-in-past nil nil (0 'font-lock-warning-face)))
 
    ;; Policy: OID

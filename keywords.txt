@@ -22,6 +22,24 @@ Alias:
 Key Id:
 keyid:
 
+# openssl/crypto/x509v3/v3_alt.c
+X400Name:
+EdiPartyName:
+DirName:
+Serial:
+IP Address:
+Registered ID:
+
+# openssl/crypto/x509/t_crl.c
+Certificate Revocation List (CRL):
+Last Update:
+# Next Update is treated special in x509-font-lock-keywords
+#Next Update:
+Revoked Certificates:
+Revocation Date:
+CRL extensions
+CRL entry extensions
+
 # openssl/crypto/x509v3/v3_cpols.c
 User Notice:
 Explicit Text:
@@ -29,11 +47,33 @@ Full Name:
 CSP:
 Unknown Qualifier:
 Organization:
+Numbers:
 
 # Keys
+# openssl/crypto/rsa/rsa_ameth.c
+PSS parameter restrictions:
+Salt Length:
+Trailer Field:
+Private-Key:
+Public-Key:
 Public-Key:
 Modulus:
 Exponent:
+modulus:
+publicExponent:
+privateExponent:
+prime1:
+prime2:
+exponent1:
+exponent2:
+coefficient:
+# openssl/crypto/ec/ecx_meth.c
+priv:
+pub:
+
+# keyword + constant
+#Hash Algorithm:
+#Mask Algorithm:
 
 # X509v3 extensions
 X509v3 Subject Directory Attributes:
@@ -76,18 +116,14 @@ AD Time Stamping
 ad dvcs
 CA Repository
 
-# pkey
-Private-Key:
-modulus:
-publicExponent:
-privateExponent:
-prime1:
-prime2:
-exponent1:
-exponent2:
-coefficient:
-
-# openssl dhparam
+# openssl/crypto/dh/dh_ameth.c
 PKCS#3 DH Parameters:
+private-key:
+public-key:
 prime:
 generator:
+subgroup order:
+subgroup factor:
+seed:
+counter:
+recommended-private-length:

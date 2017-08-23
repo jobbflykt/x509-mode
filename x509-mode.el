@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmai.com>
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmai.com>
-;;  Package-Requires: ((emacs "24.1") cl-seq)
+;;  Package-Requires: ((emacs "24.1") (cl-lib "0.5")
 
 ;; This file is not part of GNU Emacs.
 

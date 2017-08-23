@@ -157,18 +157,18 @@ buffer position that bounds the search."
 (defconst x509--keywords
   (eval-when-compile
     (regexp-opt
-     (x509--load-data-file "keywords.txt"))))
+     (x509--load-data-file "keywords/keywords.txt"))))
 
 (defconst x509--constants
   (eval-when-compile
-    (regexp-opt (x509--load-data-file "constants.txt") 'words)))
+    (regexp-opt (x509--load-data-file "keywords/constants.txt") 'words)))
 
 ;; Keyword: constant
 ;; E.g. "Signature Algorithm: sha1WithRSAEncryption"
 (defconst x509--keyword-w-constant
   (eval-when-compile
     (concat (regexp-opt
-             (x509--load-data-file "keyword+constant.txt") t)
+             (x509--load-data-file "keywords/keyword+constant.txt") t)
             ;; Followed by ": constant"
             ": *\\(.*\\)")))
 

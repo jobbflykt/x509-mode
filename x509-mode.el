@@ -37,7 +37,7 @@
 ;; Uses OpenSSL for viewing PEM and DER encoded PKI entities.
 
 ;; Usage:
-;; Open a file containing a certficate, either PEM or DER encode. Now
+;; Open a file containing a certficate, either PEM or DER encode.  Now
 ;; use M-x `x509-viewcert' to create a new buffer that displays the decoded
 ;; certificate.
 ;; Use M-x `x509-viewcrl', M-X `x509-viewasn1', M-x `x509-viewkey' and M-x
@@ -61,27 +61,27 @@ Example:
   :group 'x509-mode)
 
 (defcustom x509-x509-cmd-arguments '("-text" "-noout")
-  "Extra arguments to the openssl x509 command"
+  "Extra arguments to the openssl x509 command."
   :type 'list
   :group 'x509-mode)
 
 (defcustom x509-crl-cmd-arguments '("-text" "-noout")
-  "Extra arguments to the openssl crl command"
+  "Extra arguments to the openssl crl command."
   :type 'list
   :group 'x509-mode)
 
 (defcustom x509-dhparam-cmd-arguments '("-text" "-noout")
-  "Extra arguments to the openssl dhparam command"
+  "Extra arguments to the openssl dhparam command."
   :type 'list
   :group 'x509-mode)
 
 (defcustom x509-pkey-cmd-arguments '("-text" "-noout")
-  "Extra arguments to the openssl pkey command"
+  "Extra arguments to the openssl pkey command."
   :type 'list
   :group 'x509-mode)
 
 (defcustom x509-asn1parse-cmd-arguments '()
-  "Extra arguments to the openssl asn1parse command"
+  "Extra arguments to the openssl asn1parse command."
   :type 'list
   :group 'x509-mode)
 
@@ -149,6 +149,8 @@ buffer position that bounds the search."
   (require 'cl-seq))
 
 (defun x509--load-data-file (filename)
+  "Split FILENAME linewise into a list.
+Skip blank lines and comment lines. Return list."
   (with-temp-buffer
     (insert-file-contents
      (if (null load-file-name) filename

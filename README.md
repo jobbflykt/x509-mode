@@ -24,6 +24,15 @@ Install the `x509-mode` package from MELPA.
 
 ![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-crl.png)
 
+**Private Key**
+
+![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-pkey.png)
+
+**DH-params**
+
+![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-dhparams.png)
+
+
 **ASN.1**
 
 ![ASN.1](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-asn1.png)

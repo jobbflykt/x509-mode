@@ -295,7 +295,8 @@ Display result in another buffer."
                                 x509-dhparam-cmd-arguments))
   (x509-mode))
 
-;; Special. pkey cannot read from stdin so we need to use buffer's file.
+;; Special. older openssl pkey cannot read from stdin so we need to use
+;; buffer's file.
 ;; FIXME: Create a temporary file with buffer content and use that as input to
 ;; pkey.
 ;;;###autoload
@@ -315,7 +316,7 @@ for the key pass-phrase (openssl pkey -passin pass:PASSPHRASE)."
                        x509-pkey-cmd-arguments
                        (if (not (null passphrase))
                            (list "-passin" (format "pass:%s" passphrase)))
-                       (list (buffer-file-name)))))
+                       (list "-in" (buffer-file-name)))))
     (apply 'call-process-region args)
     (switch-to-buffer buf)
     (goto-char (point-min))

@@ -45,7 +45,7 @@
 
 ;;; Code:
 
-(defgroup x509-mode nil
+(defgroup x509 nil
   "View certificates, CRLs, keys and DH-parameters using OpenSSL"
   :group 'extensions
   :group 'convenience
@@ -58,47 +58,47 @@ Example:
 \"/usr/bin/openssl\" or just \"openssl\" on Linux
 \"C:/Program Files/Git/mingw64/bin/openssl\" on Windows."
   :type 'string
-  :group 'x509-mode)
+  :group 'x509)
 
 (defcustom x509-x509-cmd-arguments '("-text" "-noout")
   "Extra arguments to the openssl x509 command."
-  :type 'list
-  :group 'x509-mode)
+  :type '(repeat string)
+  :group 'x509)
 
 (defcustom x509-crl-cmd-arguments '("-text" "-noout")
   "Extra arguments to the openssl crl command."
-  :type 'list
-  :group 'x509-mode)
+  :type '(repeat string)
+  :group 'x509)
 
 (defcustom x509-dhparam-cmd-arguments '("-text" "-noout")
   "Extra arguments to the openssl dhparam command."
-  :type 'list
-  :group 'x509-mode)
+  :type '(repeat string)
+  :group 'x509)
 
 (defcustom x509-pkey-cmd-arguments '("-text" "-noout")
   "Extra arguments to the openssl pkey command."
-  :type 'list
-  :group 'x509-mode)
+  :type '(repeat string)
+  :group 'x509)
 
 (defcustom x509-asn1parse-cmd-arguments '()
   "Extra arguments to the openssl asn1parse command."
-  :type 'list
-  :group 'x509-mode)
+  :type '(repeat string)
+  :group 'x509)
 
-(defgroup x509-mode-faces nil
+(defgroup x509-faces nil
   "Faces used by x509."
-  :group 'x509-mode
+  :group 'x509
   :group 'faces)
 
 (defface x509-hex-string-face
   '((t (:inherit font-lock-comment-face :italic t)))
   "Face for colon-separated hex values."
-  :group 'x509-mode-faces)
+  :group 'x509-faces)
 
 (defface x509-oid-face
   '((t (:inherit font-lock-constant-face :bold t)))
   "Face for unknown OIDs."
-  :group 'x509-mode-faces)
+  :group 'x509-faces)
 
 (defun x509--match-date (cmp bound)
   "Return true if it can find a date that CMP to current time.
@@ -146,7 +146,7 @@ buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (not (time-less-p d1 d2))) bound))
 
 (eval-when-compile
-  (require 'cl-seq))
+  (require 'cl-lib))
 
 (defun x509--load-data-file (filename)
   "Split FILENAME linewise into a list.

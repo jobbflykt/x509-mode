@@ -148,16 +148,17 @@ buffer position that bounds the search."
 (eval-when-compile
   (require 'cl-lib))
 
-(defun x509--load-data-file (filename)
-  "Split FILENAME linewise into a list.
+(eval-when-compile
+  (defun x509--load-data-file (filename)
+    "Split FILENAME linewise into a list.
 Skip blank lines and comment lines. Return list."
-  (with-temp-buffer
-    (insert-file-contents
-     (if (null load-file-name) filename
-       (expand-file-name filename (file-name-directory load-file-name))))
-    (cl-remove-if (lambda (s) (or (string-match-p "^ *#" s)
-                               (string-match-p "^ *$" s)))
-               (split-string (buffer-string) "\n"))))
+    (with-temp-buffer
+      (insert-file-contents
+       (if (null load-file-name) filename
+         (expand-file-name filename (file-name-directory load-file-name))))
+      (cl-remove-if (lambda (s) (or (string-match-p "^ *#" s)
+                                    (string-match-p "^ *$" s)))
+                    (split-string (buffer-string) "\n")))))
 
 (defconst x509--keywords
   (eval-when-compile

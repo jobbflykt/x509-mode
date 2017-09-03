@@ -1,18 +1,51 @@
-# x509-mode
+# x509-mode [![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode)
 
-Minor mode for viewing certificates, CRLs, keys and DH-parameters.
+Major mode for viewing certificates, CRLs, keys, DH-parameters and ASN.1 using OpenSSL.
 
-Uses OpenSSL for viewing PEM and DER encoded PKI entities.
+## Usage
 
-While in a buffer displaying a certificate, use `M-x x509-viewcert` to create a
-new buffer that displays the decoded certificate.  Use `M-x x509-viewcrl`, `M-X
-x509-viewasn1`, `M-x x509-viewkey` and `M-x x509-viewdh` in a similar manner.
+Open a certificate, either PEM or DER encoded, in a buffer.
 
-Customize `x509-openssl-cmd` to the name of the OpenSSL binary. Typically `/usr/bin/openssl` on Linux. Git's `C:/Program Files/Git/mingw64/bin/openssl` can be used on Windows.
+    M-x x509-viewcert
+
+A new buffer should display the parsed certificate.
+
+To view certificates, CRLs, private keys Diffie-Hellman parameters and parsed ASN.1 respectively:
+
+    M-x x509-viewcert
+    M-x x509-viewcrl
+    M-X x509-viewasn1
+    M-x x509-viewkey
+    M-x x509-viewdh
 
 ## Installation
 
-Install the `x509-mode` package from MELPA.
+Install x509-mode through elpa. It's available on [melpa](https://melpa.org)
+
+    M-x package-install x509-mode
+
+I use the convenient [use-package](https://melpa.org/#/use-package)
+
+    (use-package x509-mode
+      :ensure t)
+
+## OpenSSL
+
+x509-mode requires OpenSSL. The variable `x509-openssl-cmd` must name the openssl binary.
+
+    M-x customize-variable x509-openssl-cmd
+
+### Linux
+
+    dnf install openssl
+
+    (setq x509-openssl-cmd "openssl")
+
+### Windows
+
+x509-mode works with, for example, OpenSSL that comes with Git for Windows.
+
+    (setq x509-openssl-cmd "C:\Program Files\Git\mingw64\bin\openssl.exe")
 
 ## Screenshots
 

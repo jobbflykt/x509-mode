@@ -1,4 +1,4 @@
-;;; x509-mode.el --- Decode certificates, CRLs and keys using OpenSSL. -*- lexical-binding: t; -*-
+;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL. -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmai.com>
 
@@ -32,7 +32,7 @@
 
 ;;; Commentary:
 
-;; Minor mode for viewing certificates, CRLs, keys and DH-parameters.
+;; Major for viewing certificates, CRLs, keys and DH-parameters.
 
 ;; Uses OpenSSL for viewing PEM and DER encoded PKI entities.
 

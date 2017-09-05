@@ -221,6 +221,12 @@ Skip blank lines and comment lines. Return list."
      (1 'font-lock-builtin-face)
      (2 'font-lock-constant-face))
 
+   ;; CA:TRUE, CA:FALSE
+   ;; CA used to be keyword+argument but CA: can be part of hex-string
+   '("\\(CA\\):\\(TRUE\\|FALSE\\)"
+     (1 'font-lock-builtin-face)
+     (2 'font-lock-constant-face))
+
    ;; Hex dumps At least two two-digit hex-numbers separated by `:'
    ;; Can end in `:' for example in "Modulus"
    ;; fa:09(:....)

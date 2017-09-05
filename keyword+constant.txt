@@ -1,9 +1,12 @@
 Public Key Algorithm
 X509v3 Basic Constraints
-CA
 Policy
 X509v3 Key Usage
 X509v3 Extended Key Usage
 Signature Algorithm
 Hash Algorithm
 Mask Algorithm
+
+# openssl/crypto/ec/eck_prn.c
+ASN1 OID
+NIST CURVE

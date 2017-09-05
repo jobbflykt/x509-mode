@@ -127,3 +127,22 @@ subgroup factor:
 seed:
 counter:
 recommended-private-length:
+
+# openssl/crypto/ec/eck_prn.c
+Field Type:
+Basis Type:
+Polynomial:
+Prime:
+Order:
+Cofactor:
+Seed:
+Generator (compressed):
+Generator (uncompressed):
+Generator (hybrid):
+
+# ???
+serial:
+
+# openssl/crypto/x509v3/v3_bcons.c
+# X509V3_add_value_bool
+pathlen

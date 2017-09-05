@@ -6,11 +6,6 @@ NONE
 Code Signing
 E-mail Protection
 Invalidity Date
-Microsoft Commercial Code Signing
-Microsoft Encrypted File System
-Microsoft Individual Code Signing
-Microsoft Server Gated Crypto
-Netscape Server Gated Crypto
 OCSP Signing
 DVCS
 Any Extended Key Usage
@@ -18,10 +13,38 @@ Microsoft Smartcardlogin
 Microsoft Trust List Signing
 Netscape Server Gated Crypto
 Strong Extranet ID
-TLS Web Client Authentication
+Unspecified
+Remove From CRL
+Supersede
+
+# openssl/crypto/objects/obj_dat.h
 TLS Web Server Authentication
+TLS Web Client Authentication
+Code Signing
+E-mail Protection
 Time Stamping
-X509v3 Delta CRL Indicator
+Microsoft Individual Code Signing
+Microsoft Individual Code Signing
+Microsoft Individual Code Signing
+Microsoft Commercial Code Signing
+Microsoft Trust List Signing
+Microsoft Server Gated Crypto
+Microsoft Encrypted File System
+Netscape Server Gated Crypto
+IPSec End System
+IPSec Tunnel
+IPSec User
+
+
+
+# openssl/crypto/x509v3/v3_bitst.c
+SSL Client
+SSL Server
+S/MIME
+Object Signing
+SSL CA
+S/MIME CA
+Object Signing CA
 Digital Signature
 Non Repudiation
 Key Encipherment
@@ -31,16 +54,13 @@ Certificate Sign
 CRL Sign
 Encipher Only
 Decipher Only
-S/MIME CA
-SSL CA
-Unspecified
+
+# openssl/crypto/x509v3/v3_crld.c
 Key Compromise
 CA Compromise
 Affiliation Changed
 Superseded
 Cessation Of Operation
 Certificate Hold
-Remove From CRL
 Privilege Withdrawn
 AA Compromise
-Supersede

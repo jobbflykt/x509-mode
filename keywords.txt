@@ -142,6 +142,7 @@ Generator (hybrid):
 
 # ???
 serial:
+DH Parameters:
 
 # openssl/crypto/x509v3/v3_bcons.c
 # X509V3_add_value_bool

@@ -271,13 +271,24 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)))
 
+(defun x509--read-arguemnts (prompt default history)
+  (if (equal current-prefix-arg '(4))
+      (list (read-from-minibuffer prompt default nil nil history))
+    (list default)))
+
+(defvar x509-viewcert-history nil "History list for x509-viewcert.")
+
 ;;;###autoload
-(defun x509-viewcert ()
+(defun x509-viewcert (&optional args)
   "Parse current buffer as a certificate file.
-Display result in another buffer."
-  (interactive)
-  (x509--process-buffer (append (list "x509" "-inform" (x509--buffer-encoding))
-                                x509-x509-cmd-arguments))
+Display result in another buffer.
+
+With \\[universal-argument] prefix, you can edit the command arguements."
+  (interactive (x509--read-arguemnts "x509 args: "
+                                     (format "x509 -text -noout -inform %s"
+                                             (x509--buffer-encoding))
+                                     'x509-view-cert-history ))
+  (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
 
 ;;;###autoload

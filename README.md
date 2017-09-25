@@ -18,6 +18,10 @@ To view certificates, CRLs, private keys Diffie-Hellman parameters and parsed AS
     M-x x509-viewkey
     M-x x509-viewdh
 
+The command line for all command can be edited with C-u prefix. Example:
+
+    C-u M-x x509-viewcert
+
 ## Installation
 
 Install x509-mode through elpa. It's available on [melpa](https://melpa.org)

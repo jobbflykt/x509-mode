@@ -75,6 +75,11 @@ Example:
   "Face for unknown OIDs."
   :group 'x509-faces)
 
+(defface x509-bad-date-face
+  '((t (:inherit default :background "red")))
+  "Face for past and future dates."
+  :group 'x509-faces)
+
 (defun x509--match-date (cmp bound)
   "Return true if it can find a date that CMP to current time.
 Indented to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
@@ -177,12 +182,12 @@ Skip blank lines and comment lines. Return list."
    ;; Not Before: Jun 11 00:00:01 2014 GMT
    ;; Date is "MATCH-ANCHORED", see help for variable font-lock-keywords
    '("\\(Not Before\\): " (1 'font-lock-builtin-face)
-     (x509--match-date-in-future nil nil (0 'font-lock-warning-face)))
+     (x509--match-date-in-future nil nil (0 'x509-bad-date-face)))
    '("\\(Not After\\) : " (1 'font-lock-builtin-face)
-     (x509--match-date-in-past nil nil (0 'font-lock-warning-face)))
+     (x509--match-date-in-past nil nil (0 'x509-bad-date-face)))
    ;; For CRL's when Next Update is in the past
    '("\\(Next Update\\): " (1 'font-lock-builtin-face)
-     (x509--match-date-in-past nil nil (0 'font-lock-warning-face)))
+     (x509--match-date-in-past nil nil (0 'x509-bad-date-face)))
 
    ;; Policy: OID
    ;; Has precedence over Keyword: constant below

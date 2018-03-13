@@ -70,6 +70,10 @@ coefficient:
 # openssl/crypto/ec/ecx_meth.c
 priv:
 pub:
+# openssl/crypto/dsa/dsa_ameth.c
+P:
+Q:
+G:
 
 # keyword + constant
 #Hash Algorithm:

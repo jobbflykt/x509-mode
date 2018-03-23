@@ -250,10 +250,10 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)))
 
-(defun x509--read-arguemnts (prompt default history)
+(defun x509--read-arguments (prompt default history)
   "Prompt, using PROMPT, for arguments if \\[universal-argument] prefix.
 
-Provide DEFAULT arguement and HISTORY.
+Provide DEFAULT argument and HISTORY.
 Return list with single argument string. "
   (if (equal current-prefix-arg '(4))
       (list (read-from-minibuffer prompt default nil nil history))
@@ -266,8 +266,8 @@ Return list with single argument string. "
   "Parse current buffer as a certificate file.
 Display result in another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
-  (interactive (x509--read-arguemnts "x509 args: "
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive (x509--read-arguments "x509 args: "
                                      (format "x509 -text -noout -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewcert-history))
@@ -280,8 +280,8 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 (defun x509-viewcrl (&optional args)
   "Parse current buffer as a CRL file. Display result in another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
-  (interactive (x509--read-arguemnts "crl args: "
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive (x509--read-arguments "crl args: "
                                      (format "crl -text -noout -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewcrl-history))
@@ -295,8 +295,8 @@ With \\[universal-argument] prefix, you can edit the command arguements."
   "Parse current buffer as a DH-parameter file.
 Display result in another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
-  (interactive (x509--read-arguemnts "dhparam args: "
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive (x509--read-arguments "dhparam args: "
                                      (format "dhparam -text -noout -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewdh-history))
@@ -313,9 +313,9 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 (defun x509-viewkey (&optional args)
   "Display x509 private key using the OpenSSL pkey command.
 
-With \\[universal-argument] prefix, you can edit the command arguements.
+With \\[universal-argument] prefix, you can edit the command arguments.
 For example to enter pass-phrase, add -passin pass:PASSPHRASE."
-  (interactive (x509--read-arguemnts
+  (interactive (x509--read-arguments
                 "pkey args: "
                 (format "pkey -text -noout -inform %s -in \"%s\""
                         (x509--buffer-encoding) (buffer-file-name))
@@ -387,8 +387,8 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 (defun x509-viewasn1 (&optional args)
   "Parse current buffer as ASN.1. Display result in another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
-  (interactive (x509--read-arguemnts "asn1parse args: "
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive (x509--read-arguments "asn1parse args: "
                                      (format "asn1parse -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewasn1-history))

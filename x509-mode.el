@@ -250,7 +250,7 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)))
 
-(defun x509--read-arguemnts (prompt default history)
+(defun x509--read-arguments (prompt default history)
   "Prompt, using PROMPT, for arguments if \\[universal-argument] prefix.
 
 Provide DEFAULT arguement and HISTORY.
@@ -267,10 +267,11 @@ Return list with single argument string. "
 Display result in another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
-  (interactive (x509--read-arguemnts "x509 args: "
-                                     (format "x509 -text -noout -inform %s"
-                                             (x509--buffer-encoding))
-                                     'x509--viewcert-history))
+  (interactive (x509--read-arguments
+                "x509 args: "
+                (format "x509 -nameopt utf8 -text -noout -inform %s"
+                        (x509--buffer-encoding))
+                'x509--viewcert-history))
   (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
 
@@ -281,7 +282,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
   "Parse current buffer as a CRL file. Display result in another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
-  (interactive (x509--read-arguemnts "crl args: "
+  (interactive (x509--read-arguments "crl args: "
                                      (format "crl -text -noout -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewcrl-history))
@@ -296,7 +297,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 Display result in another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
-  (interactive (x509--read-arguemnts "dhparam args: "
+  (interactive (x509--read-arguments "dhparam args: "
                                      (format "dhparam -text -noout -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewdh-history))
@@ -315,7 +316,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 
 With \\[universal-argument] prefix, you can edit the command arguements.
 For example to enter pass-phrase, add -passin pass:PASSPHRASE."
-  (interactive (x509--read-arguemnts
+  (interactive (x509--read-arguments
                 "pkey args: "
                 (format "pkey -text -noout -inform %s -in \"%s\""
                         (x509--buffer-encoding) (buffer-file-name))
@@ -388,7 +389,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
   "Parse current buffer as ASN.1. Display result in another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
-  (interactive (x509--read-arguemnts "asn1parse args: "
+  (interactive (x509--read-arguments "asn1parse args: "
                                      (format "asn1parse -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewasn1-history))

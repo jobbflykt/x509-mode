@@ -333,7 +333,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
                 "UTCTIME" "GENERALIZEDTIME" "ENUMERATED")))
 
 (defconst x509--asn1-cons-keywords
-  (regexp-opt '("cons" "SEQUENCE" "SET")))
+  (regexp-opt '("SEQUENCE" "SET")))
 
 (defconst x509--asn1-strings
   (concat (regexp-opt
@@ -355,8 +355,10 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
   (list
    ;; BOOLEAN, INTEGER and such
    `(,x509--asn1-primitives-keywords . 'font-lock-builtin-face)
-   ;; SET, SEQUENCE and such
+   ;; SET, SEQUENCE
    `(,x509--asn1-cons-keywords . 'font-lock-regexp-grouping-backslash)
+   ;; cons: as in constructed. Same font as SET and SEQUENCE
+   '("\\(cons\\):" (1 'font-lock-regexp-grouping-backslash))
    ;; Like SET and SEQUENCE
    '("\\(cont\\|\\appl\\|priv\\) \\[\\(.*?\\)\\]"
      (1 'font-lock-keyword-face)

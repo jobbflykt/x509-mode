@@ -134,6 +134,7 @@ buffer position that bounds the search."
   "Make http URLs clickable by making them buttons."
   (save-excursion
     (save-match-data
+      (goto-char (point-min))
       (while (search-forward-regexp
               "\\(file\\|https?\\)://[-_.:/A-Za-z0-9]+" nil t)
         (let* ((start (match-beginning 0))
@@ -255,7 +256,8 @@ Skip blank lines and comment lines. Return list."
 
 \\{x509-mode-map}"
   (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords))
-  (define-key x509-mode-map "q" 'x509-mode--kill-buffer))
+  (define-key x509-mode-map "q" 'x509-mode--kill-buffer)
+  (x509--mark-browse-url-links))
 
 (defun x509--buffer-encoding()
   (save-excursion
@@ -277,7 +279,6 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
     (apply 'call-process-region args)
     (switch-to-buffer buf)
     (goto-char (point-min))
-    (x509--mark-browse-url-links)
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)))
 

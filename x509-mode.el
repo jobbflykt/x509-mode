@@ -80,6 +80,11 @@ Example:
   "Face for past and future dates."
   :group 'x509-faces)
 
+(defface x509-browse-url-face
+  '((((class color) (background light)) :inherit link)
+    (((class color) (background  dark)) :inherit link))
+  "Face for storing url used when clicking link.")
+
 (defun x509--match-date (cmp bound)
   "Return true if it can find a date that CMP to current time.
 Indented to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
@@ -125,6 +130,27 @@ and set ‘match-data’ appropriately if it succeeds; like
 buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (not (time-less-p d1 d2))) bound))
 
+(defun x509--mark-browse-url-links()
+  "Make http URLs clickable by making them buttons."
+  (save-excursion
+    (save-match-data
+      (while (search-forward-regexp
+              "\\(file\\|https?\\)://[-_.:/A-Za-z0-9]+" nil t)
+        (let* ((start (match-beginning 0))
+               (end (match-end 0))
+               (url (match-string-no-properties 0))
+               (help-echo (format "Click to browse-url %s" url)))
+          ;; The url is stored in the face property
+          (make-button
+           start end
+	   'face 'x509-browse-url-face
+	   'follow-link t
+	   'x509-browse-url-face url
+           'help-echo help-echo
+	   'action (lambda (button)
+		     (browse-url
+                      (button-get button 'x509-browse-url-face)))))))))
+
 (require 'cl-lib)
 
 (defun x509--load-data-file (filename)
@@ -163,21 +189,25 @@ Skip blank lines and comment lines. Return list."
 
    ;; something=string until ',' or '/' or EOL
    ;; E.g. CN=apa,OU=Räv
-   '("\\(\\<\\w+=\\)\\(.*?\\)\\(:?[,/]\\|$\\)"
+   '("\\(\\<\\w+=\\)\\(.*?\\)\\(?:[,/]\\|$\\)"
      (1 'bold)
      (2 'font-lock-string-face))
 
    ;; something = string until ',' or EOL
    ;; E.g. CN = ACCVRAIZ1, OU = PKIACCV, O = ACCV, C = ES
-   '("\\(\\<\\w+\\) = \\(.*?\\)\\(:?[,/]\\|$\\)"
+   '("\\(\\<\\w+\\) = \\(.*?\\)\\(?:[,/]\\|$\\)"
      (1 'bold)
      (2 'font-lock-string-face))
 
+   ;; URI: and CPS: . Highlight keyword. URL is handled by
+   ;; `x509--mark-browse-url-links'
+   '("\\<\\(URI:\\|CPS: \\)"
+     (1 'font-lock-builtin-face))
 
-   ;; URI:string, email:string CPS: string
-   '("\\<\\(URI:\\|DNS:\\|email:\\|CPS: \\)\\(.*\\)"
+   ;; DNS:string email:string
+   '("\\<\\(DNS:\\|email:\\)\\(.*\\)"
      (1 'font-lock-builtin-face)
-     (2 'link))
+     (2 'font-lock-string-face))
 
    ;; Not Before: Jun 11 00:00:01 2014 GMT
    ;; Date is "MATCH-ANCHORED", see help for variable font-lock-keywords
@@ -247,6 +277,7 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
     (apply 'call-process-region args)
     (switch-to-buffer buf)
     (goto-char (point-min))
+    (x509--mark-browse-url-links)
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)))
 

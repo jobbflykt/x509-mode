@@ -301,7 +301,6 @@ Display result in another buffer.
 With \\[universal-argument] prefix, you can edit the command arguements."
   (interactive (x509--read-arguments
                 "x509 args: "
-                (format "x509 -nameopt utf8 -text -noout -inform %s"
                 (format "x509 -nameopt multiline,utf8 -text -noout -inform %s"
                         (x509--buffer-encoding))
                 'x509--viewcert-history))

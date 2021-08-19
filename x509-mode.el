@@ -369,9 +369,9 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 ;;;###autoload
 (defun x509-viewcsr (&optional args)
   "Parse current buffer as a certificate signing request file.
-Display result in another buffer.
+ARGS are arguments to the openssl command.
 
-Append ARGS to the openssl command.
+Display result in another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
   (interactive (x509--read-arguments
@@ -383,6 +383,22 @@ With \\[universal-argument] prefix, you can edit the command arguements."
   (x509-mode))
 
 (defvar x509--viewcsr-history nil "History list for x509-viewcsr.")
+
+(defun x509-viewpkcs7 (&optional args)
+  "Parse current buffer as a PKCS#7 certificate file.
+ARGS are arguments to the openssl command.
+
+Display result in another buffer.
+
+With \\[universal-argument] prefix, you can edit the command arguements."
+  (interactive (x509--read-arguments
+                "x509 args: "
+                (format "pkcs7 -print -print_certs -noout -inform %s"
+                        (x509--buffer-encoding))
+                'x509--viewpkcs7-history))
+  (x509--process-buffer (split-string-and-unquote args)))
+
+(defvar x509--viewpkcs7-history nil "History list for x509-viewpkcs7.")
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

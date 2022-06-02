@@ -41,8 +41,9 @@
 ;; Open a file containing a certificate, either PEM or DER encode.  Now
 ;; use M-x `x509-viewcert' to create a new buffer that displays the decoded
 ;; certificate.
-;; Use M-x `x509-viewcrl', M-X `x509-viewasn1', M-x `x509-viewkey' and M-x
-;; `x509-viewdh' in a similar manner.
+
+;; Use `x509-viewcrl', `x509-viewasn1',`x509-viewkey', `x509-viewdh',
+;; `x509-viewreq' in a similar manner.
 
 ;;; Code:
 
@@ -242,8 +243,7 @@ Skip blank lines and comment lines.  Return list."
    ;; Can end in `:' for example in "Modulus"
    ;; fa:09(:....)
    '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$" .
-     'x509-hex-string-face)
-   )
+     'x509-hex-string-face))
   "OpenSSL x509 highlighting.")
 
 (defun x509-mode--kill-buffer()

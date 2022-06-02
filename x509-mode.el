@@ -68,23 +68,22 @@ Example:
   :group 'faces)
 
 (defface x509-hex-string-face
-  '((t (:inherit font-lock-comment-face :italic t)))
+  '((t (:inherit font-lock-comment-face)))
   "Face for colon-separated hex values."
   :group 'x509-faces)
 
 (defface x509-oid-face
-  '((t (:inherit font-lock-constant-face :bold t)))
+  '((t (:inherit font-lock-constant-face)))
   "Face for unknown OIDs."
   :group 'x509-faces)
 
 (defface x509-bad-date-face
-  '((t (:inherit default :background "red")))
+  '((t (:inherit font-lock-warning-face :inverse-video t)))
   "Face for past and future dates."
   :group 'x509-faces)
 
 (defface x509-browse-url-face
-  '((((class color) (background light)) :inherit link)
-    (((class color) (background  dark)) :inherit link))
+  '((t (:inherit link)))
   "Face for storing url used when clicking link.")
 
 (defun x509--match-date (cmp bound)

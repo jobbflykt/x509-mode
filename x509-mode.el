@@ -67,6 +67,21 @@ Example:
   :group 'x509
   :group 'faces)
 
+(defface x509-keyword-face
+  '((t (:inherit font-lock-builtin-face)))
+  "Face for keywords."
+  :group 'x509-faces)
+
+(defface x509-constant-face
+  '((t (:inherit font-lock-constant-face)))
+  "Face for constants."
+  :group 'x509-faces)
+
+(defface x509-string-face
+  '((t (:inherit font-lock-string-face)))
+  "Face for strings."
+  :group 'x509-faces)
+
 (defface x509-hex-string-face
   '((t (:inherit font-lock-comment-face)))
   "Face for colon-separated hex values."
@@ -77,9 +92,14 @@ Example:
   "Face for unknown OIDs."
   :group 'x509-faces)
 
-(defface x509-bad-date-face
+(defface x509-asn1-sequence-face
+  '((t (:inherit font-lock-regexp-grouping-backslash)))
+  "Face for ASN.1 sequences."
+  :group 'x509-faces)
+
+(defface x509-warning-face
   '((t (:inherit font-lock-warning-face :inverse-video t)))
-  "Face for past and future dates."
+  "Face for bad values."
   :group 'x509-faces)
 
 (defface x509-browse-url-face
@@ -182,61 +202,61 @@ Skip blank lines and comment lines.  Return list."
 
 (defconst x509-font-lock-keywords
   (list
-   `(,x509--keywords . 'font-lock-builtin-face)
+   `(,x509--keywords . 'x509-keyword-face)
 
-   `(,x509--constants . 'font-lock-constant-face)
+   `(,x509--constants . 'x509-constant-face)
 
    ;; Validity on a line alone (preceding "Not Before:")
-   '("^ +Validity ?$" . 'font-lock-builtin-face)
+   '("^ +Validity ?$" . 'x509-keyword-face)
 
    ;; something=string until ',' or '/' or EOL
    ;; E.g. CN=apa,OU=Räv
    '("\\(\\<\\w+=\\)\\(.*?\\)\\(?:[,/]\\|$\\)"
      (1 'bold)
-     (2 'font-lock-string-face))
+     (2 'x509-string-face))
 
    ;; something = string until ',' or EOL
    ;; E.g. CN = ACCVRAIZ1, OU = PKIACCV, O = ACCV, C = ES
    '("\\(\\<\\w+\\) = \\(.*?\\)\\(?:[,/]\\|$\\)"
      (1 'bold)
-     (2 'font-lock-string-face))
+     (2 'x509-string-face))
 
    ;; URI: and CPS: . Highlight keyword. URL is handled by
    ;; `x509--mark-browse-url-links'
    '("\\<\\(URI:\\|CPS: \\)"
-     (1 'font-lock-builtin-face))
+     (1 'x509-keyword-face))
 
    ;; DNS:string email:string
    '("\\<\\(DNS:\\|email:\\)\\(.*\\)"
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-string-face))
+     (1 'x509-keyword-face)
+     (2 'x509-string-face))
 
    ;; Not Before: Jun 11 00:00:01 2014 GMT
    ;; Date is "MATCH-ANCHORED", see help for variable font-lock-keywords
-   '("\\(Not Before\\): " (1 'font-lock-builtin-face)
-     (x509--match-date-in-future nil nil (0 'x509-bad-date-face)))
-   '("\\(Not After\\) : " (1 'font-lock-builtin-face)
-     (x509--match-date-in-past nil nil (0 'x509-bad-date-face)))
+   '("\\(Not Before\\): " (1 'x509-keyword-face)
+     (x509--match-date-in-future nil nil (0 'x509-warning-face)))
+   '("\\(Not After\\) : " (1 'x509-keyword-face)
+     (x509--match-date-in-past nil nil (0 'x509-warning-face)))
    ;; For CRL's when Next Update is in the past
-   '("\\(Next Update\\): " (1 'font-lock-builtin-face)
-     (x509--match-date-in-past nil nil (0 'x509-bad-date-face)))
+   '("\\(Next Update\\): " (1 'x509-keyword-face)
+     (x509--match-date-in-past nil nil (0 'x509-warning-face)))
 
    ;; Policy: OID
    ;; Has precedence over Keyword: constant below
    '("\\(Policy\\): \\([0-9]+\\.[0-9]+\\(:?\\.[0-9]+\\)*\\)"
-     (1 'font-lock-builtin-face)
+     (1 'x509-keyword-face)
      (2 'x509-oid-face))
 
    ;; E.g. Public Key Algorithm: rsaEncryption
    `(,x509--keyword-w-constant
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-constant-face))
+     (1 'x509-keyword-face)
+     (2 'x509-constant-face))
 
    ;; CA:TRUE, CA:FALSE
    ;; CA used to be keyword+argument but CA: can be part of hex-string
    '("\\(CA\\):\\(TRUE\\|FALSE\\)"
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-constant-face))
+     (1 'x509-keyword-face)
+     (2 'x509-constant-face))
 
    ;; Hex dumps At least two two-digit hex-numbers separated by `:'
    ;; Can end in `:' for example in "Modulus"
@@ -412,25 +432,25 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 (defconst x509-asn1-font-lock-keywords
   (list
    ;; BOOLEAN, INTEGER and such
-   `(,x509--asn1-primitives-keywords . 'font-lock-builtin-face)
+   `(,x509--asn1-primitives-keywords . 'x509-keyword-face)
    ;; SET, SEQUENCE
-   `(,x509--asn1-cons-keywords . 'font-lock-regexp-grouping-backslash)
+   `(,x509--asn1-cons-keywords . 'x509-asn1-sequence-face)
    ;; cons: as in constructed. Same font as SET and SEQUENCE
-   '("\\(cons\\):" (1 'font-lock-regexp-grouping-backslash))
+   '("\\(cons\\):" (1 'x509-asn1-sequence-face))
    ;; Like SET and SEQUENCE
    '("\\(cont\\|\\appl\\|priv\\) \\[\\(.*?\\)\\]"
-     (1 'font-lock-keyword-face)
-     (2 'font-lock-regexp-grouping-backslash))
+     (1 'x509-keyword-face)
+     (2 'x509-asn1-sequence-face))
    ;; Parsing error messages
-   '("error:.*\\|Error in encoding" . 'font-lock-warning-face)
+   '("error:.*\\|Error in encoding" . 'x509-warning-face)
    ;; String type + string value
    `(,x509--asn1-strings
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-constant-face))
+     (1 'x509-keyword-face)
+     (2 'x509-string-face))
    ;; "OID" followed by oid
    `(,x509--asn1-oid
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-function-name-face))
+     (1 'x509-keyword-face)
+     (2 'x509-oid-face))
    "openssl asn1parse highligting"))
 
 ;;;###autoload

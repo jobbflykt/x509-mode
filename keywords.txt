@@ -55,6 +55,8 @@ PSS parameter restrictions:
 Salt Length:
 Trailer Field:
 Private-Key:
+RSA Private-Key:
+RSA-PSS Private-Key:
 Public-Key:
 RSA Public-Key:
 RSA-PSS Public-Key:

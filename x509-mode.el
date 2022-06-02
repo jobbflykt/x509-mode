@@ -145,12 +145,12 @@ buffer position that bounds the search."
           ;; The url is stored in the face property
           (make-button
            start end
-	   'face 'x509-browse-url-face
-	   'follow-link t
-	   'x509-browse-url-face url
+           'face 'x509-browse-url-face
+           'follow-link t
+           'x509-browse-url-face url
            'help-echo help-echo
-	   'action (lambda (button)
-		     (browse-url
+           'action (lambda (button)
+                     (browse-url
                       (button-get button 'x509-browse-url-face)))))))))
 
 (require 'cl-lib)
@@ -310,6 +310,23 @@ With \\[universal-argument] prefix, you can edit the command arguements."
                 (format "x509 -nameopt utf8 -text -noout -inform %s"
                         (x509--buffer-encoding))
                 'x509--viewcert-history))
+  (x509--process-buffer (split-string-and-unquote args))
+  (x509-mode))
+
+(defvar x509--viewreq-history nil "History list for x509-viewreq.")
+
+;;;###autoload
+(defun x509-viewreq (&optional args)
+  "Parse current buffer as a request file.
+ARGS are arguments to the openssl command.  Display result in
+another buffer.
+
+With \\[universal-argument] prefix, you can edit the command arguements."
+  (interactive (x509--read-arguments
+                "req args: "
+                (format "req -nameopt utf8 -text -noout -inform %s"
+                        (x509--buffer-encoding))
+                'x509--viewreq-history))
   (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
 

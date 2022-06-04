@@ -82,6 +82,11 @@ If nil, display short names."
   "Face for constants."
   :group 'x509-faces)
 
+(defface x509-short-name-face
+  '((t (:bold t)))
+  "Face for short names, e.g, CN and OU."
+  :group 'x509-faces)
+
 (defface x509-string-face
   '((t (:inherit font-lock-string-face)))
   "Face for strings."
@@ -225,7 +230,7 @@ Skip blank lines and comment lines.  Return list."
    ;; something=string until ',' or '/' or EOL
    ;; E.g. CN=apa,OU=Räv
    '("\\(\\<\\w+=\\)\\(.*?\\)\\(?:[,/]\\|$\\)"
-     (1 'bold)
+     (1 'x509-short-name-face)
      (2 'x509-string-face))
 
    ;; Subject and Issuer, long names
@@ -236,7 +241,7 @@ Skip blank lines and comment lines.  Return list."
    ;; something = string until ',' or EOL
    ;; E.g. CN = ACCVRAIZ1, OU = PKIACCV, O = ACCV, C = ES
    '("\\(\\<\\w+\\) = \\(.*?\\)\\(?:[,/]\\|$\\)"
-     (1 'bold)
+     (1 'x509-short-name-face)
      (2 'x509-string-face))
 
    ;; URI: and CPS: . Highlight keyword. URL is handled by

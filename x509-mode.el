@@ -1,9 +1,10 @@
 ;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL. -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmai.com>
+;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmai.com>
-;;  Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
+;; Homepage: https://github.com/jobbflykt/x509-mode
+;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -40,8 +41,9 @@
 ;; Open a file containing a certificate, either PEM or DER encode.  Now
 ;; use M-x `x509-viewcert' to create a new buffer that displays the decoded
 ;; certificate.
-;; Use M-x `x509-viewcrl', M-X `x509-viewasn1', M-x `x509-viewkey' and M-x
-;; `x509-viewdh' in a similar manner.
+
+;; Use `x509-viewcrl', `x509-viewasn1',`x509-viewkey', `x509-viewdh',
+;; `x509-viewreq' in a similar manner.
 
 ;;; Code:
 
@@ -65,28 +67,47 @@ Example:
   :group 'x509
   :group 'faces)
 
+(defface x509-keyword-face
+  '((t (:inherit font-lock-builtin-face)))
+  "Face for keywords."
+  :group 'x509-faces)
+
+(defface x509-constant-face
+  '((t (:inherit font-lock-constant-face)))
+  "Face for constants."
+  :group 'x509-faces)
+
+(defface x509-string-face
+  '((t (:inherit font-lock-string-face)))
+  "Face for strings."
+  :group 'x509-faces)
+
 (defface x509-hex-string-face
-  '((t (:inherit font-lock-comment-face :italic t)))
+  '((t (:inherit font-lock-comment-face)))
   "Face for colon-separated hex values."
   :group 'x509-faces)
 
 (defface x509-oid-face
-  '((t (:inherit font-lock-constant-face :bold t)))
+  '((t (:inherit font-lock-constant-face)))
   "Face for unknown OIDs."
   :group 'x509-faces)
 
-(defface x509-bad-date-face
-  '((t (:inherit default :background "red")))
-  "Face for past and future dates."
+(defface x509-asn1-sequence-face
+  '((t (:inherit font-lock-regexp-grouping-backslash)))
+  "Face for ASN.1 sequences."
+  :group 'x509-faces)
+
+(defface x509-warning-face
+  '((t (:inherit font-lock-warning-face :inverse-video t)))
+  "Face for bad values."
   :group 'x509-faces)
 
 (defface x509-browse-url-face
-  '((((class color) (background light)) :inherit link)
-    (((class color) (background  dark)) :inherit link))
+  '((t (:inherit link)))
   "Face for storing url used when clicking link.")
 
 (defun x509--match-date (cmp bound)
-  "Return true if it can find a date that CMP to current time.
+  "Return non-nil if it can find a date that CMP to current time.
 Indented to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
 and compare them to the current time. Return non-nil, move point,
 and set ‘match-data’ appropriately if it succeeds; like
@@ -113,7 +134,7 @@ position that bounds the search."
       nil)))
 
 (defun x509--match-date-in-past (bound)
-  "Return true if it can find a date that is the past.
+  "Return non-nil if it can find a date that is the past.
 Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
 and compare them to the current time. Return non-nil, move point,
 and set ‘match-data’ appropriately if it succeeds; like
@@ -122,7 +143,7 @@ buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (time-less-p d1 d2)) bound))
 
 (defun x509--match-date-in-future (bound)
-  "Return true if it can find a date that is the future.
+  "Return non-nil if it can find a date that is the future.
 Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
 and compare them to the current time. Return non-nil, move point,
 and set ‘match-data’ appropriately if it succeeds; like
@@ -144,19 +165,19 @@ buffer position that bounds the search."
           ;; The url is stored in the face property
           (make-button
            start end
-	   'face 'x509-browse-url-face
-	   'follow-link t
-	   'x509-browse-url-face url
+           'face 'x509-browse-url-face
+           'follow-link t
+           'x509-browse-url-face url
            'help-echo help-echo
-	   'action (lambda (button)
-		     (browse-url
+           'action (lambda (button)
+                     (browse-url
                       (button-get button 'x509-browse-url-face)))))))))
 
 (require 'cl-lib)
 
 (defun x509--load-data-file (filename)
   "Split FILENAME linewise into a list.
-Skip blank lines and comment lines. Return list."
+Skip blank lines and comment lines.  Return list."
   (with-temp-buffer
     (insert-file-contents
      (if (null load-file-name) filename
@@ -181,71 +202,71 @@ Skip blank lines and comment lines. Return list."
 
 (defconst x509-font-lock-keywords
   (list
-   `(,x509--keywords . 'font-lock-builtin-face)
+   `(,x509--keywords . 'x509-keyword-face)
 
-   `(,x509--constants . 'font-lock-constant-face)
+   `(,x509--constants . 'x509-constant-face)
 
    ;; Validity on a line alone (preceding "Not Before:")
-   '("^ +Validity ?$" . 'font-lock-builtin-face)
+   '("^ +Validity ?$" . 'x509-keyword-face)
 
    ;; something=string until ',' or '/' or EOL
    ;; E.g. CN=apa,OU=Räv
    '("\\(\\<\\w+=\\)\\(.*?\\)\\(?:[,/]\\|$\\)"
      (1 'bold)
-     (2 'font-lock-string-face))
+     (2 'x509-string-face))
 
    ;; something = string until ',' or EOL
    ;; E.g. CN = ACCVRAIZ1, OU = PKIACCV, O = ACCV, C = ES
    '("\\(\\<\\w+\\) = \\(.*?\\)\\(?:[,/]\\|$\\)"
      (1 'bold)
-     (2 'font-lock-string-face))
+     (2 'x509-string-face))
 
    ;; URI: and CPS: . Highlight keyword. URL is handled by
    ;; `x509--mark-browse-url-links'
    '("\\<\\(URI:\\|CPS: \\)"
-     (1 'font-lock-builtin-face))
+     (1 'x509-keyword-face))
 
    ;; DNS:string email:string
    '("\\<\\(DNS:\\|email:\\)\\(.*\\)"
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-string-face))
+     (1 'x509-keyword-face)
+     (2 'x509-string-face))
 
    ;; Not Before: Jun 11 00:00:01 2014 GMT
    ;; Date is "MATCH-ANCHORED", see help for variable font-lock-keywords
-   '("\\(Not Before\\): " (1 'font-lock-builtin-face)
-     (x509--match-date-in-future nil nil (0 'x509-bad-date-face)))
-   '("\\(Not After\\) : " (1 'font-lock-builtin-face)
-     (x509--match-date-in-past nil nil (0 'x509-bad-date-face)))
+   '("\\(Not Before\\): " (1 'x509-keyword-face)
+     (x509--match-date-in-future nil nil (0 'x509-warning-face)))
+   '("\\(Not After\\) : " (1 'x509-keyword-face)
+     (x509--match-date-in-past nil nil (0 'x509-warning-face)))
    ;; For CRL's when Next Update is in the past
-   '("\\(Next Update\\): " (1 'font-lock-builtin-face)
-     (x509--match-date-in-past nil nil (0 'x509-bad-date-face)))
+   '("\\(Next Update\\): " (1 'x509-keyword-face)
+     (x509--match-date-in-past nil nil (0 'x509-warning-face)))
 
    ;; Policy: OID
    ;; Has precedence over Keyword: constant below
    '("\\(Policy\\): \\([0-9]+\\.[0-9]+\\(:?\\.[0-9]+\\)*\\)"
-     (1 'font-lock-builtin-face)
+     (1 'x509-keyword-face)
      (2 'x509-oid-face))
 
    ;; E.g. Public Key Algorithm: rsaEncryption
    `(,x509--keyword-w-constant
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-constant-face))
+     (1 'x509-keyword-face)
+     (2 'x509-constant-face))
 
    ;; CA:TRUE, CA:FALSE
    ;; CA used to be keyword+argument but CA: can be part of hex-string
    '("\\(CA\\):\\(TRUE\\|FALSE\\)"
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-constant-face))
+     (1 'x509-keyword-face)
+     (2 'x509-constant-face))
 
    ;; Hex dumps At least two two-digit hex-numbers separated by `:'
    ;; Can end in `:' for example in "Modulus"
    ;; fa:09(:....)
    '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$" .
-     'x509-hex-string-face)
-   )
+     'x509-hex-string-face))
   "OpenSSL x509 highlighting.")
 
 (defun x509-mode--kill-buffer()
+  "Kill current buffer."
   (interactive)
   (set-buffer-modified-p nil)
   (kill-buffer))
@@ -260,6 +281,8 @@ Skip blank lines and comment lines. Return list."
   (x509--mark-browse-url-links))
 
 (defun x509--buffer-encoding()
+  "Heuristic for identifying PEM or DER coded buffer.
+Return string \"PEM\" or \"DER\"."
   (save-excursion
     (goto-char (point-min))
     (save-match-data
@@ -268,8 +291,9 @@ Skip blank lines and comment lines. Return list."
         "DER"))))
 
 (defun x509--process-buffer(openssl-arguments)
-  "Create new buffer named \"*x-[buffer-name]*\" and pass content of
-current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
+  "Create new buffer named \"*x-[buffer-name]*\".
+Pass content of current buffer to openssl with
+OPENSSL-ARGUMENTS. E.g. x509 -text"
   (interactive)
   (let* ((buf (generate-new-buffer (generate-new-buffer-name
                                     (format "*x-%s*" (buffer-name)))))
@@ -286,7 +310,7 @@ current buffer to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text"
   "Prompt, using PROMPT, for arguments if \\[universal-argument] prefix.
 
 Provide DEFAULT arguement and HISTORY.
-Return list with single argument string. "
+Return list with single argument string."
   (if (equal current-prefix-arg '(4))
       (list (read-from-minibuffer prompt default nil nil history))
     (list default)))
@@ -296,7 +320,8 @@ Return list with single argument string. "
 ;;;###autoload
 (defun x509-viewcert (&optional args)
   "Parse current buffer as a certificate file.
-Display result in another buffer.
+ARGS are arguments to the openssl command.  Display result in
+another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
   (interactive (x509--read-arguments
@@ -307,11 +332,30 @@ With \\[universal-argument] prefix, you can edit the command arguements."
   (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
 
+(defvar x509--viewreq-history nil "History list for x509-viewreq.")
+
+;;;###autoload
+(defun x509-viewreq (&optional args)
+  "Parse current buffer as a request file.
+ARGS are arguments to the openssl command.  Display result in
+another buffer.
+
+With \\[universal-argument] prefix, you can edit the command arguements."
+  (interactive (x509--read-arguments
+                "req args: "
+                (format "req -nameopt utf8 -text -noout -inform %s"
+                        (x509--buffer-encoding))
+                'x509--viewreq-history))
+  (x509--process-buffer (split-string-and-unquote args))
+  (x509-mode))
+
 (defvar x509--viewcrl-history nil "History list for x509-viewcrl.")
 
 ;;;###autoload
 (defun x509-viewcrl (&optional args)
-  "Parse current buffer as a CRL file. Display result in another buffer.
+  "Parse current buffer as a CRL file.
+ARGS are arguments to the openssl command.  Display result in
+another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
   (interactive (x509--read-arguments "crl args: "
@@ -326,7 +370,8 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 ;;;###autoload
 (defun x509-viewdh (&optional args)
   "Parse current buffer as a DH-parameter file.
-Display result in another buffer.
+ARGS are arguments to the openssl command.  Display result in
+another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
   (interactive (x509--read-arguments "dhparam args: "
@@ -345,6 +390,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 ;;;###autoload
 (defun x509-viewkey (&optional args)
   "Display x509 private key using the OpenSSL pkey command.
+ARGS are arguments to the openssl command.
 
 With \\[universal-argument] prefix, you can edit the command arguements.
 For example to enter pass-phrase, add -passin pass:PASSPHRASE."
@@ -386,25 +432,25 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 (defconst x509-asn1-font-lock-keywords
   (list
    ;; BOOLEAN, INTEGER and such
-   `(,x509--asn1-primitives-keywords . 'font-lock-builtin-face)
+   `(,x509--asn1-primitives-keywords . 'x509-keyword-face)
    ;; SET, SEQUENCE
-   `(,x509--asn1-cons-keywords . 'font-lock-regexp-grouping-backslash)
+   `(,x509--asn1-cons-keywords . 'x509-asn1-sequence-face)
    ;; cons: as in constructed. Same font as SET and SEQUENCE
-   '("\\(cons\\):" (1 'font-lock-regexp-grouping-backslash))
+   '("\\(cons\\):" (1 'x509-asn1-sequence-face))
    ;; Like SET and SEQUENCE
    '("\\(cont\\|\\appl\\|priv\\) \\[\\(.*?\\)\\]"
-     (1 'font-lock-keyword-face)
-     (2 'font-lock-regexp-grouping-backslash))
+     (1 'x509-keyword-face)
+     (2 'x509-asn1-sequence-face))
    ;; Parsing error messages
-   '("error:.*\\|Error in encoding" . 'font-lock-warning-face)
+   '("error:.*\\|Error in encoding" . 'x509-warning-face)
    ;; String type + string value
    `(,x509--asn1-strings
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-constant-face))
+     (1 'x509-keyword-face)
+     (2 'x509-string-face))
    ;; "OID" followed by oid
    `(,x509--asn1-oid
-     (1 'font-lock-builtin-face)
-     (2 'font-lock-function-name-face))
+     (1 'x509-keyword-face)
+     (2 'x509-oid-face))
    "openssl asn1parse highligting"))
 
 ;;;###autoload
@@ -420,7 +466,9 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 
 ;;;###autoload
 (defun x509-viewasn1 (&optional args)
-  "Parse current buffer as ASN.1. Display result in another buffer.
+  "Parse current buffer as ASN.1.
+ARGS are arguments to the openssl command.  Display result in
+another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguements."
   (interactive (x509--read-arguments "asn1parse args: "

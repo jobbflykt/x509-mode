@@ -17,6 +17,7 @@ To view certificates, CRLs, private keys Diffie-Hellman parameters and parsed AS
     M-X x509-viewasn1
     M-x x509-viewkey
     M-x x509-viewdh
+    M-x x509-viewreq
 
 The command line for all command can be edited with C-u prefix. Example:
 

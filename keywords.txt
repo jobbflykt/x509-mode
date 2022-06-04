@@ -55,8 +55,11 @@ PSS parameter restrictions:
 Salt Length:
 Trailer Field:
 Private-Key:
+RSA Private-Key:
+RSA-PSS Private-Key:
 Public-Key:
-Public-Key:
+RSA Public-Key:
+RSA-PSS Public-Key:
 Modulus:
 Exponent:
 modulus:
@@ -151,3 +154,8 @@ DH Parameters:
 # openssl/crypto/x509v3/v3_bcons.c
 # X509V3_add_value_bool
 pathlen
+
+# req
+Certificate Request
+Attributes
+Requested Extensions

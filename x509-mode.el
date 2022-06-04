@@ -41,7 +41,6 @@
 ;; Open a file containing a certificate, either PEM or DER encode.  Now
 ;; use M-x `x509-viewcert' to create a new buffer that displays the decoded
 ;; certificate.
-
 ;; Use `x509-viewcrl', `x509-viewasn1',`x509-viewkey', `x509-viewdh',
 ;; `x509-viewreq' in a similar manner.
 
@@ -365,7 +364,10 @@ another buffer.
 With \\[universal-argument] prefix, you can edit the command arguements."
   (interactive (x509--read-arguments
                 "req args: "
-                (format "req -nameopt utf8 -text -noout -inform %s"
+                (format "req -nameopt %sutf8 -text -noout -inform %s"
+                        (if x509-multiline-names
+                            "multiline,"
+                          "")
                         (x509--buffer-encoding))
                 'x509--viewreq-history))
   (x509--process-buffer (split-string-and-unquote args))

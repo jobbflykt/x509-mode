@@ -1,0 +1,16 @@
+# openssl/include/openssl/obj_mac.h
+commonName
+countryName
+dnQualifier
+generationQualifier
+givenName
+initials
+localityName
+organizationName
+organizationalUnitName
+pseudonym
+serialNumber
+stateOrProvinceName
+streetAddress
+surname
+title

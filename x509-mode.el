@@ -48,7 +48,7 @@
 ;;; Code:
 
 (defgroup x509 nil
-  "View certificates, CRLs, keys and DH-parameters using OpenSSL"
+  "View certificates, CRLs, keys and DH-parameters using OpenSSL."
   :group 'extensions
   :group 'convenience
   :link '(emacs-library-link :tag "Lisp File" "x509-mode.el"))
@@ -60,6 +60,12 @@ Example:
 \"/usr/bin/openssl\" or just \"openssl\" on Linux
 \"C:/Program Files/Git/mingw64/bin/openssl\" on Windows."
   :type 'string
+  :group 'x509)
+
+(defcustom x509-multiline-names t
+  "Display Issuer and Subject names on multiple line.
+If nil, display short names."
+  :type 'boolean
   :group 'x509)
 
 (defgroup x509-faces nil
@@ -200,6 +206,13 @@ Skip blank lines and comment lines.  Return list."
           ;; Followed by ": constant"
           ": *\\(.*\\)"))
 
+;; Multiline Issuer and Subject, "-nameopt multiline"
+;; E.g. "commonName                = GlobalSign Root CA"
+(defconst x509--multiline-name
+  (concat (regexp-opt
+           (x509--load-data-file "long-name.txt") t)
+          " *= \\(.*\\)"))
+
 (defconst x509-font-lock-keywords
   (list
    `(,x509--keywords . 'x509-keyword-face)
@@ -209,10 +222,16 @@ Skip blank lines and comment lines.  Return list."
    ;; Validity on a line alone (preceding "Not Before:")
    '("^ +Validity ?$" . 'x509-keyword-face)
 
+   ;; Subject and Issuer, short names
    ;; something=string until ',' or '/' or EOL
    ;; E.g. CN=apa,OU=Räv
    '("\\(\\<\\w+=\\)\\(.*?\\)\\(?:[,/]\\|$\\)"
      (1 'bold)
+     (2 'x509-string-face))
+
+   ;; Subject and Issuer, long names
+   `(,x509--multiline-name
+     (1 'x509-keyword-face)
      (2 'x509-string-face))
 
    ;; something = string until ',' or EOL
@@ -315,7 +334,7 @@ Return list with single argument string."
       (list (read-from-minibuffer prompt default nil nil history))
     (list default)))
 
-(defvar x509--viewcert-history nil "History list for x509-viewcert.")
+(defvar x509--viewcert-history nil "History list for `x509-viewcert'.")
 
 ;;;###autoload
 (defun x509-viewcert (&optional args)
@@ -326,13 +345,16 @@ another buffer.
 With \\[universal-argument] prefix, you can edit the command arguements."
   (interactive (x509--read-arguments
                 "x509 args: "
-                (format "x509 -nameopt utf8 -text -noout -inform %s"
+                (format "x509 -nameopt %sutf8 -text -noout -inform %s"
+                        (if x509-multiline-names
+                            "multiline,"
+                          "")
                         (x509--buffer-encoding))
                 'x509--viewcert-history))
   (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
 
-(defvar x509--viewreq-history nil "History list for x509-viewreq.")
+(defvar x509--viewreq-history nil "History list for `x509-viewreq'.")
 
 ;;;###autoload
 (defun x509-viewreq (&optional args)
@@ -349,7 +371,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
   (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
 
-(defvar x509--viewcrl-history nil "History list for x509-viewcrl.")
+(defvar x509--viewcrl-history nil "History list for `x509-viewcrl'.")
 
 ;;;###autoload
 (defun x509-viewcrl (&optional args)
@@ -365,7 +387,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
   (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
 
-(defvar x509--viewdh-history nil "History list for x509-viewdh.")
+(defvar x509--viewdh-history nil "History list for `x509-viewdh'.")
 
 ;;;###autoload
 (defun x509-viewdh (&optional args)
@@ -381,7 +403,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
   (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
 
-(defvar x509--viewkey-history nil "History list for x509-viewkey.")
+(defvar x509--viewkey-history nil "History list for `x509-viewkey'.")
 
 ;; Special. older openssl pkey cannot read from stdin so we need to use
 ;; buffer's file.
@@ -462,7 +484,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
        '(x509-asn1-font-lock-keywords))
   (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer))
 
-(defvar x509--viewasn1-history nil "History list for x509-viewasn1.")
+(defvar x509--viewasn1-history nil "History list for `x509-viewasn1'.")
 
 ;;;###autoload
 (defun x509-viewasn1 (&optional args)

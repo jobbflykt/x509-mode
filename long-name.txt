@@ -1,10 +1,15 @@
 # openssl/include/openssl/obj_mac.h
+businessCategory
 commonName
 countryName
 dnQualifier
+emailAddress
 generationQualifier
 givenName
 initials
+jurisdictionCountryName
+jurisdictionLocalityName
+jurisdictionStateOrProvinceName
 localityName
 organizationName
 organizationalUnitName

@@ -219,6 +219,11 @@ Skip blank lines and comment lines.  Return list."
 
 (defconst x509-font-lock-keywords
   (list
+   ;; Subject and Issuer, long names
+   `(,x509--multiline-name
+     (1 'x509-keyword-face)
+     (2 'x509-string-face))
+
    `(,x509--keywords . 'x509-keyword-face)
 
    `(,x509--constants . 'x509-constant-face)
@@ -231,11 +236,6 @@ Skip blank lines and comment lines.  Return list."
    ;; E.g. CN=apa,OU=Räv
    '("\\(\\<\\w+=\\)\\(.*?\\)\\(?:[,/]\\|$\\)"
      (1 'x509-short-name-face)
-     (2 'x509-string-face))
-
-   ;; Subject and Issuer, long names
-   `(,x509--multiline-name
-     (1 'x509-keyword-face)
      (2 'x509-string-face))
 
    ;; something = string until ',' or EOL

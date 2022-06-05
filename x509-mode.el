@@ -42,12 +42,12 @@
 ;; use M-x `x509-viewcert' to create a new buffer that displays the decoded
 ;; certificate.
 ;; Use `x509-viewcrl', `x509-viewasn1',`x509-viewkey', `x509-viewdh',
-;; `x509-viewreq' in a similar manner.
+;; `x509-viewreq', `x509-viewpkcs7' in a similar manner.
 
 ;;; Code:
 
 (defgroup x509 nil
-  "View certificates, CRLs, keys and DH-parameters using OpenSSL."
+  "View certificates, CRLs, keys and other related files using OpenSSL."
   :group 'extensions
   :group 'convenience
   :link '(emacs-library-link :tag "Lisp File" "x509-mode.el"))
@@ -346,7 +346,7 @@ Return list with single argument string."
 ARGS are arguments to the openssl command.  Display result in
 another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
+With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive (x509--read-arguments
                 "x509 args: "
                 (format "x509 -nameopt %sutf8 -text -noout -inform %s"
@@ -366,7 +366,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 ARGS are arguments to the openssl command.  Display result in
 another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
+With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive (x509--read-arguments
                 "req args: "
                 (format "req -nameopt %sutf8 -text -noout -inform %s"
@@ -386,13 +386,32 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 ARGS are arguments to the openssl command.  Display result in
 another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
+With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive (x509--read-arguments "crl args: "
                                      (format "crl -text -noout -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewcrl-history))
   (x509--process-buffer (split-string-and-unquote args))
   (x509-mode))
+
+(defvar x509--viewpkcs7-history nil "History list for `x509-viewpkcs7'.")
+
+;;;###autoload
+(defun x509-viewpkcs7 (&optional args)
+  "Parse current buffer as a PKCS#7 file.
+ARGS are arguments to the openssl command.  Display result in
+another buffer. Output only certificates and CRLs by default. Add
+the \"-print\" switch to output details.
+
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive (x509--read-arguments
+                "pkcs7 args: "
+                (format "pkcs7 -noout -text -print_certs -inform %s"
+                        (x509--buffer-encoding))
+                'x509--viewpkcs7-history))
+  (x509--process-buffer (split-string-and-unquote args))
+  (x509-mode))
+
 
 (defvar x509--viewdh-history nil "History list for `x509-viewdh'.")
 
@@ -402,7 +421,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 ARGS are arguments to the openssl command.  Display result in
 another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
+With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive (x509--read-arguments "dhparam args: "
                                      (format "dhparam -text -noout -inform %s"
                                              (x509--buffer-encoding))
@@ -421,7 +440,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
   "Display x509 private key using the OpenSSL pkey command.
 ARGS are arguments to the openssl command.
 
-With \\[universal-argument] prefix, you can edit the command arguements.
+With \\[universal-argument] prefix, you can edit the command arguments.
 For example to enter pass-phrase, add -passin pass:PASSPHRASE."
   (interactive (x509--read-arguments
                 "pkey args: "
@@ -515,7 +534,7 @@ With \\[universal-argument] prefix, you can edit the command arguements."
 ARGS are arguments to the openssl command.  Display result in
 another buffer.
 
-With \\[universal-argument] prefix, you can edit the command arguements."
+With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive (x509--read-arguments "asn1parse args: "
                                      (format "asn1parse -inform %s"
                                              (x509--buffer-encoding))

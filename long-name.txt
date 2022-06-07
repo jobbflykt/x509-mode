@@ -19,3 +19,4 @@ stateOrProvinceName
 streetAddress
 surname
 title
+x500UniqueIdentifier

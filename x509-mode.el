@@ -313,15 +313,35 @@ Return string \"PEM\" or \"DER\"."
           "PEM"
         "DER"))))
 
-(defun x509--process-buffer(openssl-arguments)
+(defun x509--pem-region()
+  "Determine if point is in region delimited by \"-----BEGIN\" \"-----END\".
+Return (begin . end) or nil"
+  (save-excursion
+    (save-match-data
+      (let ((here (point)))
+        (if (or (looking-at "-----BEGIN")
+                (re-search-backward "-----BEGIN" nil t))
+            (let ((begin (match-beginning 0)))
+              (if (and (re-search-forward "-----END.*-----" nil t)
+                       ;; Ensure point is between begin and end.
+                       (< here (match-end 0)))
+                  (cons begin (match-end 0)))))))))
+
+(defun x509--process-buffer(openssl-arguments &optional delimit)
   "Create new buffer named \"*x-[buffer-name]*\".
 Pass content of current buffer to openssl with
-OPENSSL-ARGUMENTS. E.g. x509 -text"
+OPENSSL-ARGUMENTS. E.g. x509 -text.
+
+If DELIMIT is (begin . end), operate on that region, not the whole buffer.
+Intended to be used to process a PEM embedded in a file.
+"
   (interactive)
-  (let* ((buf (generate-new-buffer (generate-new-buffer-name
+  (let* ((begin (if delimit (car delimit) (point-min)))
+         (end (if delimit (cdr delimit) (point-max)))
+         (buf (generate-new-buffer (generate-new-buffer-name
                                     (format "*x-%s*" (buffer-name)))))
          (args (append
-                (list (point-min) (point-max) x509-openssl-cmd nil buf nil)
+                (list begin end x509-openssl-cmd nil buf nil)
                 openssl-arguments)))
     (apply 'call-process-region args)
     (switch-to-buffer buf)
@@ -355,7 +375,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
                           "")
                         (x509--buffer-encoding))
                 'x509--viewcert-history))
-  (x509--process-buffer (split-string-and-unquote args))
+  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
   (x509-mode))
 
 (defvar x509--viewreq-history nil "History list for `x509-viewreq'.")
@@ -375,7 +395,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
                           "")
                         (x509--buffer-encoding))
                 'x509--viewreq-history))
-  (x509--process-buffer (split-string-and-unquote args))
+  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
   (x509-mode))
 
 (defvar x509--viewcrl-history nil "History list for `x509-viewcrl'.")
@@ -391,7 +411,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
                                      (format "crl -text -noout -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewcrl-history))
-  (x509--process-buffer (split-string-and-unquote args))
+  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
   (x509-mode))
 
 (defvar x509--viewpkcs7-history nil "History list for `x509-viewpkcs7'.")
@@ -409,7 +429,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
                 (format "pkcs7 -noout -text -print_certs -inform %s"
                         (x509--buffer-encoding))
                 'x509--viewpkcs7-history))
-  (x509--process-buffer (split-string-and-unquote args))
+  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
   (x509-mode))
 
 
@@ -426,7 +446,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
                                      (format "dhparam -text -noout -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewdh-history))
-  (x509--process-buffer (split-string-and-unquote args))
+  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
   (x509-mode))
 
 (defvar x509--viewkey-history nil "History list for `x509-viewkey'.")
@@ -523,7 +543,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
                                      (format "asn1parse -inform %s"
                                              (x509--buffer-encoding))
                                      'x509--viewasn1-history))
-  (x509--process-buffer (split-string-and-unquote args))
+  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
   (x509-asn1-mode))
 
 (provide 'x509-asn1-mode)

@@ -23,6 +23,10 @@ The command line for all command can be edited with C-u prefix. Example:
 
     C-u M-x x509-viewcert
 
+Commands operate on PEM data around point by default. If point is in -----BEGIN/-----END, that region is sent to OpenSSL. Otherwise the whole buffer is considered. If not PEM region is found, either around point or in buffer, then the buffer is assumed to be DER encoded.
+
+An exception to the above is the x509-viewkey command which always operate on the underlying buffer file. This is due to a limitation in the openssl pkey command.
+
 ## Installation
 
 Install x509-mode through elpa. It's available on [melpa](https://melpa.org)

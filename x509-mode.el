@@ -33,7 +33,7 @@
 
 ;;; Commentary:
 
-;; Major for viewing certificates, CRLs, keys and DH-parameters.
+;; Major mode for viewing certificates, CRLs, and other PKI-related files.
 
 ;; Uses OpenSSL for viewing PEM and DER encoded PKI entities.
 
@@ -63,43 +63,43 @@ Example:
 
 (defcustom x509-x509-default-arg
   "x509 -text -noout -nameopt utf8 -nameopt multiline"
-  "Default arguments for openssl x509 command."
+  "Default arguments for \"openssl x509\" command."
   :type 'string
   :group 'x509)
 
 (defcustom x509-req-default-arg
   "req -text -noout -nameopt utf8 -nameopt multiline"
-  "Default arguments for openssl req command."
+  "Default arguments for \"openssl req\" command."
   :type 'string
   :group 'x509)
 
 (defcustom x509-crl-default-arg
   "crl -text -noout -nameopt utf8 -nameopt multiline"
-  "Default arguments for openssl crl command."
+  "Default arguments for \"openssl crl\" command."
   :type 'string
   :group 'x509)
 
 (defcustom x509-pkcs7-default-arg
   "pkcs7 -noout -text -print_certs"
-  "Default arguments for openssl pkcs7 command."
+  "Default arguments for \"openssl pkcs7\" command."
   :type 'string
   :group 'x509)
 
 (defcustom x509-dhparam-default-arg
   "dhparam -text -noout"
-  "Default arguments for openssl dhparam  command."
+  "Default arguments for \"openssl dhparam\" command."
   :type 'string
   :group 'x509)
 
 (defcustom x509-key-default-arg
   "pkey -text -noout"
-  "Default arguments for openssl key command."
+  "Default arguments for \"openssl key\" command."
   :type 'string
   :group 'x509)
 
 (defcustom x509-asn1parse-default-arg
   "asn1parse"
-  "Default arguments for openssl asn1parse command."
+  "Default arguments for \"openssl asn1parse\" command."
   :type 'string
   :group 'x509)
 
@@ -150,7 +150,7 @@ Example:
 
 (defface x509-browse-url-face
   '((t (:inherit link)))
-  "Face for storing url used when clicking link.")
+  "Face for clickable URL links.")
 
 (defun x509--match-date (cmp bound)
   "Return non-nil if it can find a date that CMP to current time.
@@ -332,7 +332,7 @@ Skip blank lines and comment lines.  Return list."
 
 ;;;###autoload
 (define-derived-mode x509-mode fundamental-mode "x509"
-  "Major mode for displaying openssl x509 output.
+  "Major mode for displaying OpenSSL output.
 
 \\{x509-mode-map}"
   (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords))
@@ -395,11 +395,6 @@ If point is not in a PEM region, the whole buffer is used."
         (while (re-search-forward "\\\\n$" nil t)
           (replace-match "" nil nil)))
       new-buf)))
-
-(defun test-buffer ()
-  (interactive)
-  (switch-to-buffer (x509--generate-input-buffer)))
-
 
 (defun x509--process-buffer(input-buf openssl-arguments)
   "Create new buffer named \"*x-[buffer-name]*\".

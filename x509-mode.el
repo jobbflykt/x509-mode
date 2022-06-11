@@ -61,10 +61,46 @@ Example:
   :type 'string
   :group 'x509)
 
-(defcustom x509-multiline-names t
-  "Display Issuer and Subject names on multiple line.
-If nil, display short names."
-  :type 'boolean
+(defcustom x509-x509-default-arg
+  "x509 -text -noout -nameopt utf8 -nameopt multiline"
+  "Default arguments for openssl x509 command."
+  :type 'string
+  :group 'x509)
+
+(defcustom x509-req-default-arg
+  "req -text -noout -nameopt utf8 -nameopt multiline"
+  "Default arguments for openssl req command."
+  :type 'string
+  :group 'x509)
+
+(defcustom x509-crl-default-arg
+  "crl -text -noout -nameopt utf8 -nameopt multiline"
+  "Default arguments for openssl crl command."
+  :type 'string
+  :group 'x509)
+
+(defcustom x509-pkcs7-default-arg
+  "pkcs7 -noout -text -print_certs"
+  "Default arguments for openssl pkcs7 command."
+  :type 'string
+  :group 'x509)
+
+(defcustom x509-dhparam-default-arg
+  "dhparam -text -noout"
+  "Default arguments for openssl dhparam  command."
+  :type 'string
+  :group 'x509)
+
+(defcustom x509-key-default-arg
+  "pkey -text -noout"
+  "Default arguments for openssl key command."
+  :type 'string
+  :group 'x509)
+
+(defcustom x509-asn1parse-default-arg
+  "asn1parse"
+  "Default arguments for openssl asn1parse command."
+  :type 'string
   :group 'x509)
 
 (defgroup x509-faces nil
@@ -118,7 +154,7 @@ If nil, display short names."
 
 (defun x509--match-date (cmp bound)
   "Return non-nil if it can find a date that CMP to current time.
-Indented to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
+Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
 and compare them to the current time. Return non-nil, move point,
 and set ‘match-data’ appropriately if it succeeds; like
 ‘re-search-forward’ would.  The argument BOUND is a buffer
@@ -303,10 +339,10 @@ Skip blank lines and comment lines.  Return list."
   (define-key x509-mode-map "q" 'x509-mode--kill-buffer)
   (x509--mark-browse-url-links))
 
-(defun x509--buffer-encoding()
+(defun x509--buffer-encoding(buffer)
   "Heuristic for identifying PEM or DER coded buffer.
 Return string \"PEM\" or \"DER\"."
-  (save-excursion
+  (with-current-buffer buffer
     (goto-char (point-min))
     (save-match-data
       (if (search-forward "-----BEGIN" nil t)
@@ -327,23 +363,57 @@ Return (begin . end) or nil"
                        (< here (match-end 0)))
                   (cons begin (match-end 0)))))))))
 
-(defun x509--process-buffer(openssl-arguments &optional delimit)
-  "Create new buffer named \"*x-[buffer-name]*\".
-Pass content of current buffer to openssl with
-OPENSSL-ARGUMENTS. E.g. x509 -text.
+(defun x509--generate-input-buffer ()
+  "Return a buffer containing data to be processed by OpenSSL.
 
-If DELIMIT is (begin . end), operate on that region, not the whole buffer.
-Intended to be used to process a PEM embedded in a file.
-"
+Determine what portion of the current buffer is interesting to pass to
+OpenSSL.
+
+If point is in region delimited by \"-----BEGIN\" \"-----END\"
+then that region is selected. The region is trimmed so that
+leading and trailing non base-64 characters on each line are
+removed. The idea is to be able to view, for example, a
+certificate that is embedded as string in code.
+
+If point is not in a PEM region, the whole buffer is used."
+  (let* ((region (x509--pem-region))
+         (begin (if region (car region) (point-min)))
+         (end (if region (cdr region) (point-max)))
+         (data (buffer-substring-no-properties begin end))
+         (new-buf (generate-new-buffer (generate-new-buffer-name
+                                        (format "tmp-%s" (buffer-name))))))
+    (with-current-buffer new-buf
+      (insert data)
+      ;; If in PEM region, try to strip non base-64 characters
+      (when region
+        (goto-char (point-min))
+        (while (re-search-forward
+                "^[^-A-Za-z0-9+=/\\s]+\\|[^-A-Za-z0-9+=/\\s]+$" nil t)
+          (replace-match "" nil nil))
+        ;; Strip \n from eol. Can be seen in C code.
+        (goto-char (point-min))
+        (while (re-search-forward "\\\\n$" nil t)
+          (replace-match "" nil nil)))
+      new-buf)))
+
+(defun test-buffer ()
   (interactive)
-  (let* ((begin (if delimit (car delimit) (point-min)))
-         (end (if delimit (cdr delimit) (point-max)))
-         (buf (generate-new-buffer (generate-new-buffer-name
+  (switch-to-buffer (x509--generate-input-buffer)))
+
+
+(defun x509--process-buffer(input-buf openssl-arguments)
+  "Create new buffer named \"*x-[buffer-name]*\".
+
+Pass content INPUT-BUF to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text."
+  (interactive)
+  (let* ((buf (generate-new-buffer (generate-new-buffer-name
                                     (format "*x-%s*" (buffer-name)))))
          (args (append
-                (list begin end x509-openssl-cmd nil buf nil)
+                (list nil nil x509-openssl-cmd nil buf nil)
                 openssl-arguments)))
-    (apply 'call-process-region args)
+    (with-current-buffer input-buf
+      (apply 'call-process-region args))
+    (kill-buffer input-buf)
     (switch-to-buffer buf)
     (goto-char (point-min))
     (set-buffer-modified-p nil)
@@ -352,105 +422,82 @@ Intended to be used to process a PEM embedded in a file.
 (defun x509--read-arguments (prompt default history)
   "Prompt, using PROMPT, for arguments if \\[universal-argument] prefix.
 
-Provide DEFAULT arguement and HISTORY.
-Return list with single argument string."
+Provide DEFAULT argument and HISTORY.
+Return argument string."
   (if (equal current-prefix-arg '(4))
-      (list (read-from-minibuffer prompt default nil nil history))
-    (list default)))
+      (read-from-minibuffer prompt default nil nil history)
+    default))
 
+(defun x509--generic-view (default history)
+  "Prepare an input buffer for data to be processed.
+Optionally get modified command arguments from user.
+Process data from input buffer using command arguments.
+
+DEFAULT is the initial command line arguments to OpenSSL.
+HISTORY is the command history used with `read-from-minibuffer'."
+  (let* ((input-buf (x509--generate-input-buffer))
+         (encoding (x509--buffer-encoding input-buf))
+         (initial (format "%s -inform %s" default encoding))
+         (args (x509--read-arguments "arguments: " initial history)))
+    (x509--process-buffer input-buf (split-string-and-unquote args))
+    (x509-mode)))
+
+;; ---------------------------------------------------------------------------
 (defvar x509--viewcert-history nil "History list for `x509-viewcert'.")
-
 ;;;###autoload
-(defun x509-viewcert (&optional args)
+(defun x509-viewcert ()
   "Parse current buffer as a certificate file.
-ARGS are arguments to the openssl command.  Display result in
-another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive (x509--read-arguments
-                "x509 args: "
-                (format "x509 -nameopt %sutf8 -text -noout -inform %s"
-                        (if x509-multiline-names
-                            "multiline,"
-                          "")
-                        (x509--buffer-encoding))
-                'x509--viewcert-history))
-  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
-  (x509-mode))
+  (interactive)
+  (x509--generic-view x509-x509-default-arg 'x509--viewcert-history))
 
+;; ---------------------------------------------------------------------------
 (defvar x509--viewreq-history nil "History list for `x509-viewreq'.")
-
 ;;;###autoload
-(defun x509-viewreq (&optional args)
-  "Parse current buffer as a request file.
-ARGS are arguments to the openssl command.  Display result in
-another buffer.
+(defun x509-viewreq ()
+  "Parse current buffer as a certificate request file.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive (x509--read-arguments
-                "req args: "
-                (format "req -nameopt %sutf8 -text -noout -inform %s"
-                        (if x509-multiline-names
-                            "multiline,"
-                          "")
-                        (x509--buffer-encoding))
-                'x509--viewreq-history))
-  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
-  (x509-mode))
+  (interactive)
+  (x509--generic-view x509-req-default-arg 'x509--viewreq-history))
 
+;; ---------------------------------------------------------------------------
 (defvar x509--viewcrl-history nil "History list for `x509-viewcrl'.")
-
 ;;;###autoload
-(defun x509-viewcrl (&optional args)
+(defun x509-viewcrl ()
   "Parse current buffer as a CRL file.
-ARGS are arguments to the openssl command.  Display result in
-another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive (x509--read-arguments "crl args: "
-                                     (format "crl -text -noout -inform %s"
-                                             (x509--buffer-encoding))
-                                     'x509--viewcrl-history))
-  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
-  (x509-mode))
+  (interactive)
+  (x509--generic-view x509-crl-default-arg 'x509--viewcrl-history))
 
+;; ---------------------------------------------------------------------------
 (defvar x509--viewpkcs7-history nil "History list for `x509-viewpkcs7'.")
-
 ;;;###autoload
 (defun x509-viewpkcs7 (&optional args)
   "Parse current buffer as a PKCS#7 file.
-ARGS are arguments to the openssl command.  Display result in
-another buffer. Output only certificates and CRLs by default. Add
-the \"-print\" switch to output details.
+
+Output only certificates and CRLs by default. Add the \"-print\"
+switch to output details.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive (x509--read-arguments
-                "pkcs7 args: "
-                (format "pkcs7 -noout -text -print_certs -inform %s"
-                        (x509--buffer-encoding))
-                'x509--viewpkcs7-history))
-  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
-  (x509-mode))
+  (interactive)
+  (x509--generic-view x509-pkcs7-default-arg 'x509--viewpkcs7-history))
 
 
+;; ----------------------------------------------------------------------------
 (defvar x509--viewdh-history nil "History list for `x509-viewdh'.")
-
 ;;;###autoload
-(defun x509-viewdh (&optional args)
+(defun x509-viewdh ()
   "Parse current buffer as a DH-parameter file.
-ARGS are arguments to the openssl command.  Display result in
-another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive (x509--read-arguments "dhparam args: "
-                                     (format "dhparam -text -noout -inform %s"
-                                             (x509--buffer-encoding))
-                                     'x509--viewdh-history))
-  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
-  (x509-mode))
+  (interactive)
+  (x509--generic-view x509-dhparam-default-arg x509--viewdh-history))
 
+;; ---------------------------------------------------------------------------
 (defvar x509--viewkey-history nil "History list for `x509-viewkey'.")
-
 ;; Special. older openssl pkey cannot read from stdin so we need to use
 ;; buffer's file.
 ;; FIXME: Create a temporary file with buffer content and use that as input to
@@ -462,13 +509,24 @@ ARGS are arguments to the openssl command.
 
 With \\[universal-argument] prefix, you can edit the command arguments.
 For example to enter pass-phrase, add -passin pass:PASSPHRASE."
-  (interactive (x509--read-arguments
-                "pkey args: "
-                (format "pkey -text -noout -inform %s -in \"%s\""
-                        (x509--buffer-encoding) (buffer-file-name))
-                'x509--viewkey-history))
-  (x509--process-buffer (split-string-and-unquote args))
-  (x509-mode))
+  (interactive (list (x509--read-arguments
+                      "pkey args: "
+                      (format "%s -inform %s -in \"%s\""
+                              x509-key-default-arg
+                              (x509--buffer-encoding (current-buffer))
+                              (buffer-file-name))
+                      'x509--viewkey-history)))
+  (let* ((buf (generate-new-buffer (generate-new-buffer-name
+                                    (format "*x-%s*" (buffer-name))))))
+    (setq args (append
+                (list x509-openssl-cmd nil buf nil)
+                (split-string-and-unquote args)))
+    (apply 'call-process args)
+    (switch-to-buffer buf)
+    (goto-char (point-min))
+    (set-buffer-modified-p nil)
+    (setq buffer-read-only t)
+    (x509-mode)))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode
@@ -519,7 +577,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
    `(,x509--asn1-oid
      (1 'x509-keyword-face)
      (2 'x509-oid-face))
-   "openssl asn1parse highligting"))
+   "openssl asn1parse highlighting"))
 
 ;;;###autoload
 (define-derived-mode x509-asn1-mode fundamental-mode "asn1"
@@ -533,17 +591,12 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 (defvar x509--viewasn1-history nil "History list for `x509-viewasn1'.")
 
 ;;;###autoload
-(defun x509-viewasn1 (&optional args)
+(defun x509-viewasn1 ()
   "Parse current buffer as ASN.1.
-ARGS are arguments to the openssl command.  Display result in
-another buffer.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive (x509--read-arguments "asn1parse args: "
-                                     (format "asn1parse -inform %s"
-                                             (x509--buffer-encoding))
-                                     'x509--viewasn1-history))
-  (x509--process-buffer (split-string-and-unquote args) (x509--pem-region))
+  (interactive)
+  (x509--generic-view x509-asn1parse-default-arg 'x509--viewasn1-history)
   (x509-asn1-mode))
 
 (provide 'x509-asn1-mode)

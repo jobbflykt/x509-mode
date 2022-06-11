@@ -1,2 +1,0 @@
-V	20720523093840Z		01	unknown	/CN=CA TestTool CA 01/O=CA TestTool Authority
-R	20720523093906Z	220605132854Z,unspecified	02	unknown	/CN=Jobbflykt/O=CA TestTool Authority/emailAddress=jobbflykt@catesttool.se

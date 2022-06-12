@@ -285,8 +285,9 @@ Skip blank lines and comment lines.  Return list."
    '("\\<\\(URI:\\|CPS: \\)"
      (1 'x509-keyword-face))
 
-   ;; DNS:string email:string
-   '("\\<\\(DNS:\\|email:\\)\\(.*\\)"
+   ;; DNS:string email:string othername:string
+   ;; until ',' or EOL
+   '("\\<\\(DNS:\\|email:\\|othername:\\)\\(.*?\\)\\(?:,\\|$\\)"
      (1 'x509-keyword-face)
      (2 'x509-string-face))
 

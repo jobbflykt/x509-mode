@@ -43,6 +43,9 @@
 ;; certificate.
 ;; Use `x509-viewcrl', `x509-viewasn1',`x509-viewkey', `x509-viewdh',
 ;; `x509-viewreq', `x509-viewpkcs7' in a similar manner.
+;;
+;; When point is in a PEM encoded region, M-x `x509-dwim' tries to guess
+;; what view-function to call. It falls back to `x509-viewasn1' if it fails.
 
 ;;; Code:
 
@@ -167,7 +170,7 @@ position that bounds the search."
                 ;; Compare date to current time.
                 ;; date-to-time might fail on bogus time values or if time
                 ;; is to far in the past/future
-                (funcall cmp (date-to-time (match-string 0))
+                (funcall cmp (date-to-time (match-string-no-properties 0))
                          (current-time))
               (error nil))
             ;; If compare true, return t.
@@ -364,6 +367,17 @@ Return (begin . end) or nil"
                        (< here (match-end 0)))
                   (cons begin (match-end 0)))))))))
 
+(defun x509--pem-region-type ()
+  "Return type of pem region or nil if not matched.
+Ex \"CERTIFICATE\" or \"DH PARAMETERS\""
+  (let ((region (x509--pem-region)))
+    (if region
+        (save-excursion
+          (save-match-data
+            (goto-char (car region))
+            (if (re-search-forward "-----BEGIN \\(.*?\\)-----" (cdr region) t)
+                (match-string-no-properties 1)))))))
+
 (defun x509--generate-input-buffer ()
   "Return a buffer containing data to be processed by OpenSSL.
 
@@ -523,6 +537,24 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)
     (x509-mode)))
+
+;; ---------------------------------------------------------------------------
+;;;###autoload
+(defun x509-dwim ()
+  "Guess the type of object and call the corresponding view-function.
+
+Look at -----BEGIN header for known object types. If unknown
+type, call `x509-viewasn1'."
+  (interactive)
+  (pcase (x509--pem-region-type)
+    ("CERTIFICATE" (call-interactively 'x509-viewcert))
+    ("CERTIFICATE REQUEST" (call-interactively 'x509-viewreq))
+    ("DH PARAMETERS" (call-interactively 'x509-viewdh))
+    ("PKCS7" (call-interactively 'x509-viewpkcs7))
+    ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
+     (call-interactively 'x509-viewkey))
+    ("X509 CRL" (call-interactively 'x509-viewcrl))
+    (_ (call-interactively 'x509-viewasn1))))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

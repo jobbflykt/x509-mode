@@ -10,15 +10,19 @@ Open a certificate, either PEM or DER encoded, in a buffer.
 
 A new buffer should display the parsed certificate.
 
-To view certificates, CRLs, private keys Diffie-Hellman parameters and parsed ASN.1 respectively:
+To view certificates, CRLs, private keys Diffie-Hellman parameters, certificate requests,pkcs7 files and parsed ASN.1 respectively:
 
     M-x x509-viewcert
     M-x x509-viewcrl
-    M-X x509-viewasn1
     M-x x509-viewkey
     M-x x509-viewdh
     M-x x509-viewreq
     M-x x509-viewpkcs7
+    M-x x509-viewasn1
+
+If point is in, or at the beginning of, a PEM region, `M-x x509-dwim` tries to determine what kind of object it is and call the right x509-view-function on that region. If not in PEM region or if type is unknown, `x509-dwim` calls `x509-viewasn1`.
+
+    M-x x509-dwim
 
 The command line for all command can be edited with C-u prefix. Example:
 

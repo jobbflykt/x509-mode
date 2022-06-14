@@ -485,7 +485,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewpkcs7-history nil "History list for `x509-viewpkcs7'.")
 ;;;###autoload
-(defun x509-viewpkcs7 (&optional args)
+(defun x509-viewpkcs7 ()
   "Parse current buffer as a PKCS#7 file.
 
 Output only certificates and CRLs by default. Add the \"-print\"

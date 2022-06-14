@@ -24,11 +24,12 @@ Code Signing
 E-mail Protection
 Time Stamping
 Microsoft Individual Code Signing
-Microsoft Individual Code Signing
-Microsoft Individual Code Signing
 Microsoft Commercial Code Signing
 Microsoft Trust List Signing
 Microsoft Server Gated Crypto
+Microsoft Encrypted File System
+Microsoft Smartcard Login
+Microsoft User Principal Name
 Microsoft Encrypted File System
 Netscape Server Gated Crypto
 IPSec End System

@@ -81,6 +81,7 @@ G:
 #Mask Algorithm:
 
 # X509v3 extensions
+S/MIME Capabilities:
 X509v3 Subject Directory Attributes:
 X509v3 Subject Key Identifier:
 X509v3 Key Usage:

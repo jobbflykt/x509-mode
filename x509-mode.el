@@ -403,7 +403,7 @@ If point is not in a PEM region, the whole buffer is used."
       (when region
         (goto-char (point-min))
         (while (re-search-forward
-                "^[^-A-Za-z0-9+=/\\s]+\\|[^-A-Za-z0-9+=/\\s]+$" nil t)
+                "^[^-A-Za-z0-9+=/]+\\|[^-A-Za-z0-9+=/]+$" nil t)
           (replace-match "" nil nil))
         ;; Strip \n from eol. Can be seen in C code.
         (goto-char (point-min))
@@ -592,7 +592,7 @@ type, call `x509-viewasn1'."
    ;; cons: as in constructed. Same font as SET and SEQUENCE
    '("\\(cons\\):" (1 'x509-asn1-sequence-face))
    ;; Like SET and SEQUENCE
-   '("\\(cont\\|\\appl\\|priv\\) \\[\\(.*?\\)\\]"
+   '("\\(cont\\|appl\\|priv\\) \\[\\(.*?\\)\\]"
      (1 'x509-keyword-face)
      (2 'x509-asn1-sequence-face))
    ;; Parsing error messages

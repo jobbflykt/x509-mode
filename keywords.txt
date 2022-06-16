@@ -83,32 +83,31 @@ G:
 #Mask Algorithm:
 
 # X509v3 extensions
+Invalidity Date:
+Netscape Comment:
 S/MIME Capabilities:
-X509v3 Subject Directory Attributes:
-X509v3 Subject Key Identifier:
-X509v3 Key Usage:
-X509v3 Private Key Usage Period:
-X509v3 Subject Alternative Name:
-X509v3 Issuer Alternative Name:
-#X509v3 Basic Constraints:
+X509v3 AC Targeting:
+X509v3 Any Policy:
+X509v3 Authority Key Identifier:
+X509v3 CRL Distribution Points:
 X509v3 CRL Number:
 X509v3 CRL Reason Code:
-Invalidity Date:
-X509v3 Delta CRL Indicator:
-X509v3 Issuing Distribution Point:
 X509v3 Certificate Issuer:
-X509v3 Name Constraints:
-X509v3 CRL Distribution Points:
 X509v3 Certificate Policies:
-X509v3 Any Policy:
-X509v3 Policy Mappings:
-X509v3 Authority Key Identifier:
-X509v3 Policy Constraints:
-#X509v3 Extended Key Usage:
+X509v3 Delta CRL Indicator:
 X509v3 Freshest CRL:
 X509v3 Inhibit Any Policy:
-X509v3 AC Targeting:
+X509v3 Issuer Alternative Name:
+X509v3 Issuing Distribution Point:
+X509v3 Key Usage:
+X509v3 Name Constraints:
 X509v3 No Revocation Available:
+X509v3 Policy Constraints:
+X509v3 Policy Mappings:
+X509v3 Private Key Usage Period:
+X509v3 Subject Alternative Name:
+X509v3 Subject Directory Attributes:
+X509v3 Subject Key Identifier:
 
 # PKIX Private Extensions
 Authority Information Access:

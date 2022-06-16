@@ -94,9 +94,9 @@ Example:
   :type 'string
   :group 'x509)
 
-(defcustom x509-key-default-arg
+(defcustom x509-pkey-default-arg
   "pkey -text -noout"
-  "Default arguments for \"openssl key\" command."
+  "Default arguments for \"openssl pkey\" command."
   :type 'string
   :group 'x509)
 
@@ -496,7 +496,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
   (x509--generic-view x509-pkcs7-default-arg 'x509--viewpkcs7-history))
 
 
-;; ----------------------------------------------------------------------------
+;; ---------------------------------------------------------------------------
 (defvar x509--viewdh-history nil "History list for `x509-viewdh'.")
 ;;;###autoload
 (defun x509-viewdh ()
@@ -508,13 +508,27 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewkey-history nil "History list for `x509-viewkey'.")
+;;;###autoload
+(defun x509-viewkey ()
+  "Display x509 private key using the OpenSSL pkey command.
+
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive)
+  (x509--generic-view x509-pkey-default-arg x509--viewkey-history))
+
+
+;; ---------------------------------------------------------------------------
+(defvar x509--viewlegacykey-history nil
+  "History list for `x509-viewlegacykey'.")
 ;; Special. older openssl pkey cannot read from stdin so we need to use
 ;; buffer's file.
-;; FIXME: Create a temporary file with buffer content and use that as input to
-;; pkey.
 ;;;###autoload
-(defun x509-viewkey (&optional args)
+(defun x509-viewlegacykey (&optional args)
   "Display x509 private key using the OpenSSL pkey command.
+
+This function works with older OpenSSL that could not read key from
+stdin. Instead, the buffer file is used with -in.
+
 ARGS are arguments to the openssl command.
 
 With \\[universal-argument] prefix, you can edit the command arguments.
@@ -522,10 +536,10 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
   (interactive (list (x509--read-arguments
                       "pkey args: "
                       (format "%s -inform %s -in \"%s\""
-                              x509-key-default-arg
+                              x509-pkey-default-arg
                               (x509--buffer-encoding (current-buffer))
                               (buffer-file-name))
-                      'x509--viewkey-history)))
+                      'x509--viewlegacykey-history)))
   (let* ((buf (generate-new-buffer (generate-new-buffer-name
                                     (format "*x-%s*" (buffer-name))))))
     (setq args (append

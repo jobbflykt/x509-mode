@@ -1,10 +1,10 @@
-;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL. -*- lexical-binding: t; -*-
+;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmai.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
-;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -44,8 +44,13 @@
 ;; Use `x509-viewcrl', `x509-viewasn1',`x509-viewkey', `x509-viewdh',
 ;; `x509-viewreq', `x509-viewpkcs7' in a similar manner.
 ;;
-;; When point is in a PEM encoded region, M-x `x509-dwim' tries to guess
-;; what view-function to call. It falls back to `x509-viewasn1' if it fails.
+;; When point is at or in a PEM encoded region, M-x `x509-dwim' tries to guess
+;; what view-function to call.  It falls back to `x509-viewasn1' if it fails.
+;;
+;; Use C-u prefix with any command for editing the command arguments.
+;;
+;; When in a x509 buffer, use keys `e' and `t' to edit current command or
+;; toggle between x509-asn1-mode and x509-mode respectively.
 
 ;;; Code:
 
@@ -341,10 +346,12 @@ Skip blank lines and comment lines.  Return list."
 \\{x509-mode-map}"
   (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords))
   (define-key x509-mode-map "q" 'x509-mode--kill-buffer)
+  (define-key x509-mode-map "t" 'x509--toggle-mode)
+  (define-key x509-mode-map "e" 'x509--edit-params)
   (x509--mark-browse-url-links))
 
 (defun x509--buffer-encoding(buffer)
-  "Heuristic for identifying PEM or DER coded buffer.
+  "Heuristic for identifying PEM or DER encoding in BUFFER.
 Return string \"PEM\" or \"DER\"."
   (with-current-buffer buffer
     (goto-char (point-min))
@@ -396,7 +403,8 @@ If point is not in a PEM region, the whole buffer is used."
          (end (if region (cdr region) (point-max)))
          (data (buffer-substring-no-properties begin end))
          (new-buf (generate-new-buffer (generate-new-buffer-name
-                                        (format "tmp-%s" (buffer-name))))))
+                                        (format "tmp-%s" (buffer-name)))
+                                       t)))
     (with-current-buffer new-buf
       (insert data)
       ;; If in PEM region, try to strip non base-64 characters
@@ -411,20 +419,51 @@ If point is not in a PEM region, the whole buffer is used."
           (replace-match "" nil nil)))
       new-buf)))
 
-(defun x509--process-buffer(input-buf openssl-arguments)
+(defvar-local x509--shadow-buffer nil
+  "Input buffer used for OpenSSL command.
+
+Used when a view buffer wants to change command parameters and
+re-process the input buffer or to change the command altogether.")
+;; Make buffer local variable persist during major mode change.
+(put 'x509--shadow-buffer 'permanent-local t)
+
+(defvar-local x509--x509-mode-shadow-arguments nil
+  "Current OpenSSL command arguments used in x509-mode.")
+;; Make buffer local variable persist during major mode change.
+(put 'x509--x509-mode-shadow-arguments 'permanent-local t)
+
+(defvar-local x509--x509-asn1-mode-shadow-arguments nil
+  "Current OpenSSL command argument used in x509-asn1-mode.")
+;; Make buffer local variable persist during major mode change.
+(put 'x509--x509-asn1-mode-shadow-arguments 'permanent-local t)
+
+(defun x509--kill-shadow-buffer ()
+  "Kill buffer hook function.
+Run when killing a view buffer for cleaning up associated input buffer."
+  (when (bound-and-true-p x509--shadow-buffer)
+    (kill-buffer x509--shadow-buffer)))
+
+(defun x509--process-buffer(input-buf openssl-arguments &optional output-buf)
   "Create new buffer named \"*x-[buffer-name]*\".
 
-Pass content INPUT-BUF to openssl with OPENSSL-ARGUMENTS. E.g. x509 -text."
+Pass content INPUT-BUF to openssl with
+OPENSSL-ARGUMENTS. E.g. x509 -text.  If OUTPUT-BUF is non-'nil',
+out to that buffer instead of generating a new one."
   (interactive)
-  (let* ((buf (generate-new-buffer (generate-new-buffer-name
-                                    (format "*x-%s*" (buffer-name)))))
+  (let* ((buf (or output-buf
+                  (generate-new-buffer (generate-new-buffer-name
+                                        (format "*x-%s*" (buffer-name))))))
          (args (append
                 (list nil nil x509-openssl-cmd nil buf nil)
                 openssl-arguments)))
+    (switch-to-buffer buf)
+    (setq buffer-read-only nil)
+    (erase-buffer)
+    (setq x509--shadow-buffer input-buf)
+    (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t)
     (with-current-buffer input-buf
       (apply 'call-process-region args))
-    (kill-buffer input-buf)
-    (switch-to-buffer buf)
+    ;; remember input-buffer and arguments
     (goto-char (point-min))
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)))
@@ -438,19 +477,87 @@ Return argument string."
       (read-from-minibuffer prompt default nil nil history)
     default))
 
-(defun x509--generic-view (default history)
+(defun x509--add-inform-spec(arguments encoding)
+  "Add or modify \"-inform ENCODING\" in ARGUMENTS."
+  (if (string-match "-inform \\(PEM\\|DER\\)" arguments)
+      (replace-match encoding nil nil arguments 1)
+    (format "%s -inform %s" arguments encoding)))
+
+(defun x509--generic-view (default history mode &optional input-buf output-buf)
   "Prepare an input buffer for data to be processed.
 Optionally get modified command arguments from user.
 Process data from input buffer using command arguments.
 
 DEFAULT is the initial command line arguments to OpenSSL.
-HISTORY is the command history used with `read-from-minibuffer'."
-  (let* ((input-buf (x509--generate-input-buffer))
-         (encoding (x509--buffer-encoding input-buf))
-         (initial (format "%s -inform %s" default encoding))
+HISTORY is the command history symbol used with
+`read-from-minibuffer'.  MODE is the major mode that will be
+applied to the result buffer.  If INPUT-BUF is non-'nil', use
+existing input buffer instead of creating one.  If OUTPUT-BUF is
+non-'nil', use that instead of creating a new one."
+  (let* ((in-buf (or input-buf (x509--generate-input-buffer)))
+         (encoding (x509--buffer-encoding in-buf))
+         (initial (x509--add-inform-spec default encoding))
          (args (x509--read-arguments "arguments: " initial history)))
-    (x509--process-buffer input-buf (split-string-and-unquote args))
-    (x509-mode)))
+    (x509--process-buffer in-buf (split-string-and-unquote args) output-buf)
+    ;; Remember what arguments where used.
+    (if (eq mode 'x509-mode)
+        (setq x509--x509-mode-shadow-arguments args)
+      (setq x509--x509-asn1-mode-shadow-arguments args))
+    (funcall mode)))
+
+(defun x509--get-x509-toggle-mode-args ()
+  "Ask user for command and return default arguments for that command."
+  (let* ((collection '(("cert" . x509-x509-default-arg)
+                       ("req" . x509-req-default-arg)
+                       ("crl" . x509-crl-default-arg)
+                       ("pkcs7" . x509-pkcs7-default-arg)
+                       ("dhparam" . x509-dhparam-default-arg)
+                       ("key" . x509-pkey-default-arg)
+                       ("asn1parse" . x509-asn1parse-default-arg)))
+         (choice (completing-read
+                  "Parse as: "          ; PROMPT
+                  collection            ; COLLECTION
+                  nil                   ; PREDICATE
+                  t                     ; REQUIRE-MATCH
+                  )))
+    (symbol-value (cdr (assoc choice collection)))))
+
+(defun x509--get-x509-history (args)
+  "Return history variable that matches command ARGS."
+  (pcase (car (split-string-and-unquote args))
+    ("x509" 'x509--viewcert-history)
+    ("req" 'x509--viewreq-history)
+    ("crl" 'x509--viewcrl-history)
+    ("pkcs7" 'x509--viewpkcs7-history)
+    ("dhparam" 'x509--viewdh-history)
+    ("pkey" 'x509--viewkey-history)
+    ("asn1parse" 'x509--viewasn1-history)
+    (_ "")))
+
+(defun x509--toggle-mode(&optional edit)
+  "Toggle between asn1-mode and x509-mode.
+
+If EDIT is non-'nil', edit current command arguments and redisplay."
+  (interactive)
+  (if edit
+      (setq current-prefix-arg '(4)))
+  (if (or (and edit (eq major-mode 'x509-asn1-mode))   ; Edit asn1 mode
+          (and (not edit) (eq major-mode 'x509-mode))) ; Toggle to asn1
+      (let ((default-args (or x509--x509-asn1-mode-shadow-arguments
+                              x509-asn1parse-default-arg)))
+        (x509--generic-view default-args 'x509--viewasn1-history
+                            'x509-asn1-mode
+                            x509--shadow-buffer (current-buffer)))
+    (let* ((default-args (or x509--x509-mode-shadow-arguments
+                             (x509--get-x509-toggle-mode-args)))
+           (history (x509--get-x509-history default-args)))
+      (x509--generic-view default-args history 'x509-mode
+                          x509--shadow-buffer (current-buffer)))))
+
+(defun x509--edit-params()
+  "Edit command parameters in current buffer."
+  (interactive)
+  (x509--toggle-mode t))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewcert-history nil "History list for `x509-viewcert'.")
@@ -460,7 +567,8 @@ HISTORY is the command history used with `read-from-minibuffer'."
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-x509-default-arg 'x509--viewcert-history))
+  (x509--generic-view x509-x509-default-arg 'x509--viewcert-history
+                      'x509-mode))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewreq-history nil "History list for `x509-viewreq'.")
@@ -470,7 +578,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-req-default-arg 'x509--viewreq-history))
+  (x509--generic-view x509-req-default-arg 'x509--viewreq-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewcrl-history nil "History list for `x509-viewcrl'.")
@@ -480,7 +588,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-crl-default-arg 'x509--viewcrl-history))
+  (x509--generic-view x509-crl-default-arg 'x509--viewcrl-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewpkcs7-history nil "History list for `x509-viewpkcs7'.")
@@ -488,12 +596,13 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 (defun x509-viewpkcs7 ()
   "Parse current buffer as a PKCS#7 file.
 
-Output only certificates and CRLs by default. Add the \"-print\"
+Output only certificates and CRLs by default.  Add the \"-print\"
 switch to output details.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-pkcs7-default-arg 'x509--viewpkcs7-history))
+  (x509--generic-view x509-pkcs7-default-arg 'x509--viewpkcs7-history
+                      'x509-mode))
 
 
 ;; ---------------------------------------------------------------------------
@@ -504,7 +613,8 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-dhparam-default-arg x509--viewdh-history))
+  (x509--generic-view x509-dhparam-default-arg 'x509--viewdh-history
+                      'x509-mode))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewkey-history nil "History list for `x509-viewkey'.")
@@ -514,8 +624,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-pkey-default-arg x509--viewkey-history))
-
+  (x509--generic-view x509-pkey-default-arg 'x509--viewkey-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewlegacykey-history nil
@@ -527,7 +636,7 @@ With \\[universal-argument] prefix, you can edit the command arguments."
   "Display x509 private key using the OpenSSL pkey command.
 
 This function works with older OpenSSL that could not read key from
-stdin. Instead, the buffer file is used with -in.
+stdin.  Instead, the buffer file is used with -in.
 
 ARGS are arguments to the openssl command.
 
@@ -557,7 +666,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 (defun x509-dwim ()
   "Guess the type of object and call the corresponding view-function.
 
-Look at -----BEGIN header for known object types. If unknown
+Look at -----BEGIN header for known object types.  If unknown
 type, call `x509-viewasn1'."
   (interactive)
   (pcase (x509--pem-region-type)
@@ -628,7 +737,9 @@ type, call `x509-viewasn1'."
 \\{x509-mode-map}"
   (set (make-local-variable 'font-lock-defaults)
        '(x509-asn1-font-lock-keywords))
-  (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer))
+  (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)
+  (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
+  (define-key x509-asn1-mode-map "e" 'x509--edit-params))
 
 (defvar x509--viewasn1-history nil "History list for `x509-viewasn1'.")
 
@@ -638,8 +749,8 @@ type, call `x509-viewasn1'."
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-asn1parse-default-arg 'x509--viewasn1-history)
-  (x509-asn1-mode))
+  (x509--generic-view x509-asn1parse-default-arg 'x509--viewasn1-history
+                      'x509-asn1-mode))
 
 (provide 'x509-asn1-mode)
 (provide 'x509-mode)

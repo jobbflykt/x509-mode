@@ -30,7 +30,7 @@ The command line for all command can be edited with C-u prefix. Example:
 
 Commands operate on PEM data around point by default. If point is in -----BEGIN/-----END, that region is sent to OpenSSL. Otherwise the whole buffer is considered. If not PEM region is found, either around point or in buffer, then the buffer is assumed to be DER encoded.
 
-An exception to the above is the x509-viewkey command which always operate on the underlying buffer file. This is due to a limitation in the openssl pkey command.
+When in x509-mode or x509-asn1-mode, the keys **e** and **t** is used for editing the current command and for toggling between x509-asn1-mode and x509-mode. Use **q** to kill the view-buffer.
 
 ## Installation
 

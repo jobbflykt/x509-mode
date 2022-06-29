@@ -16,6 +16,7 @@ destinationIndicator
 distinguishedName
 dnQualifier
 dnsName
+domainComponent
 enhancedSearchGuide
 facsimileTelephoneNumber
 generationQualifier

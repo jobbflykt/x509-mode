@@ -57,6 +57,11 @@ userPassword
 x121Address
 x500UniqueIdentifier
 
+# CABForum EV SSL Certificate Guidelines
+jurisdictionCountryName
+jurisdictionLocalityName
+jurisdictionStateOrProvinceName
+
 # pkcs9
 challengePassword
 contentType

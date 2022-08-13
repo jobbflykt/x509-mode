@@ -403,8 +403,7 @@ If point is not in a PEM region, the whole buffer is used."
          (end (if region (cdr region) (point-max)))
          (data (buffer-substring-no-properties begin end))
          (new-buf (generate-new-buffer (generate-new-buffer-name
-                                        (format "tmp-%s" (buffer-name)))
-                                       t)))
+                                        (format " *in-x-%s*" (buffer-name))))))
     (with-current-buffer new-buf
       (insert data)
       ;; If in PEM region, try to strip non base-64 characters

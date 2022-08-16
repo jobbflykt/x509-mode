@@ -669,7 +669,8 @@ Look at -----BEGIN header for known object types.  If unknown
 type, call `x509-viewasn1'."
   (interactive)
   (pcase (x509--pem-region-type)
-    ("CERTIFICATE" (call-interactively 'x509-viewcert))
+    ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
+     (call-interactively 'x509-viewcert))
     ("CERTIFICATE REQUEST" (call-interactively 'x509-viewreq))
     ("DH PARAMETERS" (call-interactively 'x509-viewdh))
     ("PKCS7" (call-interactively 'x509-viewpkcs7))

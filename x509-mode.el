@@ -366,10 +366,11 @@ Return (begin . end) or nil"
   (save-excursion
     (save-match-data
       (let ((here (point)))
-        (if (or (looking-at "-----BEGIN")
-                (re-search-backward "-----BEGIN" nil t))
-            (let ((begin (match-beginning 0)))
-              (if (and (re-search-forward "-----END.*-----" nil t)
+        (if (or (looking-at "-----BEGIN \\(.*?\\)-----")
+                (re-search-backward "-----BEGIN \\(.*?\\)-----" nil t))
+            (let ((begin (match-beginning 0))
+                  (type (match-string-no-properties 1)))
+              (if (and (search-forward (concat "-----END " type "-----") nil t)
                        ;; Ensure point is between begin and end.
                        (< here (match-end 0)))
                   (cons begin (match-end 0)))))))))

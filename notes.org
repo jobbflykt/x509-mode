@@ -206,3 +206,5 @@ Revoked Certificates:
          c5:dc:fc:09
 
 #+end_example
+* viewpkcs12
+pkcs12 -info -nodes -passin pass:

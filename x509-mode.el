@@ -735,7 +735,7 @@ type, call `x509-viewasn1'."
 (define-derived-mode x509-asn1-mode fundamental-mode "asn1"
   "Major mode for displaying openssl asn1parse output.
 
-\\{x509-mode-map}"
+\\{x509-asn1-mode-map}"
   (set (make-local-variable 'font-lock-defaults)
        '(x509-asn1-font-lock-keywords))
   (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)

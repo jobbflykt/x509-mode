@@ -717,8 +717,8 @@ type, call `x509-viewasn1'."
    '("\\(cons\\):" (1 'x509-asn1-sequence-face))
    ;; Like SET and SEQUENCE
    '("\\(cont\\|appl\\|priv\\) \\[\\(.*?\\)\\]"
-     (1 'x509-keyword-face)
-     (2 'x509-asn1-sequence-face))
+     (1 'x509-asn1-sequence-face)
+     (2 'x509-string-face))
    ;; Parsing error messages
    '("error:.*\\|Error in encoding" . 'x509-warning-face)
    ;; String type + string value

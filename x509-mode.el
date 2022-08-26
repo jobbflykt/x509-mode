@@ -541,8 +541,8 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
   (interactive)
   (if edit
       (setq current-prefix-arg '(4)))
-  (if (or (and edit (eq major-mode 'x509-asn1-mode))   ; Edit asn1 mode
-          (and (not edit) (eq major-mode 'x509-mode))) ; Toggle to asn1
+  (if (or (and edit (derived-mode-p 'x509-asn1-mode))   ; Edit asn1 mode
+          (and (not edit) (derived-mode-p 'x509-mode))) ; Toggle to asn1
       (let ((default-args (or x509--x509-asn1-mode-shadow-arguments
                               x509-asn1parse-default-arg)))
         (x509--generic-view default-args 'x509--viewasn1-history

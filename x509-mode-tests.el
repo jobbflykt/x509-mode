@@ -38,8 +38,11 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
                        "\n"
                        " # comment 2\n"
                        "2\n"))
-         (tmp-file (make-temp-file "data" nil nil text))
-         (data (x509--load-data-file tmp-file)))
+         (tmp-file (make-temp-file "data"))
+         data)
+    (with-temp-file tmp-file
+      (insert text))
+    (setq data (x509--load-data-file tmp-file))
     (delete-file tmp-file)
     (should (equal data '("data 1" "2")))))
 

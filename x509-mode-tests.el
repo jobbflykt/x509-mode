@@ -43,9 +43,20 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (delete-file tmp-file)
     (should (equal data '("data 1" "2")))))
 
+(ert-deftest x509--buffer-encoding()
+  "Identify PEM encoding"
+  (with-temp-buffer
+    (insert "not pem ")
+    (should (equal "DER" (x509--buffer-encoding (current-buffer)))))
+  (with-temp-buffer
+    (insert "-----BEGIN ")
+    (should (equal "PEM" (x509--buffer-encoding (current-buffer))))))
+
 (ert-deftest x509--pem-region()
   "Find region delimited by BEGIN/END"
   (with-temp-buffer
+    ;;       1                                                    54
+    ;;       v                                                    v
     (insert "-----BEGIN TYPE----- -----END BOGUS-----END TYPE----- -----END TYPE-----")
     (goto-char (point-min))
     (let ((region (x509--pem-region)))
@@ -57,3 +68,14 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
       (should region)
       (should (equal 1 (car region)))
       (should (equal 54 (cdr region))))))
+
+(ert-deftest x509--pem-region-negative()
+  "Behave when there is no region"
+  (with-temp-buffer
+    (insert "-----BEGIN TYPE----- -----END BOGUS-----")
+    (goto-char (point-min))
+    (should-not (x509--pem-region)))
+  (with-temp-buffer
+    (insert "-----END TYPE-----")
+    (goto-char (point-min))
+    (should-not (x509--pem-region))))

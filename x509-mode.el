@@ -448,11 +448,12 @@ Run when killing a view buffer for cleaning up associated input buffer."
 
 Pass content INPUT-BUF to openssl with
 OPENSSL-ARGUMENTS. E.g. x509 -text.  If OUTPUT-BUF is non-'nil',
-out to that buffer instead of generating a new one."
+output to that buffer instead of generating a new one."
   (interactive)
   (let* ((buf (or output-buf
                   (generate-new-buffer (generate-new-buffer-name
                                         (format "*x-%s*" (buffer-name))))))
+         ;; Operate on whole buffer. Output to buf
          (args (append
                 (list nil nil x509-openssl-cmd nil buf nil)
                 openssl-arguments)))
@@ -463,7 +464,6 @@ out to that buffer instead of generating a new one."
     (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t)
     (with-current-buffer input-buf
       (apply 'call-process-region args))
-    ;; remember input-buffer and arguments
     (goto-char (point-min))
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)))

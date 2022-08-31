@@ -123,3 +123,35 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
               (with-current-buffer buf
                 (should (equal q-pem-data (buffer-string)))))
           (kill-buffer buf))))))
+
+(ert-deftest x509--process-buffer ()
+  "Let OpenSSL process buffer."
+  (let ((text
+         (string-join
+          (list
+           "-----BEGIN X509 CRL-----"
+           "MIIBqzCBlAIBATANBgkqhkiG9w0BAQsFADA8MRowGAYDVQQDDBFDQSBUZXN0VG9v"
+           "bCBDQSAwMTEeMBwGA1UECgwVQ0EgVGVzdFRvb2wgQXV0aG9yaXR5Fw0yMjA2MTEw"
+           "NjA5NTZaGA8yMDcyMDUyOTA2MDk1NlowIjAgAgECFw0yMjA2MTEwNjA5MzlaMAww"
+           "CgYDVR0VBAMKAQAwDQYJKoZIhvcNAQELBQADggEBAAeCzW8Qjb9T0Y7GUygw+J28"
+           "HH6LLprpUsxf9YuHXtrq6IcsM0pxtZIw0nRb/X56u8vjOXnjlDPEDEIwaNnhI+VR"
+           "uzE2Caq4Xt7lilCtviZPyJXtceZ5SOh0pkZYrccSWln2+JuBDh+f3O2dOjxl5yZl"
+           "XYcjYinabHXoRdhMG5pTC0X0TMCnl+Q1EsrFDNNwmDaXszR5MU7I/X3mgC3ulp8e"
+           "j/bRF+3Y36I5ELBjTTj7A8Kd/WvafJzoe6fHUbo5uytY4ztXzmkiZXIdcOKsCvsd"
+           "VBa4KOgROKhpFOIHhlXNV97Pl++QslL0gho9Rc0+NbKNlXyz1EyaDXMR5cXc/Ak="
+           "-----END X509 CRL-----")
+          "\n"))
+        shadow-buffer)
+    (with-temp-buffer
+      (insert text)
+      (goto-char (point-min))
+      (x509--process-buffer (current-buffer) '("crl" "-text" "-noout"))
+      (should (re-search-forward "Certificate Revocation List (CRL):" nil t))
+      (should (string-match-p "^\\*x-.*\\*" (buffer-name)))
+      (should (boundp 'x509--shadow-buffer))
+      (should (bufferp x509--shadow-buffer))
+      (should (buffer-live-p x509--shadow-buffer))
+      (setq shadow-buffer x509--shadow-buffer)
+      (kill-buffer)
+      ;; Shadow buffer should be killed in hook
+      (should-not (buffer-live-p shadow-buffer)))))

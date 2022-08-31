@@ -82,3 +82,44 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (insert "-----END TYPE-----")
     (goto-char (point-min))
     (should-not (x509--pem-region))))
+
+(ert-deftest x509--pem-region-type()
+  "Get type of region, e.g. \"CERTIFICATE\"."
+  (with-temp-buffer
+    (insert "-----BEGIN my type----- -----END my type-----")
+    (goto-char (point-min))
+    (should (equal "my type" (x509--pem-region-type))))
+  (with-temp-buffer
+    (insert "-----END TYPE-----")
+    (goto-char (point-min))
+    (should-not (x509--pem-region-type))))
+
+(ert-deftest x509--generate-input-buffer ()
+  "Create buffer with valid data"
+  ;; PEM region                llllllllllllllllllll20
+  (with-temp-buffer
+    (let ((q-pem-data (concat "const char* pem = \"-----BEGIN XX-----\"\n"
+                              "                  \"data\"\n"
+                              "                  \"-----END XX-----\";\n"))
+          (clean-pem-data "-----BEGIN XX-----\ndata\n-----END XX-----"))
+      (insert q-pem-data)
+      (goto-char 20)
+      (let ((buf (x509--generate-input-buffer)))
+        (unwind-protect
+            (progn
+              (should buf)
+              (with-current-buffer buf
+                (should (equal clean-pem-data (buffer-string)))))
+          (kill-buffer buf)))))
+  ;; Not PEM data. Use whole buffer.
+  (with-temp-buffer
+    (let ((q-pem-data "somedata"))
+      (insert q-pem-data)
+      (goto-char 0)
+      (let ((buf (x509--generate-input-buffer)))
+        (unwind-protect
+            (progn
+              (should buf)
+              (with-current-buffer buf
+                (should (equal q-pem-data (buffer-string)))))
+          (kill-buffer buf))))))

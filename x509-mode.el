@@ -448,7 +448,9 @@ Run when killing a view buffer for cleaning up associated input buffer."
 
 Pass content INPUT-BUF to openssl with
 OPENSSL-ARGUMENTS. E.g. x509 -text.  If OUTPUT-BUF is non-'nil',
-out to that buffer instead of generating a new one."
+out to that buffer instead of generating a new one.
+
+Return output buffer."
   (interactive)
   (let* ((buf (or output-buf
                   (generate-new-buffer (generate-new-buffer-name
@@ -456,17 +458,18 @@ out to that buffer instead of generating a new one."
          (args (append
                 (list nil nil x509-openssl-cmd nil buf nil)
                 openssl-arguments)))
-    (switch-to-buffer buf)
-    (setq buffer-read-only nil)
-    (erase-buffer)
-    (setq x509--shadow-buffer input-buf)
-    (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t)
-    (with-current-buffer input-buf
-      (apply 'call-process-region args))
-    ;; remember input-buffer and arguments
-    (goto-char (point-min))
-    (set-buffer-modified-p nil)
-    (setq buffer-read-only t)))
+    (with-current-buffer buf
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (setq x509--shadow-buffer input-buf)
+      (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t)
+      (with-current-buffer input-buf
+        (apply 'call-process-region args))
+      ;; remember input-buffer and arguments
+      (goto-char (point-min))
+      (set-buffer-modified-p nil)
+      (setq buffer-read-only t))
+    buf))
 
 (defun x509--read-arguments (prompt default history)
   "Prompt, using PROMPT, for arguments if \\[universal-argument] prefix.
@@ -497,8 +500,11 @@ non-'nil', use that instead of creating a new one."
   (let* ((in-buf (or input-buf (x509--generate-input-buffer)))
          (encoding (x509--buffer-encoding in-buf))
          (initial (x509--add-inform-spec default encoding))
-         (args (x509--read-arguments "arguments: " initial history)))
-    (x509--process-buffer in-buf (split-string-and-unquote args) output-buf)
+         (args (x509--read-arguments "arguments: " initial history))
+         (result-buffer (x509--process-buffer
+                         in-buf
+                         (split-string-and-unquote args) output-buf)))
+    (switch-to-buffer result-buffer)
     ;; Remember what arguments where used.
     (if (eq mode 'x509-mode)
         (setq x509--x509-mode-shadow-arguments args)

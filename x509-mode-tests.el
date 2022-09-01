@@ -7,7 +7,7 @@
 Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
   (let ((offset (or offset-seconds 0)))
     (format-time-string "%b %e %H:%M:%S %Y GMT"
-                        (time-add (current-time) offset)
+                        (time-add (current-time) (seconds-to-time offset))
                         "GMT")))
 
 

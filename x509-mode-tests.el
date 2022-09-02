@@ -124,24 +124,26 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
                 (should (equal q-pem-data (buffer-string)))))
           (kill-buffer buf))))))
 
+(defvar x509--test-pem-crl
+  (concat
+   "-----BEGIN X509 CRL-----\n"
+   "MIIBqzCBlAIBATANBgkqhkiG9w0BAQsFADA8MRowGAYDVQQDDBFDQSBUZXN0VG9v\n"
+   "bCBDQSAwMTEeMBwGA1UECgwVQ0EgVGVzdFRvb2wgQXV0aG9yaXR5Fw0yMjA2MTEw\n"
+   "NjA5NTZaGA8yMDcyMDUyOTA2MDk1NlowIjAgAgECFw0yMjA2MTEwNjA5MzlaMAww\n"
+   "CgYDVR0VBAMKAQAwDQYJKoZIhvcNAQELBQADggEBAAeCzW8Qjb9T0Y7GUygw+J28\n"
+   "HH6LLprpUsxf9YuHXtrq6IcsM0pxtZIw0nRb/X56u8vjOXnjlDPEDEIwaNnhI+VR\n"
+   "uzE2Caq4Xt7lilCtviZPyJXtceZ5SOh0pkZYrccSWln2+JuBDh+f3O2dOjxl5yZl\n"
+   "XYcjYinabHXoRdhMG5pTC0X0TMCnl+Q1EsrFDNNwmDaXszR5MU7I/X3mgC3ulp8e\n"
+   "j/bRF+3Y36I5ELBjTTj7A8Kd/WvafJzoe6fHUbo5uytY4ztXzmkiZXIdcOKsCvsd\n"
+   "VBa4KOgROKhpFOIHhlXNV97Pl++QslL0gho9Rc0+NbKNlXyz1EyaDXMR5cXc/Ak=\n"
+   "-----END X509 CRL-----")
+  "Sample PEM encoded CRL for testing.")
+
 (ert-deftest x509--process-buffer ()
-  "Let OpenSSL process buffer."
-  (let ((text
-         (concat
-           "-----BEGIN X509 CRL-----\n"
-           "MIIBqzCBlAIBATANBgkqhkiG9w0BAQsFADA8MRowGAYDVQQDDBFDQSBUZXN0VG9v\n"
-           "bCBDQSAwMTEeMBwGA1UECgwVQ0EgVGVzdFRvb2wgQXV0aG9yaXR5Fw0yMjA2MTEw\n"
-           "NjA5NTZaGA8yMDcyMDUyOTA2MDk1NlowIjAgAgECFw0yMjA2MTEwNjA5MzlaMAww\n"
-           "CgYDVR0VBAMKAQAwDQYJKoZIhvcNAQELBQADggEBAAeCzW8Qjb9T0Y7GUygw+J28\n"
-           "HH6LLprpUsxf9YuHXtrq6IcsM0pxtZIw0nRb/X56u8vjOXnjlDPEDEIwaNnhI+VR\n"
-           "uzE2Caq4Xt7lilCtviZPyJXtceZ5SOh0pkZYrccSWln2+JuBDh+f3O2dOjxl5yZl\n"
-           "XYcjYinabHXoRdhMG5pTC0X0TMCnl+Q1EsrFDNNwmDaXszR5MU7I/X3mgC3ulp8e\n"
-           "j/bRF+3Y36I5ELBjTTj7A8Kd/WvafJzoe6fHUbo5uytY4ztXzmkiZXIdcOKsCvsd\n"
-           "VBa4KOgROKhpFOIHhlXNV97Pl++QslL0gho9Rc0+NbKNlXyz1EyaDXMR5cXc/Ak=\n"
-           "-----END X509 CRL-----"))
-        shadow-buffer)
+  "Test OpenSSL process buffer."
+  (let (shadow-buffer)
     (with-temp-buffer
-      (insert text)
+      (insert x509--test-pem-crl)
       (goto-char (point-min))
       (let ((result-buffer (x509--process-buffer
                             (current-buffer) '("crl" "-text" "-noout"))))
@@ -156,3 +158,51 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
           (kill-buffer)
           ;; Shadow buffer should be killed in hook
           (should-not (buffer-live-p shadow-buffer)))))))
+
+(ert-deftest x509--read-arguments ()
+  "Ensure that argument is added to history."
+  (let (history
+        (args "my args"))
+    (should (equal args (x509--read-arguments "PROMPT" args 'history)))
+    (should (equal history (list args)))))
+
+(ert-deftest x509--generic-view ()
+  "Test creating a view buffer"
+  (let (history
+        (expanded-args (concat x509-crl-default-arg " -inform PEM")))
+    (with-temp-buffer
+      (insert x509--test-pem-crl)
+      (x509--generic-view x509-crl-default-arg 'history 'x509-mode)
+      (should (derived-mode-p 'x509-mode))
+      ;; Buffer encoding is added to the arguments which is added to the
+      ;; history.
+      (should (equal history (list expanded-args)))
+      (should (boundp 'x509--x509-mode-shadow-arguments))
+      (should (equal x509--x509-mode-shadow-arguments expanded-args))
+      (kill-buffer))))
+
+(ert-deftest x509--generic-view-asn1 ()
+  "Test creating a view buffer for x509-asn1-mode"
+  (let (history
+        (expanded-args (concat x509-asn1parse-default-arg " -inform PEM")))
+    (with-temp-buffer
+      (insert x509--test-pem-crl)
+      (x509--generic-view x509-asn1parse-default-arg 'history 'x509-asn1-mode)
+      (should (derived-mode-p 'x509-asn1-mode))
+      ;; Buffer encoding is added to the arguments which is added to the
+      ;; history.
+      (should (equal history (list expanded-args)))
+      (should (boundp 'x509--x509-asn1-mode-shadow-arguments))
+      (should (equal x509--x509-asn1-mode-shadow-arguments expanded-args))
+      (kill-buffer))))
+
+(ert-deftest x509--get-x509-history ()
+  "Verify that all commands return expected history variables"
+  (should (equal 'x509--viewcert-history (x509--get-x509-history "x509")))
+  (should (equal 'x509--viewreq-history (x509--get-x509-history "req")))
+  (should (equal 'x509--viewcrl-history (x509--get-x509-history "crl")))
+  (should (equal 'x509--viewpkcs7-history (x509--get-x509-history "pkcs7")))
+  (should (equal 'x509--viewdh-history (x509--get-x509-history "dhparam")))
+  (should (equal 'x509--viewkey-history (x509--get-x509-history "pkey")))
+  (should (equal 'x509--viewasn1-history (x509--get-x509-history "asn1parse")))
+  (should (equal nil (x509--get-x509-history "UNKNOWN"))))

@@ -448,7 +448,9 @@ Run when killing a view buffer for cleaning up associated input buffer."
 
 Pass content INPUT-BUF to openssl with
 OPENSSL-ARGUMENTS. E.g. x509 -text.  If OUTPUT-BUF is non-'nil',
-output to that buffer instead of generating a new one."
+out to that buffer instead of generating a new one.
+
+Return output buffer."
   (interactive)
   (let* ((buf (or output-buf
                   (generate-new-buffer (generate-new-buffer-name
@@ -457,16 +459,18 @@ output to that buffer instead of generating a new one."
          (args (append
                 (list nil nil x509-openssl-cmd nil buf nil)
                 openssl-arguments)))
-    (switch-to-buffer buf)
-    (setq buffer-read-only nil)
-    (erase-buffer)
-    (setq x509--shadow-buffer input-buf)
-    (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t)
-    (with-current-buffer input-buf
-      (apply 'call-process-region args))
-    (goto-char (point-min))
-    (set-buffer-modified-p nil)
-    (setq buffer-read-only t)))
+    (with-current-buffer buf
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (setq x509--shadow-buffer input-buf)
+      (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t)
+      (with-current-buffer input-buf
+        (apply 'call-process-region args))
+      ;; remember input-buffer and arguments
+      (goto-char (point-min))
+      (set-buffer-modified-p nil)
+      (setq buffer-read-only t))
+    buf))
 
 (defun x509--read-arguments (prompt default history)
   "Prompt, using PROMPT, for arguments if \\[universal-argument] prefix.
@@ -497,8 +501,11 @@ non-'nil', use that instead of creating a new one."
   (let* ((in-buf (or input-buf (x509--generate-input-buffer)))
          (encoding (x509--buffer-encoding in-buf))
          (initial (x509--add-inform-spec default encoding))
-         (args (x509--read-arguments "arguments: " initial history)))
-    (x509--process-buffer in-buf (split-string-and-unquote args) output-buf)
+         (args (x509--read-arguments "arguments: " initial history))
+         (result-buffer (x509--process-buffer
+                         in-buf
+                         (split-string-and-unquote args) output-buf)))
+    (switch-to-buffer result-buffer)
     ;; Remember what arguments where used.
     (if (eq mode 'x509-mode)
         (setq x509--x509-mode-shadow-arguments args)
@@ -541,8 +548,8 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
   (interactive)
   (if edit
       (setq current-prefix-arg '(4)))
-  (if (or (and edit (eq major-mode 'x509-asn1-mode))   ; Edit asn1 mode
-          (and (not edit) (eq major-mode 'x509-mode))) ; Toggle to asn1
+  (if (or (and edit (derived-mode-p 'x509-asn1-mode))   ; Edit asn1 mode
+          (and (not edit) (derived-mode-p 'x509-mode))) ; Toggle to asn1
       (let ((default-args (or x509--x509-asn1-mode-shadow-arguments
                               x509-asn1parse-default-arg)))
         (x509--generic-view default-args 'x509--viewasn1-history
@@ -717,8 +724,8 @@ type, call `x509-viewasn1'."
    '("\\(cons\\):" (1 'x509-asn1-sequence-face))
    ;; Like SET and SEQUENCE
    '("\\(cont\\|appl\\|priv\\) \\[\\(.*?\\)\\]"
-     (1 'x509-keyword-face)
-     (2 'x509-asn1-sequence-face))
+     (1 'x509-asn1-sequence-face)
+     (2 'x509-string-face))
    ;; Parsing error messages
    '("error:.*\\|Error in encoding" . 'x509-warning-face)
    ;; String type + string value
@@ -735,7 +742,7 @@ type, call `x509-viewasn1'."
 (define-derived-mode x509-asn1-mode fundamental-mode "asn1"
   "Major mode for displaying openssl asn1parse output.
 
-\\{x509-mode-map}"
+\\{x509-asn1-mode-map}"
   (set (make-local-variable 'font-lock-defaults)
        '(x509-asn1-font-lock-keywords))
   (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)

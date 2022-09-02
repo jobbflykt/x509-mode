@@ -28,9 +28,15 @@ The command line for all command can be edited with C-u prefix. Example:
 
     C-u M-x x509-viewcert
 
-Commands operate on PEM data around point by default. If point is in -----BEGIN/-----END, that region is sent to OpenSSL. Otherwise the whole buffer is considered. If not PEM region is found, either around point or in buffer, then the buffer is assumed to be DER encoded.
+Commands operate on PEM data around point by default. If point is in -----BEGIN/-----END, that region is sent to OpenSSL. Otherwise the whole buffer is considered. If no PEM region is found, either around point or in buffer, then the buffer is assumed to be DER encoded.
 
-When in x509-mode or x509-asn1-mode, the keys **e** and **t** is used for editing the current command and for toggling between x509-asn1-mode and x509-mode. Use **q** to kill the view-buffer.
+### Key bindings
+
+**e** edit the current command.
+
+**t** toggle between x509-mode and x509-asn1-mode
+
+**q** quit and kill view buffer.
 
 ## Installation
 

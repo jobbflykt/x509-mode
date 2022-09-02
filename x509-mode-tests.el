@@ -206,3 +206,28 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
   (should (equal 'x509--viewkey-history (x509--get-x509-history "pkey")))
   (should (equal 'x509--viewasn1-history (x509--get-x509-history "asn1parse")))
   (should (equal nil (x509--get-x509-history "UNKNOWN"))))
+
+
+(defun find-testfile(file-name)
+  "Find file-name in testfiles"
+  (expand-file-name file-name "testfiles"))
+
+(ert-deftest x509-viewcert-pem ()
+  "View PEM coded cert."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.crt"))
+    (x509-viewcert)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "Certificate:" (buffer-string)))
+    (kill-buffer)))
+
+(ert-deftest x509-viewcert-der ()
+  "View PEM coded cert."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.cer"))
+    (x509-viewcert)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "Certificate:" (buffer-string)))
+    (kill-buffer)))
+
+;; FIXME: Test all x509-viewXXX functions.

@@ -476,9 +476,12 @@ Return output buffer."
 
 Provide DEFAULT argument and HISTORY.
 Return argument string."
-  (if (equal current-prefix-arg '(4))
-      (read-from-minibuffer prompt default nil nil history)
-    default))
+  (let ((history-delete-duplicates t))
+    (if (equal current-prefix-arg '(4))
+        (read-from-minibuffer prompt default nil nil history)
+      (progn
+        (add-to-history history default)
+        default))))
 
 (defun x509--add-inform-spec(arguments encoding)
   "Add or modify \"-inform ENCODING\" in ARGUMENTS."

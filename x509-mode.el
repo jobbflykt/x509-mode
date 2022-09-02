@@ -477,9 +477,12 @@ Return output buffer."
 
 Provide DEFAULT argument and HISTORY.
 Return argument string."
-  (if (equal current-prefix-arg '(4))
-      (read-from-minibuffer prompt default nil nil history)
-    default))
+  (let ((history-delete-duplicates t))
+    (if (equal current-prefix-arg '(4))
+        (read-from-minibuffer prompt default nil nil history)
+      (progn
+        (add-to-history history default)
+        default))))
 
 (defun x509--add-inform-spec(arguments encoding)
   "Add or modify \"-inform ENCODING\" in ARGUMENTS."
@@ -539,7 +542,7 @@ non-'nil', use that instead of creating a new one."
     ("dhparam" 'x509--viewdh-history)
     ("pkey" 'x509--viewkey-history)
     ("asn1parse" 'x509--viewasn1-history)
-    (_ "")))
+    (_ nil)))
 
 (defun x509--toggle-mode(&optional edit)
   "Toggle between asn1-mode and x509-mode.
@@ -679,13 +682,18 @@ type, call `x509-viewasn1'."
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
      (call-interactively 'x509-viewcert))
-    ("CERTIFICATE REQUEST" (call-interactively 'x509-viewreq))
-    ("DH PARAMETERS" (call-interactively 'x509-viewdh))
-    ("PKCS7" (call-interactively 'x509-viewpkcs7))
+    ("CERTIFICATE REQUEST"
+     (call-interactively 'x509-viewreq))
+    ("DH PARAMETERS"
+     (call-interactively 'x509-viewdh))
+    ("PKCS7"
+     (call-interactively 'x509-viewpkcs7))
     ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
      (call-interactively 'x509-viewkey))
-    ("X509 CRL" (call-interactively 'x509-viewcrl))
-    (_ (call-interactively 'x509-viewasn1))))
+    ("X509 CRL"
+     (call-interactively 'x509-viewcrl))
+    (_
+     (call-interactively 'x509-viewasn1))))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

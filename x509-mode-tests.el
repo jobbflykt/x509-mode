@@ -299,7 +299,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (insert-file-contents-literally (find-testfile "CA/pki/key/jobbflykt.key"))
     (x509-viewkey)
     (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "Private-Key: (2048 bit)" (buffer-string)))
+    (should (string-match-p "publicExponent: 65537 (0x10001)" (buffer-string)))
     (kill-buffer)))
 
 (ert-deftest x509-viewasn1 ()

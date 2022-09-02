@@ -17,9 +17,9 @@ lisp: $(ELCS)
 	-f batch-byte-compile $<
 
 test:
+	openssl version
 	$(BATCH) --eval "\
 	(progn \
 	  (message \"%s\" (emacs-version)) \
 	  (load-file \"$(TOP)/x509-mode-tests.el\") \
 	  (ert-run-tests-batch-and-exit))"
-	openssl version

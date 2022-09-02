@@ -222,7 +222,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (kill-buffer)))
 
 (ert-deftest x509-viewcert-der ()
-  "View PEM coded cert."
+  "View DER coded cert."
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.cer"))
     (x509-viewcert)
@@ -230,4 +230,83 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (should (string-match-p "Certificate:" (buffer-string)))
     (kill-buffer)))
 
-;; FIXME: Test all x509-viewXXX functions.
+(ert-deftest x509-viewcert-pem ()
+  "View PEM coded cert."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.crt"))
+    (x509-viewcert)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "Certificate:" (buffer-string)))
+    (kill-buffer)))
+
+(ert-deftest x509-viewreq ()
+  "View cert request."
+  (with-temp-buffer
+    (insert-file-contents-literally
+     (find-testfile "CA/ca/request/jobbflykt.pem"))
+    (x509-viewreq)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "Certificate Request:" (buffer-string)))
+    (kill-buffer)))
+
+(ert-deftest x509-viewcrl-der ()
+  "View DER-coded CRL."
+  (with-temp-buffer
+    (insert-file-contents-literally
+     (find-testfile "CA/pki/crl/ca_testtool_ca_01.crl"))
+    (x509-viewcrl)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "Certificate Revocation List (CRL):"
+                            (buffer-string)))
+    (kill-buffer)))
+
+(ert-deftest x509-viewcrl-pem ()
+  "View PEM-coded CRL."
+  (with-temp-buffer
+    (insert-file-contents-literally
+     (find-testfile "CA/pki/crl/ca_testtool_ca_01_crl.pem"))
+    (x509-viewcrl)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "Certificate Revocation List (CRL):"
+                            (buffer-string)))
+    (kill-buffer)))
+
+(ert-deftest x509-viewpkcs7 ()
+  "View pkcs7."
+  (with-temp-buffer
+    (insert-file-contents-literally
+     (find-testfile "CA/pki/pkcs7/jobbflykt.p7b"))
+    (x509-viewpkcs7)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "Certificate:"
+                            (buffer-string)))
+    (should (string-match-p "Certificate Revocation List (CRL):"
+                            (buffer-string)))
+    (kill-buffer)))
+
+(ert-deftest x509-viewdh ()
+  "View Diffie-Hellman parameters."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "dhparams-4096.pem"))
+    (x509-viewdh)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "DH Parameters: (4096 bit)" (buffer-string)))
+    (kill-buffer)))
+
+(ert-deftest x509-viewkey ()
+  "View plaintext private key."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "CA/pki/key/jobbflykt.key"))
+    (x509-viewkey)
+    (should (derived-mode-p 'x509-mode))
+    (should (string-match-p "Private-Key: (2048 bit)" (buffer-string)))
+    (kill-buffer)))
+
+(ert-deftest x509-viewasn1 ()
+  "View plaintext private key as ASN.1."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.crt"))
+    (x509-viewasn1)
+    (should (derived-mode-p 'x509-asn1-mode))
+    (should (string-match-p ":X509v3 Subject Key Identifier" (buffer-string)))
+    (kill-buffer)))

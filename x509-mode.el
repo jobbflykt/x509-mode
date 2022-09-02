@@ -4,7 +4,7 @@
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmai.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "25.1"))
 
 ;; This file is not part of GNU Emacs.
 

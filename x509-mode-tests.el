@@ -143,13 +143,16 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (with-temp-buffer
       (insert text)
       (goto-char (point-min))
-      (x509--process-buffer (current-buffer) '("crl" "-text" "-noout"))
-      (should (re-search-forward "Certificate Revocation List (CRL):" nil t))
-      (should (string-match-p "^\\*x-.*\\*" (buffer-name)))
-      (should (boundp 'x509--shadow-buffer))
-      (should (bufferp x509--shadow-buffer))
-      (should (buffer-live-p x509--shadow-buffer))
-      (setq shadow-buffer x509--shadow-buffer)
-      (kill-buffer)
-      ;; Shadow buffer should be killed in hook
-      (should-not (buffer-live-p shadow-buffer)))))
+      (let ((result-buffer (x509--process-buffer
+                            (current-buffer) '("crl" "-text" "-noout"))))
+        (should result-buffer)
+        (with-current-buffer result-buffer
+          (should (re-search-forward "Certificate Revocation List (CRL):" nil t))
+          (should (string-match-p "^\\*x-.*\\*" (buffer-name)))
+          (should (boundp 'x509--shadow-buffer))
+          (should (bufferp x509--shadow-buffer))
+          (should (buffer-live-p x509--shadow-buffer))
+          (setq shadow-buffer x509--shadow-buffer)
+          (kill-buffer)
+          ;; Shadow buffer should be killed in hook
+          (should-not (buffer-live-p shadow-buffer)))))))

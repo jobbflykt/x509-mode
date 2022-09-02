@@ -230,15 +230,6 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (should (string-match-p "Certificate:" (buffer-string)))
     (kill-buffer)))
 
-(ert-deftest x509-viewcert-pem ()
-  "View PEM coded cert."
-  (with-temp-buffer
-    (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.crt"))
-    (x509-viewcert)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "Certificate:" (buffer-string)))
-    (kill-buffer)))
-
 (ert-deftest x509-viewreq ()
   "View cert request."
   (with-temp-buffer

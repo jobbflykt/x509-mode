@@ -4,7 +4,7 @@
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmai.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "25.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -455,6 +455,7 @@ Return output buffer."
   (let* ((buf (or output-buf
                   (generate-new-buffer (generate-new-buffer-name
                                         (format "*x-%s*" (buffer-name))))))
+         ;; Operate on whole buffer. Output to buf
          (args (append
                 (list nil nil x509-openssl-cmd nil buf nil)
                 openssl-arguments)))

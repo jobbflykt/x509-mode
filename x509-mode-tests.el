@@ -1,4 +1,4 @@
-;;; x509-mode-tests.el --- Tests for x509-mode coding:utf-8 -*-
+;;; x509-mode-tests.el --- Tests for x509-mode  -*- lexical-binding:t; coding:utf-8 -*-
 
 ;; Copyright (C) 2022 Fredrik Axelsson <f.axelsson@gmail.com>
 
@@ -193,14 +193,14 @@ Offset current time with OFFSET-SECONDS is not nil."
 
 (ert-deftest x509--read-arguments ()
   "Ensure that argument is added to history."
-  (let (history
-        (args "my args"))
+  (dlet (history
+         (args "my args"))
     (should (equal args (x509--read-arguments "PROMPT" args 'history)))
     (should (equal history (list args)))))
 
 (ert-deftest x509--generic-view ()
   "Test creating a view buffer."
-  (let (history
+  (dlet (history
         (expanded-args (concat x509-crl-default-arg " -inform PEM")))
     (with-temp-buffer
       (insert x509--test-pem-crl)
@@ -215,7 +215,7 @@ Offset current time with OFFSET-SECONDS is not nil."
 
 (ert-deftest x509--generic-view-asn1 ()
   "Test creating a view buffer for x509-asn1-mode."
-  (let (history
+  (dlet (history
         (expanded-args (concat x509-asn1parse-default-arg " -inform PEM")))
     (with-temp-buffer
       (insert x509--test-pem-crl)

@@ -1,4 +1,4 @@
-;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL -*- lexical-binding: t; -*-
+;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL  -*- lexical-binding:t; coding:utf-8 -*-
 
 ;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
 

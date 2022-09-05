@@ -1,4 +1,4 @@
-;;; x509-mode-tests.el --- Tests for x509-mode -*- lexical-binding:t; coding:utf-8 -*-
+;;; x509-mode-tests.el --- Tests for x509-mode coding:utf-8 -*-
 
 ;; Copyright (C) 2022 Fredrik Axelsson <f.axelsson@gmail.com>
 

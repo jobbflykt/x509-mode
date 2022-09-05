@@ -32,6 +32,8 @@
 
 (require 'x509-mode)
 
+(defvar x509--test-history nil)
+
 (defun x509--test-make-gmt-time (&optional offset-seconds)
   "Return a time string.
 
@@ -193,37 +195,39 @@ Offset current time with OFFSET-SECONDS is not nil."
 
 (ert-deftest x509--read-arguments ()
   "Ensure that argument is added to history."
-  (dlet (history
-         (args "my args"))
-    (should (equal args (x509--read-arguments "PROMPT" args 'history)))
-    (should (equal history (list args)))))
+  (let ((args "my args"))
+    (setq x509--test-history nil)
+    (should (equal args (x509--read-arguments
+                         "PROMPT" args 'x509--test-history)))
+    (should (equal x509--test-history (list args)))))
 
 (ert-deftest x509--generic-view ()
   "Test creating a view buffer."
-  (dlet (history
-        (expanded-args (concat x509-crl-default-arg " -inform PEM")))
+  (let ((expanded-args (concat x509-crl-default-arg " -inform PEM")))
+    (setq x509--test-history nil)
     (with-temp-buffer
       (insert x509--test-pem-crl)
-      (x509--generic-view x509-crl-default-arg 'history 'x509-mode)
+      (x509--generic-view x509-crl-default-arg 'x509--test-history 'x509-mode)
       (should (derived-mode-p 'x509-mode))
       ;; Buffer encoding is added to the arguments which is added to the
-      ;; history.
-      (should (equal history (list expanded-args)))
+      ;; x509--test-history.
+      (should (equal x509--test-history (list expanded-args)))
       (should (boundp 'x509--x509-mode-shadow-arguments))
       (should (equal x509--x509-mode-shadow-arguments expanded-args))
       (kill-buffer))))
 
 (ert-deftest x509--generic-view-asn1 ()
   "Test creating a view buffer for x509-asn1-mode."
-  (dlet (history
-        (expanded-args (concat x509-asn1parse-default-arg " -inform PEM")))
+  (let ((expanded-args (concat x509-asn1parse-default-arg " -inform PEM")))
+    (setq x509--test-history nil)
     (with-temp-buffer
       (insert x509--test-pem-crl)
-      (x509--generic-view x509-asn1parse-default-arg 'history 'x509-asn1-mode)
+      (x509--generic-view x509-asn1parse-default-arg 'x509--test-history
+                          'x509-asn1-mode)
       (should (derived-mode-p 'x509-asn1-mode))
       ;; Buffer encoding is added to the arguments which is added to the
-      ;; history.
-      (should (equal history (list expanded-args)))
+      ;; x509--test-history.
+      (should (equal x509--test-history (list expanded-args)))
       (should (boundp 'x509--x509-asn1-mode-shadow-arguments))
       (should (equal x509--x509-asn1-mode-shadow-arguments expanded-args))
       (kill-buffer))))

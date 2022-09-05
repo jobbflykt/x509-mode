@@ -1,10 +1,42 @@
+;;; x509-mode-tests.el --- Tests for x509-mode -*- lexical-binding:t; coding:utf-8 -*-
+
+;; Copyright (C) 2022 Fredrik Axelsson <f.axelsson@gmail.com>
+
+;; This file is not part of GNU Emacs.
+
+;; MIT License
+;;
+;; Copyright (c) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
+;;
+;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;; of this software and associated documentation files (the "Software"), to
+;; deal in the Software without restriction, including without limitation the
+;; rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+;; sell copies of the Software, and to permit persons to whom the Software is
+;; furnished to do so, subject to the following conditions:
+;;
+;; The above copyright notice and this permission notice shall be included in
+;; all copies or substantial portions of the Software.
+;;
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+;; IN THE SOFTWARE.
+
+;;; Code:
+
 (require 'ert)
 
 (require 'x509-mode)
 
 (defun x509--test-make-gmt-time (&optional offset-seconds)
   "Return a time string.
-Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
+
+Ex: \"Wed Aug 17 08:48:06 2022 GMT\"
+Offset current time with OFFSET-SECONDS is not nil."
   (let ((offset (or offset-seconds 0)))
     (format-time-string "%b %e %H:%M:%S %Y GMT"
                         (time-add (current-time) (seconds-to-time offset))
@@ -47,7 +79,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (should (equal data '("data 1" "2")))))
 
 (ert-deftest x509--buffer-encoding()
-  "Identify PEM encoding"
+  "Identify PEM encoding."
   (with-temp-buffer
     (insert "not pem ")
     (should (equal "DER" (x509--buffer-encoding (current-buffer)))))
@@ -56,7 +88,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (should (equal "PEM" (x509--buffer-encoding (current-buffer))))))
 
 (ert-deftest x509--pem-region()
-  "Find region delimited by BEGIN/END"
+  "Find region delimited by BEGIN/END."
   (with-temp-buffer
     ;;       1                                                    54
     ;;       v                                                    v
@@ -73,7 +105,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
       (should (equal 54 (cdr region))))))
 
 (ert-deftest x509--pem-region-negative()
-  "Behave when there is no region"
+  "Behave when there is no region."
   (with-temp-buffer
     (insert "-----BEGIN TYPE----- -----END BOGUS-----")
     (goto-char (point-min))
@@ -95,7 +127,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (should-not (x509--pem-region-type))))
 
 (ert-deftest x509--generate-input-buffer ()
-  "Create buffer with valid data"
+  "Create buffer with valid data."
   ;; PEM region                llllllllllllllllllll20
   (with-temp-buffer
     (let ((q-pem-data (concat "const char* pem = \"-----BEGIN XX-----\"\n"
@@ -167,7 +199,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (should (equal history (list args)))))
 
 (ert-deftest x509--generic-view ()
-  "Test creating a view buffer"
+  "Test creating a view buffer."
   (let (history
         (expanded-args (concat x509-crl-default-arg " -inform PEM")))
     (with-temp-buffer
@@ -182,7 +214,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
       (kill-buffer))))
 
 (ert-deftest x509--generic-view-asn1 ()
-  "Test creating a view buffer for x509-asn1-mode"
+  "Test creating a view buffer for x509-asn1-mode."
   (let (history
         (expanded-args (concat x509-asn1parse-default-arg " -inform PEM")))
     (with-temp-buffer
@@ -197,7 +229,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
       (kill-buffer))))
 
 (ert-deftest x509--get-x509-history ()
-  "Verify that all commands return expected history variables"
+  "Verify that all commands return expected history variables."
   (should (equal 'x509--viewcert-history (x509--get-x509-history "x509")))
   (should (equal 'x509--viewreq-history (x509--get-x509-history "req")))
   (should (equal 'x509--viewcrl-history (x509--get-x509-history "crl")))
@@ -209,7 +241,7 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
 
 
 (defun find-testfile(file-name)
-  "Find file-name in testfiles"
+  "Find FILE-NAME in testfiles."
   (expand-file-name file-name "testfiles"))
 
 (ert-deftest x509-viewcert-pem ()
@@ -301,3 +333,6 @@ Ex: \"Wed Aug 17 08:48:06 2022 GMT\""
     (should (derived-mode-p 'x509-asn1-mode))
     (should (string-match-p ":X509v3 Subject Key Identifier" (buffer-string)))
     (kill-buffer)))
+
+(provide 'x509-mode-tests)
+;;; x509-mode-tests.el ends here

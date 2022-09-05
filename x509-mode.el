@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
 
-;; Author: Fredrik Axelsson <f.axelsson@gmai.com>
+;; Author: Fredrik Axelsson <f.axelsson@gmail.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
 ;; Package-Requires: ((emacs "25.1"))
 

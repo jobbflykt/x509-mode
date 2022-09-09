@@ -1,6 +1,6 @@
 # x509-mode [![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode)
 
-Major mode for viewing certificates, CRLs, keys, DH-parameters and ASN.1 using OpenSSL.
+Major mode for viewing certificates, CRLs, keys, DH-parameters and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
 
 ## Usage
 

@@ -13,7 +13,10 @@ ELCS = $(ELS:.el=.elc)
 lisp: $(ELCS)
 
 %.elc: %.el
-	$(BATCH) --eval "(when (file-exists-p \"$@\") (delete-file \"$@\"))" \
+	$(BATCH) --eval \
+          "(progn \
+             (when (file-exists-p \"$@\") (delete-file \"$@\")) \
+             (setq byte-compile-error-on-warn t))" \
 	-f batch-byte-compile $<
 
 test:

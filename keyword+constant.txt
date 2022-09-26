@@ -6,6 +6,7 @@ X509v3 Extended Key Usage
 Signature Algorithm
 Hash Algorithm
 Mask Algorithm
+Netscape Cert Type
 
 # openssl/crypto/ec/eck_prn.c
 ASN1 OID

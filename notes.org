@@ -208,3 +208,15 @@ Revoked Certificates:
 #+end_example
 * viewpkcs12
 pkcs12 -info -nodes -passin pass:
+* TODO Highlight near expires
+Customizable time before expire highlight. Some "almost" warning face.
+Also customizable highlight expired, yes/no.
+* TODO Heuristic for dwim on DER data
+Certs, CRLs and other entities should be recognized as such by examining the
+ASN.1 structure.
+* TODO Handle public keys better
+Detect if public RSA key and use -pubin or whatever to decode as such.
+* TODO Add URL highlighting to unknown OIDs
+Query to www.oid-info.com
+Example:
+http://www.oid-info.com/cgi-bin/display?oid=1.2.752.20&action=display

@@ -48,8 +48,7 @@ Offset current time with OFFSET-SECONDS is not nil."
 (ert-deftest x509--date-in-the-past ()
   "Find date in buffer that is in the past."
   (with-temp-buffer
-    (let ((old-date (x509--test-make-gmt-time -60))
-          (future-date (x509--test-make-gmt-time 60)))
+    (let ((old-date (x509--test-make-gmt-time -60)))
       (insert old-date)
       (goto-char (point-min))
       (should (x509--match-date-in-past nil))
@@ -63,6 +62,42 @@ Offset current time with OFFSET-SECONDS is not nil."
       (goto-char (point-min))
       (should (x509--match-date-in-future (point-max)))
       (should (string= (match-string-no-properties 0) future-date)))))
+
+(ert-deftest x509--date-near-now ()
+  "Find date in buffer that is near now.
+
+Examine a date that is in the future within
+`x509-warn-near-expire-days' of now."
+  (with-temp-buffer
+    (let* ((days-ahead (- x509-warn-near-expire-days 1))
+           (seconds-ahead (* days-ahead 24 60 60))
+           (near-future-date (x509--test-make-gmt-time seconds-ahead)))
+      (insert near-future-date)
+      (goto-char (point-min))
+      (should (x509--match-date-near-now (point-max)))
+      (should (string= (match-string-no-properties 0) near-future-date)))))
+
+(ert-deftest x509--date-near-now-in-future ()
+  "Ensure that a date in the near future is not matched."
+  (with-temp-buffer
+    (let* ((days-before 1)
+           (seconds-before (* days-before 24 60 60))
+           (near-past-date (x509--test-make-gmt-time (- seconds-before))))
+      (insert near-past-date)
+      (goto-char (point-min))
+      (should-not (x509--match-date-near-now (point-max))))))
+
+(ert-deftest x509--date-near-now-not-active ()
+  "Ensure that dates in the near future is not matched when
+`x509-warn-near-expire-days' is nil."
+  (with-temp-buffer
+    (let* ((x509-warn-near-expire-days nil)
+           (days-ahead 1)
+           (seconds-ahead (* days-ahead 24 60 60))
+           (near-future-date (x509--test-make-gmt-time seconds-ahead)))
+      (insert near-future-date)
+      (goto-char (point-min))
+      (should-not (x509--match-date-near-now (point-max))))))
 
 (ert-deftest x509--load-data-file()
   "Turn file into list of strings."

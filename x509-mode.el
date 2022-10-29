@@ -156,6 +156,11 @@ Example:
   "Face for bad values."
   :group 'x509-faces)
 
+(defface x509-near-warning-face
+  '((t (:inherit font-lock-variable-name-face :inverse-video t)))
+  "Face for near expire date/time values."
+  :group 'x509-faces)
+
 (defface x509-browse-url-face
   '((t (:inherit link)))
   "Face for clickable URL links.")
@@ -204,6 +209,33 @@ and set ‘match-data’ appropriately if it succeeds; like
 ‘re-search-forward’ would.  The optional argument BOUND is a
 buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (not (time-less-p d1 d2))) bound))
+
+(defcustom x509-warn-near-expire-days 30
+  "Warn certificate expiration if time is near.
+
+Set to `nil' to inhibit warning."
+  :type 'integer
+  :group 'x509)
+
+(defun x509--match-date-near-now (bound)
+  (x509--match-date
+   (lambda (time now)
+     (message "Comparing %s %s (less %s)" time now (time-less-p time now))
+     ;; time is not in the future
+     ;; and time is within decoded-time-delta from now
+     (let* ((delta (make-decoded-time
+                   :day x509-warn-near-expire-days))
+           (decoded-now (decode-time now))
+           (decoded-now-plus-delta (decoded-time-add decoded-now delta))
+           (encoded-now-plus-delta (encode-time decoded-now-plus-delta)))
+       (message "delta %s" delta)
+       (message "decoded time %s" decoded-now)
+       (message "decoded time plus delta %s" decoded-now-plus-delta)
+       (message "encoded time plus delta %s" encoded-now-plus-delta)
+       (message "time-less-p time encoded-now-plus-delta %s"
+                (time-less-p time encoded-now-plus-delta))
+       (time-less-p time encoded-now-plus-delta)))
+   bound))
 
 (defun x509--mark-browse-url-links()
   "Make http URLs clickable by making them buttons."
@@ -304,7 +336,8 @@ Skip blank lines and comment lines.  Return list."
    '("\\(Not Before\\): " (1 'x509-keyword-face)
      (x509--match-date-in-future nil nil (0 'x509-warning-face)))
    '("\\(Not After\\) : " (1 'x509-keyword-face)
-     (x509--match-date-in-past nil nil (0 'x509-warning-face)))
+     ;;(x509--match-date-in-past nil nil (0 'x509-warning-face))
+     (x509--match-date-near-now nil nil (0 'x509-near-warning-face)))
    ;; For CRL's when Next Update is in the past
    '("\\(Next Update\\): " (1 'x509-keyword-face)
      (x509--match-date-in-past nil nil (0 'x509-warning-face)))

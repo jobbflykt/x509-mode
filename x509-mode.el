@@ -157,7 +157,7 @@ Example:
   :group 'x509-faces)
 
 (defface x509-near-warning-face
-  '((t (:inherit font-lock-variable-name-face :inverse-video t)))
+  '((t (:inherit font-lock-function-name-face :inverse-video nil)))
   "Face for near expire date/time values."
   :group 'x509-faces)
 
@@ -220,21 +220,22 @@ Set to `nil' to inhibit warning."
 (defun x509--match-date-near-now (bound)
   (x509--match-date
    (lambda (time now)
-     (message "Comparing %s %s (less %s)" time now (time-less-p time now))
      ;; time is not in the future
      ;; and time is within decoded-time-delta from now
-     (let* ((delta (make-decoded-time
-                   :day x509-warn-near-expire-days))
-           (decoded-now (decode-time now))
-           (decoded-now-plus-delta (decoded-time-add decoded-now delta))
-           (encoded-now-plus-delta (encode-time decoded-now-plus-delta)))
-       (message "delta %s" delta)
-       (message "decoded time %s" decoded-now)
-       (message "decoded time plus delta %s" decoded-now-plus-delta)
-       (message "encoded time plus delta %s" encoded-now-plus-delta)
-       (message "time-less-p time encoded-now-plus-delta %s"
-                (time-less-p time encoded-now-plus-delta))
-       (time-less-p time encoded-now-plus-delta)))
+     (and x509-warn-near-expire-days)
+     (and (time-less-p now time)
+          (let* ((delta (make-decoded-time
+                         :day x509-warn-near-expire-days))
+                 (decoded-now (decode-time now))
+                 (decoded-now-plus-delta (decoded-time-add decoded-now delta))
+                 (encoded-now-plus-delta (encode-time decoded-now-plus-delta)))
+            ;; (message "delta %s" delta)
+            ;; (message "decoded time %s" decoded-now)
+            ;; (message "decoded time plus delta %s" decoded-now-plus-delta)
+            ;; (message "encoded time plus delta %s" encoded-now-plus-delta)
+            ;; (message "time-less-p time encoded-now-plus-delta %s"
+            ;;          (time-less-p time encoded-now-plus-delta))
+            (time-less-p time encoded-now-plus-delta))))
    bound))
 
 (defun x509--mark-browse-url-links()
@@ -336,7 +337,7 @@ Skip blank lines and comment lines.  Return list."
    '("\\(Not Before\\): " (1 'x509-keyword-face)
      (x509--match-date-in-future nil nil (0 'x509-warning-face)))
    '("\\(Not After\\) : " (1 'x509-keyword-face)
-     ;;(x509--match-date-in-past nil nil (0 'x509-warning-face))
+     (x509--match-date-in-past nil nil (0 'x509-warning-face))
      (x509--match-date-near-now nil nil (0 'x509-near-warning-face)))
    ;; For CRL's when Next Update is in the past
    '("\\(Next Update\\): " (1 'x509-keyword-face)

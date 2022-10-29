@@ -242,12 +242,6 @@ Set to `nil' to inhibit warning."
                   (message-log-max nil))
               (setq decoded-now-plus-delta (decoded-time-add decoded-now delta)))
             (setq encoded-now-plus-delta (encode-time decoded-now-plus-delta))
-            ;; (message "delta %s" delta)
-            ;; (message "decoded time %s" decoded-now)
-            ;; (message "decoded time plus delta %s" decoded-now-plus-delta)
-            ;; (message "encoded time plus delta %s" encoded-now-plus-delta)
-            ;; (message "time-less-p time encoded-now-plus-delta %s"
-            ;;          (time-less-p time encoded-now-plus-delta))
             (time-less-p time encoded-now-plus-delta))))
    bound))
 

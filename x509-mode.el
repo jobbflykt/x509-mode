@@ -220,15 +220,28 @@ Set to `nil' to inhibit warning."
 (defun x509--match-date-near-now (bound)
   (x509--match-date
    (lambda (time now)
-     ;; time is not in the future
+     ;; We should highlight near expire times
+     ;; and time is not in the future
      ;; and time is within decoded-time-delta from now
-     (and x509-warn-near-expire-days)
-     (and (time-less-p now time)
-          (let* ((delta (make-decoded-time
+     (and x509-warn-near-expire-days
+          (time-less-p now time)
+          (let* ((inhibit-message t)
+                 (message-log-max nil)
+
+                 (delta (make-decoded-time
                          :day x509-warn-near-expire-days))
                  (decoded-now (decode-time now))
-                 (decoded-now-plus-delta (decoded-time-add decoded-now delta))
-                 (encoded-now-plus-delta (encode-time decoded-now-plus-delta)))
+                 decoded-now-plus-delta
+                 encoded-now-plus-delta)
+            ;; FIXME The message "obsolete timestamp with cdr" appears when
+            ;; decoded-time-add is called. Has something to do with
+            ;; WARN_OBSOLETE_TIMESTAMPS in timefns.c but I don't understand
+            ;; what the correct thing to do is.  For now, inhibit message while
+            ;; doing time calculations
+            (let ((inhibit-message t)
+                  (message-log-max nil))
+              (setq decoded-now-plus-delta (decoded-time-add decoded-now delta)))
+            (setq encoded-now-plus-delta (encode-time decoded-now-plus-delta))
             ;; (message "delta %s" delta)
             ;; (message "decoded time %s" decoded-now)
             ;; (message "decoded time plus delta %s" decoded-now-plus-delta)

@@ -54,6 +54,9 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+(require 'time-date)
+
 (defgroup x509 nil
   "View certificates, CRLs, keys and other related files using OpenSSL."
   :group 'extensions
@@ -156,6 +159,11 @@ Example:
   "Face for bad values."
   :group 'x509-faces)
 
+(defface x509-near-warning-face
+  '((t (:inherit font-lock-function-name-face :inverse-video nil)))
+  "Face for near expire date/time values."
+  :group 'x509-faces)
+
 (defface x509-browse-url-face
   '((t (:inherit link)))
   "Face for clickable URL links.")
@@ -205,6 +213,34 @@ and set ‘match-data’ appropriately if it succeeds; like
 buffer position that bounds the search."
   (x509--match-date (lambda (d1 d2) (not (time-less-p d1 d2))) bound))
 
+(defcustom x509-warn-near-expire-days 30
+  "Warn certificate expiration if time is near.
+
+Set to `nil' to inhibit warning."
+  :type 'integer
+  :group 'x509)
+
+(defun x509--match-date-near-now (bound)
+  "Return non-nil it can find a date that is \"near\" in the future.
+
+\"Near\" is defined by `x509-warn-near-expire-days'.
+Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
+and compare them to the current time. Return non-nil, move point,
+and set ‘match-data’ appropriately if it succeeds; like
+‘re-search-forward’ would.  The optional argument BOUND is a
+buffer position that bounds the search."
+  (x509--match-date
+   (lambda (time now)
+     ;; If we should highlight near expire times
+     ;; and time is not in the future
+     ;; and time is within decoded-time-delta from now
+     (and x509-warn-near-expire-days
+          (time-less-p now time)
+          (time-less-p time
+                       (time-add now
+                                 (* x509-warn-near-expire-days 24 60 60)))))
+   bound))
+
 (defun x509--mark-browse-url-links()
   "Make http URLs clickable by making them buttons."
   (save-excursion
@@ -226,8 +262,6 @@ buffer position that bounds the search."
            'action (lambda (button)
                      (browse-url
                       (button-get button 'x509-browse-url-face)))))))))
-
-(require 'cl-lib)
 
 (defun x509--load-data-file (filename)
   "Split FILENAME linewise into a list.
@@ -304,7 +338,8 @@ Skip blank lines and comment lines.  Return list."
    '("\\(Not Before\\): " (1 'x509-keyword-face)
      (x509--match-date-in-future nil nil (0 'x509-warning-face)))
    '("\\(Not After\\) : " (1 'x509-keyword-face)
-     (x509--match-date-in-past nil nil (0 'x509-warning-face)))
+     (x509--match-date-in-past nil nil (0 'x509-warning-face))
+     (x509--match-date-near-now nil nil (0 'x509-near-warning-face)))
    ;; For CRL's when Next Update is in the past
    '("\\(Next Update\\): " (1 'x509-keyword-face)
      (x509--match-date-in-past nil nil (0 'x509-warning-face)))

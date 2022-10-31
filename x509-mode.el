@@ -244,7 +244,11 @@ Set to `nil' to inhibit warning."
             (let ((inhibit-message t)
                   (message-log-max nil))
               (setq decoded-now-plus-delta (decoded-time-add decoded-now delta)))
-            (setq encoded-now-plus-delta (encode-time decoded-now-plus-delta))
+            ;; FIXME In emacs 25.1, encode-time needs 6+ arguments while
+            ;; later emacs uses just one, the time. If support for emacs 25.1 is
+            ;; dropped, there is no need for `funcall' here.
+            (setq encoded-now-plus-delta
+                  (funcall 'encode-time decoded-now-plus-delta))
             (time-less-p time encoded-now-plus-delta))))
    bound))
 

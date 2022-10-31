@@ -221,35 +221,24 @@ Set to `nil' to inhibit warning."
   :group 'x509)
 
 (defun x509--match-date-near-now (bound)
+  "Return non-nil it can find a date that is \"near\" in the future.
+
+\"Near\" is defined by `x509-warn-near-expire-days'.
+Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
+and compare them to the current time. Return non-nil, move point,
+and set ‘match-data’ appropriately if it succeeds; like
+‘re-search-forward’ would.  The optional argument BOUND is a
+buffer position that bounds the search."
   (x509--match-date
    (lambda (time now)
-     ;; We should highlight near expire times
+     ;; If we should highlight near expire times
      ;; and time is not in the future
      ;; and time is within decoded-time-delta from now
      (and x509-warn-near-expire-days
           (time-less-p now time)
-          (let* ((inhibit-message t)
-                 (message-log-max nil)
-
-                 (delta (make-decoded-time
-                         :day x509-warn-near-expire-days))
-                 (decoded-now (decode-time now))
-                 decoded-now-plus-delta
-                 encoded-now-plus-delta)
-            ;; FIXME The message "obsolete timestamp with cdr" appears when
-            ;; decoded-time-add is called. Has something to do with
-            ;; WARN_OBSOLETE_TIMESTAMPS in timefns.c but I don't understand
-            ;; what the correct thing to do is.  For now, inhibit message while
-            ;; doing time calculations
-            (let ((inhibit-message t)
-                  (message-log-max nil))
-              (setq decoded-now-plus-delta (decoded-time-add decoded-now delta)))
-            ;; FIXME In emacs 25.1, encode-time needs 6+ arguments while
-            ;; later emacs uses just one, the time. If support for emacs 25.1 is
-            ;; dropped, there is no need for `funcall' here.
-            (setq encoded-now-plus-delta
-                  (apply 'encode-time decoded-now-plus-delta))
-            (time-less-p time encoded-now-plus-delta))))
+          (time-less-p time
+                       (time-add now
+                                 (* x509-warn-near-expire-days 24 60 60)))))
    bound))
 
 (defun x509--mark-browse-url-links()

@@ -248,7 +248,7 @@ Set to `nil' to inhibit warning."
             ;; later emacs uses just one, the time. If support for emacs 25.1 is
             ;; dropped, there is no need for `funcall' here.
             (setq encoded-now-plus-delta
-                  (funcall 'encode-time decoded-now-plus-delta))
+                  (apply 'encode-time decoded-now-plus-delta))
             (time-less-p time encoded-now-plus-delta))))
    bound))
 

@@ -54,6 +54,9 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+(require 'time-date)
+
 (defgroup x509 nil
   "View certificates, CRLs, keys and other related files using OpenSSL."
   :group 'extensions
@@ -266,8 +269,6 @@ Set to `nil' to inhibit warning."
            'action (lambda (button)
                      (browse-url
                       (button-get button 'x509-browse-url-face)))))))))
-
-(require 'cl-lib)
 
 (defun x509--load-data-file (filename)
   "Split FILENAME linewise into a list.

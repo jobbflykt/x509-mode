@@ -705,22 +705,23 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (setq buffer-read-only t)
     (x509-mode)))
 
-(defun dwim-tester(openssl-commamd-args)
+(defun x509--dwim-tester(openssl-commamd-args)
   "Test running OPENSSL-COMMAMD-ARGS in current buffer.
 Return t if return status is 0, otherwise nil. Use to determine
 if the buffer contains data of certain type."
   (let* ((in-buf (x509--generate-input-buffer))
          (encoding (x509--buffer-encoding in-buf))
          (args (x509--add-inform-spec openssl-commamd-args encoding))
+         ;; Arguments to `call-process-region'. Just run the command and
+         ;; discard the output.
          (proc-args (append
                      (list nil nil x509-openssl-cmd nil nil nil)
                      (split-string-and-unquote args)))
          result)
     (prog1
-        (setq result (= 0 (with-current-buffer in-buf
-                            (apply 'call-process-region proc-args))))
-      (kill-buffer in-buf)
-      (message "dwim-tester(%s) -> %s" openssl-commamd-args result))))
+        (= 0 (with-current-buffer in-buf
+               (apply 'call-process-region proc-args)))
+      (kill-buffer in-buf))))
 
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
@@ -744,17 +745,17 @@ Look at -----BEGIN header for known object types.  Then test different openssl c
      (call-interactively 'x509-viewcrl))
     (_
      (cond
-      ((dwim-tester x509-x509-default-arg)
+      ((x509--dwim-tester x509-x509-default-arg)
        (call-interactively 'x509-viewcert))
-      ((dwim-tester x509-crl-default-arg)
+      ((x509--dwim-tester x509-crl-default-arg)
        (call-interactively 'x509-viewcrl))
-      ((dwim-tester x509-pkey-default-arg)
+      ((x509--dwim-tester x509-pkey-default-arg)
        (call-interactively 'x509-viewkey))
-      ((dwim-tester x509-req-default-arg)
+      ((x509--dwim-tester x509-req-default-arg)
        (call-interactively 'x509-viewreq))
-      ((dwim-tester x509-dhparam-default-arg)
+      ((x509--dwim-tester x509-dhparam-default-arg)
        (call-interactively 'x509-viewdh))
-      ((dwim-tester x509-pkcs7-default-arg)
+      ((x509--dwim-tester x509-pkcs7-default-arg)
        (call-interactively 'x509-viewpkcs7))
       (t
        (call-interactively 'x509-viewasn1))))))

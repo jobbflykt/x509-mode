@@ -283,86 +283,74 @@ Examine a date that is in the future within
   "Find FILE-NAME in testfiles."
   (expand-file-name file-name "testfiles"))
 
-(ert-deftest x509-viewcert-pem ()
-  "View PEM coded cert."
-  (with-temp-buffer
-    (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.crt"))
-    (x509-viewcert)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "Certificate:" (buffer-string)))
-    (kill-buffer)))
+(defun view-test-helper (test-files view-command expected-mode expected-strings)
+  "Run VIEW-COMMAND on all TEST-FILES.
+Check that buffer has EXPECTED-MODE and contains EXPECTED-STRINGS.
+Repeat with `x509-dwim' which should produce the same result."
+  (let ((regexes (if (listp expected-strings)
+                     expected-strings
+                   (list expected-strings)))
+        (files (if (listp test-files)
+                   test-files
+                 (list test-files))))
+    (dolist (test-file files)
+      (dolist (view-func (list view-command 'x509-dwim))
+        (with-temp-buffer
+          (insert-file-contents-literally (find-testfile test-file))
+          (funcall view-func)
+          (should (derived-mode-p expected-mode))
+          (dolist (regex regexes)
+            (should (string-match-p regex (buffer-string))))
+          (kill-buffer))))))
 
-(ert-deftest x509-viewcert-der ()
-  "View DER coded cert."
-  (with-temp-buffer
-    (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.cer"))
-    (x509-viewcert)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "Certificate:" (buffer-string)))
-    (kill-buffer)))
+(ert-deftest x509-viewcert ()
+  "View cert."
+(view-test-helper '("CA/pki/crt/jobbflykt.crt"
+                    "CA/pki/crt/jobbflykt.cer")
+                    'x509-viewcert
+                    'x509-mode
+                    "Certificate:"))
 
 (ert-deftest x509-viewreq ()
   "View cert request."
-  (with-temp-buffer
-    (insert-file-contents-literally
-     (find-testfile "CA/ca/request/jobbflykt.pem"))
-    (x509-viewreq)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "Certificate Request:" (buffer-string)))
-    (kill-buffer)))
+  (view-test-helper '("CA/ca/request/jobbflykt.pem"
+                      "CA/ca/request/jobbflykt_req.der")
+                    'x509-viewreq
+                    'x509-mode
+                    "Certificate Request:"))
 
-(ert-deftest x509-viewcrl-der ()
-  "View DER-coded CRL."
-  (with-temp-buffer
-    (insert-file-contents-literally
-     (find-testfile "CA/pki/crl/ca_testtool_ca_01.crl"))
-    (x509-viewcrl)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "Certificate Revocation List (CRL):"
-                            (buffer-string)))
-    (kill-buffer)))
-
-(ert-deftest x509-viewcrl-pem ()
-  "View PEM-coded CRL."
-  (with-temp-buffer
-    (insert-file-contents-literally
-     (find-testfile "CA/pki/crl/ca_testtool_ca_01_crl.pem"))
-    (x509-viewcrl)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "Certificate Revocation List (CRL):"
-                            (buffer-string)))
-    (kill-buffer)))
+(ert-deftest x509-viewcrl ()
+  "View CRL."
+  (view-test-helper '("CA/pki/crl/ca_testtool_ca_01.crl"
+                      "CA/pki/crl/ca_testtool_ca_01.crl.pem")
+                    'x509-viewcrl
+                    'x509-mode
+                    "Certificate Revocation List (CRL):"))
 
 (ert-deftest x509-viewpkcs7 ()
-  "View pkcs7."
-  (with-temp-buffer
-    (insert-file-contents-literally
-     (find-testfile "CA/pki/pkcs7/jobbflykt.p7b"))
-    (x509-viewpkcs7)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "Certificate:"
-                            (buffer-string)))
-    (should (string-match-p "Certificate Revocation List (CRL):"
-                            (buffer-string)))
-    (kill-buffer)))
+  "View p7"
+  (view-test-helper '("CA/pki/pkcs7/jobbflykt.p7b"
+                      "CA/pki/pkcs7/jobbflykt.p7b.der")
+                    'x509-viewpkcs7
+                    'x509-mode
+                    '("Certificate:"
+                      "Certificate Revocation List (CRL):")))
 
 (ert-deftest x509-viewdh ()
   "View Diffie-Hellman parameters."
-  (with-temp-buffer
-    (insert-file-contents-literally (find-testfile "dhparams-4096.pem"))
-    (x509-viewdh)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "DH Parameters: (4096 bit)" (buffer-string)))
-    (kill-buffer)))
+  (view-test-helper '("dhparams-4096.pem"
+                      "dhparams-4096.der")
+                    'x509-viewdh
+                    'x509-mode
+                    "DH Parameters: (4096 bit)"))
 
 (ert-deftest x509-viewkey ()
   "View plaintext private key."
-  (with-temp-buffer
-    (insert-file-contents-literally (find-testfile "CA/pki/key/jobbflykt.key"))
-    (x509-viewkey)
-    (should (derived-mode-p 'x509-mode))
-    (should (string-match-p "publicExponent: 65537 (0x10001)" (buffer-string)))
-    (kill-buffer)))
+  (view-test-helper '("CA/pki/key/jobbflykt.key"
+                      "CA/pki/key/jobbflykt.key.der")
+                    'x509-viewkey
+                    'x509-mode
+                    "publicExponent: 65537 (0x10001)"))
 
 (ert-deftest x509-viewasn1 ()
   "View plaintext private key as ASN.1."

@@ -107,6 +107,12 @@ Example:
   :type 'string
   :group 'x509)
 
+(defcustom x509-pkey-pubin-default-arg
+  "pkey -text -noout -pubin"
+  "Default arguments for \"openssl pkey -pubin\" command."
+  :type 'string
+  :group 'x509)
+
 (defcustom x509-asn1parse-default-arg
   "asn1parse"
   "Default arguments for \"openssl asn1parse\" command."
@@ -557,6 +563,7 @@ non-'nil', use that instead of creating a new one."
                        ("pkcs7" . x509-pkcs7-default-arg)
                        ("dhparam" . x509-dhparam-default-arg)
                        ("key" . x509-pkey-default-arg)
+                       ("publickey" . x509-pkey-pubin-default-arg)
                        ("asn1parse" . x509-asn1parse-default-arg)))
          (choice (completing-read
                   "Parse as: "          ; PROMPT
@@ -574,7 +581,10 @@ non-'nil', use that instead of creating a new one."
     ("crl" 'x509--viewcrl-history)
     ("pkcs7" 'x509--viewpkcs7-history)
     ("dhparam" 'x509--viewdh-history)
-    ("pkey" 'x509--viewkey-history)
+    ("pkey"
+     (if (string-match-p "-pubin" args)
+         'x509--viewpublickey-history
+       'x509--viewkey-history))
     ("asn1parse" 'x509--viewasn1-history)
     (_ nil)))
 
@@ -671,6 +681,18 @@ With \\[universal-argument] prefix, you can edit the command arguments."
   (x509--generic-view x509-pkey-default-arg 'x509--viewkey-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
+(defvar x509--viewpublickey-history nil
+  "History list for `x509-publicviewkey'.")
+;;;###autoload
+(defun x509-viewpublickey ()
+  "Display x509 public key using the OpenSSL pkey command.
+
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive)
+  (x509--generic-view x509-pkey-pubin-default-arg
+                      'x509--viewpublickey-history 'x509-mode))
+
+;; ---------------------------------------------------------------------------
 (defvar x509--viewlegacykey-history nil
   "History list for `x509-viewlegacykey'.")
 ;; Special. older openssl pkey cannot read from stdin so we need to use
@@ -742,6 +764,8 @@ different openssl commands until one succeeds.  Call
      (call-interactively 'x509-viewpkcs7))
     ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
      (call-interactively 'x509-viewkey))
+    ("PUBLIC KEY"
+     (call-interactively 'x509-viewpublickey))
     ("X509 CRL"
      (call-interactively 'x509-viewcrl))
     (_
@@ -752,6 +776,8 @@ different openssl commands until one succeeds.  Call
        (call-interactively 'x509-viewcrl))
       ((x509--dwim-tester x509-pkey-default-arg)
        (call-interactively 'x509-viewkey))
+      ((x509--dwim-tester x509-pkey-pubin-default-arg)
+       (call-interactively 'x509-viewpublickey))
       ((x509--dwim-tester x509-req-default-arg)
        (call-interactively 'x509-viewreq))
       ((x509--dwim-tester x509-dhparam-default-arg)

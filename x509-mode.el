@@ -716,8 +716,7 @@ if the buffer contains data of certain type."
          ;; discard the output.
          (proc-args (append
                      (list nil nil x509-openssl-cmd nil nil nil)
-                     (split-string-and-unquote args)))
-         result)
+                     (split-string-and-unquote args))))
     (prog1
         (= 0 (with-current-buffer in-buf
                (apply 'call-process-region proc-args)))

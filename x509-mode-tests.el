@@ -353,13 +353,11 @@ Repeat with `x509-dwim' which should produce the same result."
                     "publicExponent: 65537 (0x10001)"))
 
 (ert-deftest x509-viewasn1 ()
-  "View plaintext private key as ASN.1."
-  (with-temp-buffer
-    (insert-file-contents-literally (find-testfile "CA/pki/crt/jobbflykt.crt"))
-    (x509-viewasn1)
-    (should (derived-mode-p 'x509-asn1-mode))
-    (should (string-match-p ":X509v3 Subject Key Identifier" (buffer-string)))
-    (kill-buffer)))
+  "View ASN.1"
+  (view-test-helper "not-pki.der"
+                    'x509-viewasn1
+                    'x509-asn1-mode
+                    "UTF8STRING        :Hello x509-mode"))
 
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

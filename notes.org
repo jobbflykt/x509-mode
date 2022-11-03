@@ -210,7 +210,7 @@ Revoked Certificates:
 pkcs12 -info -nodes -passin pass:
 * DONE Highlight near expires
 Customizable time before expire highlight. Some "almost" warning face.
-* TODO Heuristic for dwim on DER data
+* DONE Heuristic for dwim on DER data
 Certs, CRLs and other entities should be recognized as such by examining the
 ASN.1 structure.
 * TODO Handle public keys better

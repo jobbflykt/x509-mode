@@ -55,7 +55,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'time-date)
 
 (defgroup x509 nil
   "View certificates, CRLs, keys and other related files using OpenSSL."
@@ -497,11 +496,11 @@ Return output buffer."
     (with-current-buffer buf
       (setq buffer-read-only nil)
       (erase-buffer)
+      ;; Remember input-buffer and arguments
       (setq x509--shadow-buffer input-buf)
       (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t)
       (with-current-buffer input-buf
         (apply 'call-process-region args))
-      ;; remember input-buffer and arguments
       (goto-char (point-min))
       (set-buffer-modified-p nil)
       (setq buffer-read-only t))
@@ -706,13 +705,31 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (setq buffer-read-only t)
     (x509-mode)))
 
+(defun x509--dwim-tester(openssl-commamd-args)
+  "Test running OPENSSL-COMMAMD-ARGS in current buffer.
+Return t if return status is 0, otherwise nil. Use to determine
+if the buffer contains data of certain type."
+  (let* ((in-buf (x509--generate-input-buffer))
+         (encoding (x509--buffer-encoding in-buf))
+         (args (x509--add-inform-spec openssl-commamd-args encoding))
+         ;; Arguments to `call-process-region'. Just run the command and
+         ;; discard the output.
+         (proc-args (append
+                     (list nil nil x509-openssl-cmd nil nil nil)
+                     (split-string-and-unquote args))))
+    (prog1
+        (= 0 (with-current-buffer in-buf
+               (apply 'call-process-region proc-args)))
+      (kill-buffer in-buf))))
+
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
 (defun x509-dwim ()
   "Guess the type of object and call the corresponding view-function.
 
-Look at -----BEGIN header for known object types.  If unknown
-type, call `x509-viewasn1'."
+Look at -----BEGIN header for known object types.  Then test
+different openssl commands until one succeeds.  Call
+`x509-viewasn1' as a last resort."
   (interactive)
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
@@ -728,7 +745,21 @@ type, call `x509-viewasn1'."
     ("X509 CRL"
      (call-interactively 'x509-viewcrl))
     (_
-     (call-interactively 'x509-viewasn1))))
+     (cond
+      ((x509--dwim-tester x509-x509-default-arg)
+       (call-interactively 'x509-viewcert))
+      ((x509--dwim-tester x509-crl-default-arg)
+       (call-interactively 'x509-viewcrl))
+      ((x509--dwim-tester x509-pkey-default-arg)
+       (call-interactively 'x509-viewkey))
+      ((x509--dwim-tester x509-req-default-arg)
+       (call-interactively 'x509-viewreq))
+      ((x509--dwim-tester x509-dhparam-default-arg)
+       (call-interactively 'x509-viewdh))
+      ((x509--dwim-tester x509-pkcs7-default-arg)
+       (call-interactively 'x509-viewpkcs7))
+      (t
+       (call-interactively 'x509-viewasn1))))))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

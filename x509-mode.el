@@ -728,7 +728,9 @@ if the buffer contains data of certain type."
 (defun x509-dwim ()
   "Guess the type of object and call the corresponding view-function.
 
-Look at -----BEGIN header for known object types.  Then test different openssl commands until one succeeds.  Call `x509-viewasn1' as a last resort."
+Look at -----BEGIN header for known object types.  Then test
+different openssl commands until one succeeds.  Call
+`x509-viewasn1' as a last resort."
   (interactive)
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")

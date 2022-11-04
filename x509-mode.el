@@ -34,18 +34,27 @@
 ;;; Commentary:
 
 ;; Major mode for viewing certificates, CRLs, and other PKI-related files.
-
-;; Uses OpenSSL for viewing PEM and DER encoded PKI entities.
-
-;; Usage:
-;; Open a file containing a certificate, either PEM or DER encode.  Now
-;; use M-x `x509-viewcert' to create a new buffer that displays the decoded
-;; certificate.
-;; Use `x509-viewcrl', `x509-viewasn1',`x509-viewkey', `x509-viewdh',
-;; `x509-viewreq', `x509-viewpkcs7' in a similar manner.
 ;;
-;; When point is at or in a PEM encoded region, M-x `x509-dwim' tries to guess
-;; what view-function to call.  It falls back to `x509-viewasn1' if it fails.
+;; Uses OpenSSL for viewing PEM and DER encoded PKI entities.
+;;
+;; Prerequisites: OpenSSL. Customize the variable `x509-openssl-cmd' to name
+;; the openssl binary. Defaults are "openssl" on Linux (assuming it's on PATH)
+;; and "C:/Program Files/Git/mingw64/bin/openssl.exe" on Windows (assuming Git
+;; for Windows is installed in its default location).
+;;
+;; Usage: Open a file containing a certificate, either PEM or DER encode.  Now
+;; use M-x `x509-viewcert' to create a new buffer that displays the decoded
+;; certificate.  Use `x509-viewcrl', `x509-viewasn1',`x509-viewkey',
+;; `x509-viewpublickey', `x509-viewdh', `x509-viewreq', `x509-viewpkcs7' in a
+;; similar manner.
+;;
+;; M-x `x509-dwim' tries to guess what view-function to call.  It falls back to
+;; `x509-viewasn1' if it fails.
+;;
+;; If point is at the beginning of, or in, a PEM region, all view functions,
+;; including `x509-dwim', tries extra hard to use that region as input. This
+;; often works even when there is other data ahead and after region and if the
+;; region is indented or the lines are quoted.
 ;;
 ;; Use C-u prefix with any command for editing the command arguments.
 ;;
@@ -106,6 +115,12 @@ Example:
 (defcustom x509-pkey-default-arg
   "pkey -text -noout"
   "Default arguments for \"openssl pkey\" command."
+  :type 'string
+  :group 'x509)
+
+(defcustom x509-pkey-pubin-default-arg
+  "pkey -text -noout -pubin"
+  "Default arguments for \"openssl pkey -pubin\" command."
   :type 'string
   :group 'x509)
 
@@ -559,6 +574,7 @@ non-'nil', use that instead of creating a new one."
                        ("pkcs7" . x509-pkcs7-default-arg)
                        ("dhparam" . x509-dhparam-default-arg)
                        ("key" . x509-pkey-default-arg)
+                       ("publickey" . x509-pkey-pubin-default-arg)
                        ("asn1parse" . x509-asn1parse-default-arg)))
          (choice (completing-read
                   "Parse as: "          ; PROMPT
@@ -576,7 +592,10 @@ non-'nil', use that instead of creating a new one."
     ("crl" 'x509--viewcrl-history)
     ("pkcs7" 'x509--viewpkcs7-history)
     ("dhparam" 'x509--viewdh-history)
-    ("pkey" 'x509--viewkey-history)
+    ("pkey"
+     (if (string-match-p "-pubin" args)
+         'x509--viewpublickey-history
+       'x509--viewkey-history))
     ("asn1parse" 'x509--viewasn1-history)
     (_ nil)))
 
@@ -673,6 +692,18 @@ With \\[universal-argument] prefix, you can edit the command arguments."
   (x509--generic-view x509-pkey-default-arg 'x509--viewkey-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
+(defvar x509--viewpublickey-history nil
+  "History list for `x509-publicviewkey'.")
+;;;###autoload
+(defun x509-viewpublickey ()
+  "Display x509 public key using the OpenSSL pkey command.
+
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive)
+  (x509--generic-view x509-pkey-pubin-default-arg
+                      'x509--viewpublickey-history 'x509-mode))
+
+;; ---------------------------------------------------------------------------
 (defvar x509--viewlegacykey-history nil
   "History list for `x509-viewlegacykey'.")
 ;; Special. older openssl pkey cannot read from stdin so we need to use
@@ -744,6 +775,8 @@ different openssl commands until one succeeds.  Call
      (call-interactively 'x509-viewpkcs7))
     ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
      (call-interactively 'x509-viewkey))
+    ("PUBLIC KEY"
+     (call-interactively 'x509-viewpublickey))
     ("X509 CRL"
      (call-interactively 'x509-viewcrl))
     (_
@@ -754,6 +787,8 @@ different openssl commands until one succeeds.  Call
        (call-interactively 'x509-viewcrl))
       ((x509--dwim-tester x509-pkey-default-arg)
        (call-interactively 'x509-viewkey))
+      ((x509--dwim-tester x509-pkey-pubin-default-arg)
+       (call-interactively 'x509-viewpublickey))
       ((x509--dwim-tester x509-req-default-arg)
        (call-interactively 'x509-viewreq))
       ((x509--dwim-tester x509-dhparam-default-arg)

@@ -62,7 +62,9 @@
   :group 'convenience
   :link '(emacs-library-link :tag "Lisp File" "x509-mode.el"))
 
-(defcustom x509-openssl-cmd "openssl"
+(defcustom x509-openssl-cmd (if (eq system-type 'windows-nt)
+                                "C:/Program Files/Git/mingw64/bin/openssl.exe"
+                              "openssl")
   "Path to OpenSSL binary.
 
 Example:

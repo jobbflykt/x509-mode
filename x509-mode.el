@@ -161,7 +161,7 @@ Example:
   :group 'x509-faces)
 
 (defface x509-oid-face
-  '((t (:inherit font-lock-constant-face)))
+  '((t (:inherit link)))
   "Face for unknown OIDs."
   :group 'x509-faces)
 
@@ -257,27 +257,42 @@ buffer position that bounds the search."
                                  (* x509-warn-near-expire-days 24 60 60)))))
    bound))
 
-(defun x509--mark-browse-url-links()
-  "Make http URLs clickable by making them buttons."
+(defun x509--mark-browse-url-links(regex compose-url-fn)
+  "Make URLs clickable by making them buttons.
+
+REGEX is used to find and delimit button.
+COMPOSE-URL-FN is a function that takes a string and returns an URL.
+For simple cases, COMPOSE-URL-FN returns its argument unchanged."
   (save-excursion
     (save-match-data
       (goto-char (point-min))
-      (while (search-forward-regexp
-              "\\(file\\|https?\\)://[-_.:/A-Za-z0-9]+" nil t)
+      (while (search-forward-regexp regex nil t)
         (let* ((start (match-beginning 0))
                (end (match-end 0))
-               (url (match-string-no-properties 0))
+               (url (funcall compose-url-fn (match-string-no-properties 0)))
                (help-echo (format "Click to browse-url %s" url)))
           ;; The url is stored in the face property
           (make-button
            start end
            'face 'x509-browse-url-face
            'follow-link t
-           'x509-browse-url-face url
+           'url url
            'help-echo help-echo
            'action (lambda (button)
-                     (browse-url
-                      (button-get button 'x509-browse-url-face)))))))))
+                     (browse-url (button-get button 'url)))))))))
+
+(defun x509--mark-browse-http-links()
+  "Make http URLs clickable by making them buttons."
+  (x509--mark-browse-url-links "\\(file\\|https?\\)://[-_.:/A-Za-z0-9]+"
+                               (lambda (url) url)))
+
+(defun x509--mark-browse-oid()
+  "Make OIDs clickable by making them buttons."
+  (x509--mark-browse-url-links "\\(?:[0-9]+\\.\\)\\{3,\\}[0-9]+"
+                               (lambda (oid)
+                                 ;; Require OID at least 4 nodes deep to avoid
+                                 ;; false positives.
+                                 (concat "http://oid-info.com/get/" oid))))
 
 (defun x509--load-data-file (filename)
   "Split FILENAME linewise into a list.
@@ -399,7 +414,8 @@ Skip blank lines and comment lines.  Return list."
   (define-key x509-mode-map "q" 'x509-mode--kill-buffer)
   (define-key x509-mode-map "t" 'x509--toggle-mode)
   (define-key x509-mode-map "e" 'x509--edit-params)
-  (x509--mark-browse-url-links))
+  (x509--mark-browse-http-links)
+  (x509--mark-browse-oid))
 
 (defun x509--buffer-encoding(buffer)
   "Heuristic for identifying PEM or DER encoding in BUFFER.
@@ -858,7 +874,9 @@ different openssl commands until one succeeds.  Call
        '(x509-asn1-font-lock-keywords))
   (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)
   (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
-  (define-key x509-asn1-mode-map "e" 'x509--edit-params))
+  (define-key x509-asn1-mode-map "e" 'x509--edit-params)
+  (x509--mark-browse-http-links)
+  (x509--mark-browse-oid))
 
 (defvar x509--viewasn1-history nil "History list for `x509-viewasn1'.")
 

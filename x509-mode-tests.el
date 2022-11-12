@@ -99,6 +99,48 @@ Examine a date that is in the future within
       (goto-char (point-min))
       (should-not (x509--match-date-near-now (point-max))))))
 
+(ert-deftest x509--mark-browse-http-links()
+  "Verify that an URL is buttonized and has the expected properties."
+  (with-temp-buffer
+    (let ((https "https://xyz.com/abc.html")
+          https-button
+          (http "http://123/456")
+          http-button
+          (file "file://apa/banan")
+          file-button)
+      (insert "xxx" https " yyy " http " " file)
+      (x509--mark-browse-http-links)
+      (should (setq https-button (next-button (point-min))))
+      (when https-button
+        (should (string= https (button-get https-button 'url)))
+        (should (string= (format "Click to browse-url %s" https)
+                         (button-get https-button 'help-echo)))
+        (should (setq http-button (next-button (button-end https-button))))
+        (when http-button
+          (should (string= http (button-get http-button 'url)))
+          (should (string= (format "Click to browse-url %s" http)
+                           (button-get http-button 'help-echo)))
+          (should (setq file-button (next-button (button-end http-button))))
+          (when file-button
+            (should (string= file (button-get file-button 'url)))
+            (should (string= (format "Click to browse-url %s" file)
+                             (button-get file-button 'help-echo)))))))))
+
+(ert-deftest x509--mark-browse-oid()
+  "Verify that an OID is buttonized and has the expected properties."
+  (with-temp-buffer
+    (let* ((oid "1.2.898.22")
+           (expected-url (concat "http://oid-info.com/get/" oid))
+           (too-short "1.2.3")
+           button)
+      (insert "xxx " too-short "  " oid " yyy")
+      (x509--mark-browse-oid)
+      (should (setq button (next-button (point-min))))
+      (when button
+        (should (string= expected-url (button-get button 'url)))
+        (should (string= (format "Click to browse-url %s" expected-url)
+                         (button-get button 'help-echo)))))))
+
 (ert-deftest x509--load-data-file()
   "Turn file into list of strings."
   (let* ((text (concat "# comment 1\n"

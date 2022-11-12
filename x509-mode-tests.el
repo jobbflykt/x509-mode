@@ -130,7 +130,7 @@ Examine a date that is in the future within
   "Verify that an OID is buttonized and has the expected properties."
   (with-temp-buffer
     (let* ((oid "1.2.898.22")
-           (expected-url (concat "http://oid-info.com/get/" oid))
+           (expected-url (format x509-query-oid-url-format oid))
            (too-short "1.2.3")
            button)
       (insert "xxx " too-short "  " oid " yyy")

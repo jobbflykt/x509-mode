@@ -236,6 +236,13 @@ Set to `nil' to inhibit warning."
   :type 'integer
   :group 'x509)
 
+(defcustom x509-query-oid-url-format "https://oid-rep.orange-labs.fr/get/%s"
+  "Format string for constructing URL for querying OIDs
+
+Used with `(format x509-query-oid-url-format oid)'"
+  :type 'string
+  :group 'x509)
+
 (defun x509--match-date-near-now (bound)
   "Return non-nil it can find a date that is \"near\" in the future.
 
@@ -292,7 +299,7 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
                                (lambda (oid)
                                  ;; Require OID at least 4 nodes deep to avoid
                                  ;; false positives.
-                                 (concat "http://oid-info.com/get/" oid))))
+                                 (format x509-query-oid-url-format oid))))
 
 (defun x509--load-data-file (filename)
   "Split FILENAME linewise into a list.

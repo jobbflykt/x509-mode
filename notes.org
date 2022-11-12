@@ -215,7 +215,7 @@ Certs, CRLs and other entities should be recognized as such by examining the
 ASN.1 structure.
 * DONE Handle public keys better
 Detect if public RSA key and use -pubin or whatever to decode as such.
-* TODO Add URL highlighting to unknown OIDs
-Query to www.oid-info.com
+* DONE Add URL highlighting to unknown OIDs
+Query www.oid-info.com
 Example:
-http://www.oid-info.com/cgi-bin/display?oid=1.2.752.20&action=display
+https://oid-rep.orange-labs.fr/get/0.0.5.115.1.0

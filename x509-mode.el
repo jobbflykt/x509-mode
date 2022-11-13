@@ -824,6 +824,27 @@ different openssl commands until one succeeds.  Call
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode
 
+(defun x509--asn1-get-offset()
+  "Return offset at current line.
+
+Ex ^ 63:d=1  hl=2 l=  34
+-> 63 + 2 = 65"
+  (move-beginning-of-line 1)
+  (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
+      (let ((pos (string-to-number (match-string-no-properties 1)))
+            (header-len (string-to-number (match-string-no-properties 2))))
+        (+ pos header-len))
+    0))
+
+(defun x509--asn1-get-command-line-offset(args)
+  "Look for \"-offset N\" in ARGS string.
+
+Return N or 0 if no offset."
+  (if (string-match "-offset \\([0-9]+\\)" args)
+      (string-to-number (match-string 1 args))
+    0))
+
+
 (defconst x509--asn1-primitives-keywords
   (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"
                 "OCTET_STRING" "OCTET STRING" "NULL" "OID"

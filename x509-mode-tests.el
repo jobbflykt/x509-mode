@@ -411,5 +411,25 @@ Repeat with `x509-dwim' which should produce the same result."
                     'x509-asn1-mode
                     "UTF8STRING        :Hello x509-mode"))
 
+(ert-deftest x509--asn1-update-command-line-offset-arg ()
+  "Test add, update and remove -offset N argument."
+  ;; Zero offset. Don't add.
+  (should (string= (x509--asn1-update-command-line-offset-arg
+                    "x" 0)
+                   "x"))
+  ;; Zero offset. Remove
+  (should (string= (x509--asn1-update-command-line-offset-arg
+                    "x -offset 10 z" 0)
+                   "x  z"))
+  ;; Add offset
+  (should (string= (x509--asn1-update-command-line-offset-arg
+                    "x" 17)
+                   "x -offset 17"))
+  ;; Update offset
+  (should (string= (x509--asn1-update-command-line-offset-arg
+                    "x -offset 989 y" 17)
+                   "x -offset 17 y"))
+  )
+
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

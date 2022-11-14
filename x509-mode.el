@@ -511,6 +511,11 @@ re-process the input buffer or to change the command altogether.")
 ;; Make buffer local variable persist during major mode change.
 (put 'x509--x509-asn1-mode-shadow-arguments 'permanent-local t)
 
+(defvar-local x509--x509-asn1-mode-offset-stack nil
+  "Stack of offsets when drilling down in x509-asn1-mode.")
+;; Make buffer local variable persist during major mode change.
+(put 'x509--x509-asn1-mode-offset-stack 'permanent-local t)
+
 (defun x509--kill-shadow-buffer ()
   "Kill buffer hook function.
 Run when killing a view buffer for cleaning up associated input buffer."
@@ -844,6 +849,53 @@ Return N or 0 if no offset."
       (string-to-number (match-string 1 args))
     0))
 
+(defun x509--asn1-update-command-line-offset-arg(arguments offset)
+  "Add or modify -offset N argument in ARGUMENTS.
+Return updated argument string."
+  (if (= offset 0)
+      ;; Remove -offset argument of zero
+      (if (string-match "-offset [0-9]+" arguments)
+          (replace-match "" nil nil arguments)
+        arguments)
+    ;; Replace existing argument
+    (if (string-match "-offset \\([0-9]+\\)" arguments)
+        (replace-match (number-to-string offset) nil nil arguments 1)
+      ;; Add new
+      (format "%s -offset %s" arguments offset))))
+
+(defun x509--asn1-offset-down()
+  "Add -offset N argument to current asn1 command line and redisplay.
+Offset is calculated from offset on current line."
+  (interactive)
+  (let* ((line-offset (x509--asn1-get-offset))
+         (current-offset (x509--asn1-get-command-line-offset
+                          (or x509--x509-asn1-mode-shadow-arguments
+                              x509-asn1parse-default-arg)))
+         (new-offset (+ line-offset current-offset))
+         (new-args (x509--asn1-update-command-line-offset-arg
+                    (or x509--x509-asn1-mode-shadow-arguments
+                        x509-asn1parse-default-arg)
+                    new-offset)))
+    (if (> new-offset 0)
+        (push new-offset x509--x509-asn1-mode-offset-stack))
+    (x509--generic-view new-args 'x509--viewasn1-history
+                        'x509-asn1-mode
+                        x509--shadow-buffer (current-buffer))))
+
+(defun x509--asn1-offset-up()
+  "Pop offset and redisplay."
+  (interactive)
+  (if x509--x509-asn1-mode-offset-stack
+      (pop x509--x509-asn1-mode-offset-stack))
+  (let* ((new-offset (or (car x509--x509-asn1-mode-offset-stack)
+                         0))
+         (new-args (x509--asn1-update-command-line-offset-arg
+                    (or x509--x509-asn1-mode-shadow-arguments
+                        x509-asn1parse-default-arg)
+                    new-offset)))
+    (x509--generic-view new-args 'x509--viewasn1-history
+                        'x509-asn1-mode
+                        x509--shadow-buffer (current-buffer))))
 
 (defconst x509--asn1-primitives-keywords
   (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"
@@ -903,6 +955,8 @@ Return N or 0 if no offset."
   (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)
   (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
   (define-key x509-asn1-mode-map "e" 'x509--edit-params)
+  (define-key x509-asn1-mode-map "d" 'x509--asn1-offset-down)
+  (define-key x509-asn1-mode-map "u" 'x509--asn1-offset-up)
   (x509--mark-browse-http-links)
   (x509--mark-browse-oid))
 

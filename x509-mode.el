@@ -512,7 +512,9 @@ re-process the input buffer or to change the command altogether.")
 (put 'x509--x509-asn1-mode-shadow-arguments 'permanent-local t)
 
 (defvar-local x509--x509-asn1-mode-offset-stack nil
-  "Stack of offsets when drilling down in x509-asn1-mode.")
+  "Stack of pairs of (offset . pos) when drilling down in x509-asn1-mode.
+POS is the buffer position when going down. Used to restore pos
+when going back up.")
 ;; Make buffer local variable persist during major mode change.
 (put 'x509--x509-asn1-mode-offset-stack 'permanent-local t)
 
@@ -834,12 +836,13 @@ different openssl commands until one succeeds.  Call
 
 Ex ^ 63:d=1  hl=2 l=  34
 -> 63 + 2 = 65"
-  (move-beginning-of-line 1)
-  (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
-      (let ((pos (string-to-number (match-string-no-properties 1)))
-            (header-len (string-to-number (match-string-no-properties 2))))
-        (+ pos header-len))
-    0))
+  (save-excursion
+    (move-beginning-of-line 1)
+    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
+        (let ((pos (string-to-number (match-string-no-properties 1)))
+              (header-len (string-to-number (match-string-no-properties 2))))
+          (+ pos header-len))
+      0)))
 
 (defun x509--asn1-get-command-line-offset(args)
   "Look for \"-offset N\" in ARGS string.
@@ -877,7 +880,7 @@ Offset is calculated from offset on current line."
                         x509-asn1parse-default-arg)
                     new-offset)))
     (if (> new-offset 0)
-        (push new-offset x509--x509-asn1-mode-offset-stack))
+        (push (cons new-offset (point)) x509--x509-asn1-mode-offset-stack))
     (x509--generic-view new-args 'x509--viewasn1-history
                         'x509-asn1-mode
                         x509--shadow-buffer (current-buffer))))
@@ -885,17 +888,21 @@ Offset is calculated from offset on current line."
 (defun x509--asn1-offset-up()
   "Pop offset and redisplay."
   (interactive)
-  (if x509--x509-asn1-mode-offset-stack
-      (pop x509--x509-asn1-mode-offset-stack))
-  (let* ((new-offset (or (car x509--x509-asn1-mode-offset-stack)
+  (when (and (boundp 'x509--x509-asn1-mode-offset-stack)
+             x509--x509-asn1-mode-offset-stack)
+    (let* ((popped (pop x509--x509-asn1-mode-offset-stack))
+           (prevoius-pos (cdr popped))
+           (new-offset (if x509--x509-asn1-mode-offset-stack
+                           (caar x509--x509-asn1-mode-offset-stack)
                          0))
-         (new-args (x509--asn1-update-command-line-offset-arg
-                    (or x509--x509-asn1-mode-shadow-arguments
-                        x509-asn1parse-default-arg)
-                    new-offset)))
-    (x509--generic-view new-args 'x509--viewasn1-history
-                        'x509-asn1-mode
-                        x509--shadow-buffer (current-buffer))))
+           (new-args (x509--asn1-update-command-line-offset-arg
+                      (or x509--x509-asn1-mode-shadow-arguments
+                          x509-asn1parse-default-arg)
+                      new-offset)))
+      (x509--generic-view new-args 'x509--viewasn1-history
+                          'x509-asn1-mode
+                          x509--shadow-buffer (current-buffer))
+      (goto-char prevoius-pos))))
 
 (defconst x509--asn1-primitives-keywords
   (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"

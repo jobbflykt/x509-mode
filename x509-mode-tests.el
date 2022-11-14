@@ -431,5 +431,33 @@ Repeat with `x509-dwim' which should produce the same result."
                    "x -offset 17 y"))
   )
 
+(ert-deftest x509--asn1-down-up()
+  "Verify that going down and up in nested ASN.1 structures works.
+nested.der should contain:
+    0:d=0  hl=2 l=   5 cons: SEQUENCE
+    2:d=1  hl=2 l=   3 cons: SEQUENCE
+    4:d=2  hl=2 l=   1 prim: INTEGER           :-06
+"
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "nested.der"))
+    (x509-viewasn1)
+    (x509--asn1-offset-down)
+    (should (equal x509--x509-asn1-mode-offset-stack '((2 . 1))))
+    ;; Move point and verify it's restored when going up later
+    (forward-char 4)
+    (x509--asn1-offset-down)
+    (should (equal x509--x509-asn1-mode-offset-stack '((4 . 5) (2 . 1))))
+    (should (looking-at "    0:d=0  hl=2 l=   1 prim: INTEGER           :-06"))
+    (x509--asn1-offset-up)
+    (should (equal x509--x509-asn1-mode-offset-stack '((2 . 1))))
+    (should (equal (point) 5))
+    (x509--asn1-offset-up)
+    (should (null x509--x509-asn1-mode-offset-stack))
+    ;; Going up from top does nothing
+    (x509--asn1-offset-up)
+    (should (looking-at "    0:d=0  hl=2 l=   5 cons: SEQUENCE"))
+    (kill-buffer)
+    ))
+
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

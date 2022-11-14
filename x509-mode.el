@@ -832,7 +832,7 @@ different openssl commands until one succeeds.  Call
 ;; asn1-mode
 
 (defun x509--asn1-get-offset()
-  "Return offset at current line.
+  "Return offset at current ASN.1 line.
 
 Ex ^ 63:d=1  hl=2 l=  34
 -> 63 + 2 = 65"
@@ -853,11 +853,11 @@ Return N or 0 if no offset."
     0))
 
 (defun x509--asn1-update-command-line-offset-arg(arguments offset)
-  "Add or modify -offset N argument in ARGUMENTS.
+  "Add, modify or remove -offset N argument in ARGUMENTS.
 Return updated argument string."
   (if (= offset 0)
       ;; Remove -offset argument of zero
-      (if (string-match "-offset [0-9]+" arguments)
+      (if (string-match " *-offset [0-9]+" arguments)
           (replace-match "" nil nil arguments)
         arguments)
     ;; Replace existing argument

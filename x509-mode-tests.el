@@ -420,7 +420,7 @@ Repeat with `x509-dwim' which should produce the same result."
   ;; Zero offset. Remove
   (should (string= (x509--asn1-update-command-line-offset-arg
                     "x -offset 10 z" 0)
-                   "x  z"))
+                   "x z"))
   ;; Add offset
   (should (string= (x509--asn1-update-command-line-offset-arg
                     "x" 17)

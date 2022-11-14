@@ -39,6 +39,8 @@ Commands operate on PEM data around point by default. If point is in -----BEGIN/
 
 **q** quit and kill view buffer.
 
+In x509-asn1-mode, additional keys can be used to parse nested ASN.1 structures. Place cursor on a line in the asn.1 buffer and press **d** to re-parse at that offset, going *down*. Press **u** to go *up*. Can be used repeatedly.
+
 ## Installation
 
 Install x509-mode through elpa. It's available on [melpa](https://melpa.org)

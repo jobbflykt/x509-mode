@@ -511,6 +511,13 @@ re-process the input buffer or to change the command altogether.")
 ;; Make buffer local variable persist during major mode change.
 (put 'x509--x509-asn1-mode-shadow-arguments 'permanent-local t)
 
+(defvar-local x509--x509-asn1-mode-offset-stack nil
+  "Stack of pairs of (offset . pos) when drilling down in x509-asn1-mode.
+POS is the buffer position when going down. Used to restore pos
+when going back up.")
+;; Make buffer local variable persist during major mode change.
+(put 'x509--x509-asn1-mode-offset-stack 'permanent-local t)
+
 (defun x509--kill-shadow-buffer ()
   "Kill buffer hook function.
 Run when killing a view buffer for cleaning up associated input buffer."
@@ -824,6 +831,79 @@ different openssl commands until one succeeds.  Call
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode
 
+(defun x509--asn1-get-offset()
+  "Return offset at current ASN.1 line.
+
+Ex ^ 63:d=1  hl=2 l=  34
+-> 63 + 2 = 65"
+  (save-excursion
+    (move-beginning-of-line 1)
+    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
+        (let ((pos (string-to-number (match-string-no-properties 1)))
+              (header-len (string-to-number (match-string-no-properties 2))))
+          (+ pos header-len))
+      0)))
+
+(defun x509--asn1-get-command-line-offset(args)
+  "Look for \"-offset N\" in ARGS string.
+
+Return N or 0 if no offset."
+  (if (string-match "-offset \\([0-9]+\\)" args)
+      (string-to-number (match-string 1 args))
+    0))
+
+(defun x509--asn1-update-command-line-offset-arg(arguments offset)
+  "Add, modify or remove -offset N argument in ARGUMENTS.
+Return updated argument string."
+  (if (= offset 0)
+      ;; Remove -offset argument of zero
+      (if (string-match " *-offset [0-9]+" arguments)
+          (replace-match "" nil nil arguments)
+        arguments)
+    ;; Replace existing argument
+    (if (string-match "-offset \\([0-9]+\\)" arguments)
+        (replace-match (number-to-string offset) nil nil arguments 1)
+      ;; Add new
+      (format "%s -offset %s" arguments offset))))
+
+(defun x509--asn1-offset-down()
+  "Add -offset N argument to current asn1 command line and redisplay.
+Offset is calculated from offset on current line."
+  (interactive)
+  (let* ((line-offset (x509--asn1-get-offset))
+         (current-offset (x509--asn1-get-command-line-offset
+                          (or x509--x509-asn1-mode-shadow-arguments
+                              x509-asn1parse-default-arg)))
+         (new-offset (+ line-offset current-offset))
+         (new-args (x509--asn1-update-command-line-offset-arg
+                    (or x509--x509-asn1-mode-shadow-arguments
+                        x509-asn1parse-default-arg)
+                    new-offset)))
+    (if (> new-offset 0)
+        (push (cons new-offset (point)) x509--x509-asn1-mode-offset-stack))
+    (x509--generic-view new-args 'x509--viewasn1-history
+                        'x509-asn1-mode
+                        x509--shadow-buffer (current-buffer))))
+
+(defun x509--asn1-offset-up()
+  "Pop offset and redisplay."
+  (interactive)
+  (when (and (boundp 'x509--x509-asn1-mode-offset-stack)
+             x509--x509-asn1-mode-offset-stack)
+    (let* ((popped (pop x509--x509-asn1-mode-offset-stack))
+           (prevoius-pos (cdr popped))
+           (new-offset (if x509--x509-asn1-mode-offset-stack
+                           (caar x509--x509-asn1-mode-offset-stack)
+                         0))
+           (new-args (x509--asn1-update-command-line-offset-arg
+                      (or x509--x509-asn1-mode-shadow-arguments
+                          x509-asn1parse-default-arg)
+                      new-offset)))
+      (x509--generic-view new-args 'x509--viewasn1-history
+                          'x509-asn1-mode
+                          x509--shadow-buffer (current-buffer))
+      (goto-char prevoius-pos))))
+
 (defconst x509--asn1-primitives-keywords
   (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"
                 "OCTET_STRING" "OCTET STRING" "NULL" "OID"
@@ -882,6 +962,8 @@ different openssl commands until one succeeds.  Call
   (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)
   (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
   (define-key x509-asn1-mode-map "e" 'x509--edit-params)
+  (define-key x509-asn1-mode-map "d" 'x509--asn1-offset-down)
+  (define-key x509-asn1-mode-map "u" 'x509--asn1-offset-up)
   (x509--mark-browse-http-links)
   (x509--mark-browse-oid))
 

@@ -219,3 +219,30 @@ Detect if public RSA key and use -pubin or whatever to decode as such.
 Query www.oid-info.com
 Example:
 https://oid-rep.orange-labs.fr/get/0.0.5.115.1.0
+* DONE asn1-mode offset
+Add keys, e.g. d/u (down/up), for drilling down into ASN.1 structures at an
+offset determined by the current line.
+
+Example
+  646:d=5  hl=2 l=   3 prim: OBJECT            :X509v3 Extended Key Usage
+> 651:d=5  hl=2 l=  56 prim: OCTET STRING      [HEX DUMP]:3036060A2B060104018237140202060A6086480165030201032F06082B0601050507030206082B0601050507030306082B06010505070304
+
+If cursor i on line denoted by >, pressing d will add an "-offset 653" argument
+to the asn1parse command. The OCTET STRING is itself an ANS.1 struct starting at
+offset 651 + 2.
+
+Doing that gives a view of the Extended Key Usage structure.
+
+  ...
+  58:d=1  hl=2 l=   3 prim: OBJECT            :X509v3 CRL Distribution Points
+> 63:d=1  hl=2 l=  34 prim: OCTET STRING      [HEX DUMP]:3020301EA01CA01A8618687474703A2F2F63726C2E636174657374746F6F6C2E7365
+
+Placing the cursor on another line and again pressing d should add that offset
+to the current one and redisplay again. In the example -offset 718, = 653 +
+63 + 2.
+
+x509-asn1-mode must store a list of offset that can be pushed and popped when
+going down and up. The stack also records point before going down, restoring it
+when backing up.
+
+x509--ans1parse-offset-stack = (653 718)

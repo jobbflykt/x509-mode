@@ -160,9 +160,14 @@ Example:
   "Face for colon-separated hex values."
   :group 'x509-faces)
 
+(defface x509-oid-link-face
+  '((t (:inherit (link font-lock-constant-face))))
+  "Face for OID buttons."
+  :group 'x509-faces)
+
 (defface x509-oid-face
-  '((t (:inherit link)))
-  "Face for unknown OIDs."
+  '((t (:inherit font-lock-constant-face)))
+  "Face for symbolic, known, OIDs."
   :group 'x509-faces)
 
 (defface x509-asn1-sequence-face
@@ -264,10 +269,11 @@ buffer position that bounds the search."
                                  (* x509-warn-near-expire-days 24 60 60)))))
    bound))
 
-(defun x509--mark-browse-url-links(regex compose-url-fn)
+(defun x509--mark-browse-url-links(regex face compose-url-fn)
   "Make URLs clickable by making them buttons.
 
 REGEX is used to find and delimit button.
+FACE is the face to apply to the button.
 COMPOSE-URL-FN is a function that takes a string and returns an URL.
 For simple cases, COMPOSE-URL-FN returns its argument unchanged."
   (save-excursion
@@ -281,7 +287,7 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
           ;; The url is stored in the face property
           (make-button
            start end
-           'face 'x509-browse-url-face
+           'face face
            'follow-link t
            'url url
            'help-echo help-echo
@@ -291,11 +297,13 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
 (defun x509--mark-browse-http-links()
   "Make http URLs clickable by making them buttons."
   (x509--mark-browse-url-links "\\(file\\|https?\\)://[-_.:/A-Za-z0-9]+"
+                               'x509-browse-url-face
                                (lambda (url) url)))
 
 (defun x509--mark-browse-oid()
   "Make OIDs clickable by making them buttons."
   (x509--mark-browse-url-links "\\(?:[0-9]+\\.\\)\\{3,\\}[0-9]+"
+                               'x509-oid-link-face
                                (lambda (oid)
                                  ;; Require OID at least 4 nodes deep to avoid
                                  ;; false positives.

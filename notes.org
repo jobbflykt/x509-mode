@@ -246,3 +246,8 @@ going down and up. The stack also records point before going down, restoring it
 when backing up.
 
 x509--ans1parse-offset-stack = (653 718)
+* DONE Add support for OpenSSL 3
+For example "Signature Value" is shown after
+     Signature Algorithm: sha256WithRSAEncryption
+new> Signature Value:
+          12:74:61...

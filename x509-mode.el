@@ -957,8 +957,8 @@ Offset is calculated from offset on current line."
    ;; "OID" followed by oid
    `(,x509--asn1-oid
      (1 'x509-keyword-face)
-     (2 'x509-oid-face))
-   "openssl asn1parse highlighting"))
+     (2 'x509-oid-face)))
+  "openssl asn1parse highlighting")
 
 ;;;###autoload
 (define-derived-mode x509-asn1-mode fundamental-mode "asn1"

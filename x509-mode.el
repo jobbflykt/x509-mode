@@ -425,7 +425,7 @@ Skip blank lines and comment lines.  Return list."
   "Major mode for displaying OpenSSL output.
 
 \\{x509-mode-map}"
-  (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords))
+  (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
   (define-key x509-mode-map "q" 'x509-mode--kill-buffer)
   (define-key x509-mode-map "t" 'x509--toggle-mode)
   (define-key x509-mode-map "e" 'x509--edit-params)
@@ -966,7 +966,7 @@ Offset is calculated from offset on current line."
 
 \\{x509-asn1-mode-map}"
   (set (make-local-variable 'font-lock-defaults)
-       '(x509-asn1-font-lock-keywords))
+       '(x509-asn1-font-lock-keywords t))
   (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)
   (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
   (define-key x509-asn1-mode-map "e" 'x509--edit-params)

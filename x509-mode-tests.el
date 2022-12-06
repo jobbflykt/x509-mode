@@ -402,7 +402,7 @@ Repeat with `x509-dwim' which should produce the same result."
                       "CA/pki/key/jobbflykt-public.key.der")
                     'x509-viewpublickey
                     'x509-mode
-                    "RSA Public-Key: (2048 bit)"))
+                    "Public-Key: (2048 bit)"))
 
 (ert-deftest x509-viewasn1 ()
   "View ASN.1"

@@ -411,6 +411,33 @@ Repeat with `x509-dwim' which should produce the same result."
                     'x509-asn1-mode
                     "UTF8STRING        :Hello x509-mode"))
 
+(defun check-face-helper(regex expected-face &optional match)
+  "Check that face at `match-beginning' MATCH matches EXPECTED-FACE.
+Search for REGEX. If MATCH is `nil', look at beginning of whole regexp."
+  (goto-char (point-min))
+  (should (re-search-forward regex nil t))
+  (let ((point (match-beginning (if match match 0))))
+    (should (eq (get-char-property point 'face)
+                expected-face))))
+
+(ert-deftest x509-viewasn1-faces ()
+  "Check a few font lock faces in asn1mode buffer."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "inf.der"))
+    (x509-viewasn1)
+    (goto-char (point-min))
+    (if (fboundp 'font-lock-ensure)
+        (font-lock-ensure)
+      (with-no-warnings
+        (font-lock-fontify-buffer)))
+    (check-face-helper "=\\(inf\\)" 'x509-constant-face 1)
+    (check-face-helper "cons" 'x509-asn1-sequence-face)
+    (check-face-helper "SEQUENCE" 'x509-asn1-sequence-face)
+    (check-face-helper "prim" 'x509-keyword-face)
+    (check-face-helper "INTEGER" 'x509-keyword-face)
+    (check-face-helper "EOC" 'x509-keyword-face)
+    (kill-buffer)))
+
 (ert-deftest x509--asn1-update-command-line-offset-arg ()
   "Test add, update and remove -offset N argument."
   ;; Zero offset. Don't add.

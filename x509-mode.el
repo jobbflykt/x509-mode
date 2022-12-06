@@ -938,6 +938,10 @@ Offset is calculated from offset on current line."
 
 (defconst x509-asn1-font-lock-keywords
   (list
+   ;; Undetermined length, i.e. when the length byte is 0x80 indicating
+   ;; zero following length bytes.
+   '("l=\\(inf\\) "
+     (1 'x509-constant-face))
    ;; BOOLEAN, INTEGER and such
    `(,x509--asn1-primitives-keywords . 'x509-keyword-face)
    ;; SET, SEQUENCE

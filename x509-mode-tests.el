@@ -347,11 +347,11 @@ Repeat with `x509-dwim' which should produce the same result."
           (insert-file-contents-literally (find-testfile test-file))
           (funcall view-func)
           (unwind-protect
-              (progn
+              (let ((content (buffer-substring-no-properties
+                              (point-min) (point-max))))
                 (should (derived-mode-p expected-mode))
-                (let ((content (buffer-substring-no-properties (point-min) (point-max))))
-                  (dolist (regex regexes)
-                    (should (string-match-p regex content)))))
+                (dolist (regex regexes)
+                  (should (string-match-p regex content))))
             (kill-buffer)))))))
 
 (ert-deftest x509-viewcert ()

@@ -589,7 +589,9 @@ HISTORY is the command history symbol used with
 `read-from-minibuffer'.  MODE is the major mode that will be
 applied to the result buffer.  If INPUT-BUF is non-'nil', use
 existing input buffer instead of creating one.  If OUTPUT-BUF is
-non-'nil', use that instead of creating a new one."
+non-'nil', use that instead of creating a new one.
+
+Switch to resulting buffer and return it."
   (let* ((in-buf (or input-buf (x509--generate-input-buffer)))
          (encoding (x509--buffer-encoding in-buf))
          (initial (x509--add-inform-spec default encoding))
@@ -602,7 +604,8 @@ non-'nil', use that instead of creating a new one."
     (if (eq mode 'x509-mode)
         (setq x509--x509-mode-shadow-arguments args)
       (setq x509--x509-asn1-mode-shadow-arguments args))
-    (funcall mode)))
+    (funcall mode)
+    result-buffer))
 
 (defun x509--get-x509-toggle-mode-args ()
   "Ask user for command and return default arguments for that command."

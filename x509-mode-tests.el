@@ -266,7 +266,7 @@ Examine a date that is in the future within
           (should (bufferp x509--shadow-buffer))
           (should (buffer-live-p x509--shadow-buffer))
           (setq shadow-buffer x509--shadow-buffer)
-          (kill-buffer)
+          (kill-buffer result-buffer)
           ;; Shadow buffer should be killed in hook
           (should-not (buffer-live-p shadow-buffer)))))))
 
@@ -284,16 +284,18 @@ Examine a date that is in the future within
     (setq x509--test-history nil)
     (with-temp-buffer
       (insert x509--test-pem-crl)
-      (x509--generic-view x509-crl-default-arg 'x509--test-history 'x509-mode)
-      (unwind-protect
-          (progn
-            (should (derived-mode-p 'x509-mode))
-            ;; Buffer encoding is added to the arguments which is added to the
-            ;; x509--test-history.
-            (should (equal x509--test-history (list expanded-args)))
-            (should (boundp 'x509--x509-mode-shadow-arguments))
-            (should (equal x509--x509-mode-shadow-arguments expanded-args)))
-        (kill-buffer)))))
+      (let ((result-buffer (x509--generic-view
+                            x509-crl-default-arg 'x509--test-history 'x509-mode)))
+        (unwind-protect
+            (with-current-buffer result-buffer
+              (progn
+                (should (derived-mode-p 'x509-mode))
+                ;; Buffer encoding is added to the arguments which is added to the
+                ;; x509--test-history.
+                (should (equal x509--test-history (list expanded-args)))
+                (should (boundp 'x509--x509-mode-shadow-arguments))
+                (should (equal x509--x509-mode-shadow-arguments expanded-args))))
+          (kill-buffer result-buffer))))))
 
 (ert-deftest x509--generic-view-asn1 ()
   "Test creating a view buffer for x509-asn1-mode."
@@ -301,17 +303,18 @@ Examine a date that is in the future within
     (setq x509--test-history nil)
     (with-temp-buffer
       (insert x509--test-pem-crl)
-      (x509--generic-view x509-asn1parse-default-arg 'x509--test-history
-                          'x509-asn1-mode)
-      (unwind-protect
-          (progn
-            (should (derived-mode-p 'x509-asn1-mode))
-            ;; Buffer encoding is added to the arguments which is added to the
-            ;; x509--test-history.
-            (should (equal x509--test-history (list expanded-args)))
-            (should (boundp 'x509--x509-asn1-mode-shadow-arguments))
-            (should (equal x509--x509-asn1-mode-shadow-arguments expanded-args)))
-        (kill-buffer)))))
+      (let ((result-buffer (x509--generic-view
+                            x509-asn1parse-default-arg 'x509--test-history
+                            'x509-asn1-mode)))
+        (unwind-protect
+            (with-current-buffer result-buffer
+              (should (derived-mode-p 'x509-asn1-mode))
+              ;; Buffer encoding is added to the arguments which is added to the
+              ;; x509--test-history.
+              (should (equal x509--test-history (list expanded-args)))
+              (should (boundp 'x509--x509-asn1-mode-shadow-arguments))
+              (should (equal x509--x509-asn1-mode-shadow-arguments expanded-args)))
+          (kill-buffer result-buffer))))))
 
 (ert-deftest x509--get-x509-history ()
   "Verify that all commands return expected history variables."
@@ -345,14 +348,15 @@ Repeat with `x509-dwim' which should produce the same result."
       (dolist (view-func (list view-command 'x509-dwim))
         (with-temp-buffer
           (insert-file-contents-literally (find-testfile test-file))
-          (funcall view-func)
-          (unwind-protect
-              (let ((content (buffer-substring-no-properties
-                              (point-min) (point-max))))
-                (should (derived-mode-p expected-mode))
-                (dolist (regex regexes)
-                  (should (string-match-p regex content))))
-            (kill-buffer)))))))
+          (let ((view-buffer (funcall view-func)))
+            (unwind-protect
+                (with-current-buffer view-buffer
+                  (let ((content (buffer-substring-no-properties
+                                  (point-min) (point-max))))
+                    (should (derived-mode-p expected-mode))
+                    (dolist (regex regexes)
+                      (should (string-match-p regex content)))))
+              (kill-buffer view-buffer))))))))
 
 (ert-deftest x509-viewcert ()
   "View cert."
@@ -390,7 +394,12 @@ Repeat with `x509-dwim' which should produce the same result."
 (ert-deftest x509-viewdh ()
   "View Diffie-Hellman parameters."
   (view-test-helper '("dhparams-4096.pem"
-                      "dhparams-4096.der")
+                      ;; Special: there is no telling if this is a public key
+                      ;; with modulus and exponent or if it is diffie-hellman
+                      ;; parameters P and G. So when "guessing", both options are
+                      ;; valid and x509-dwim can get you one or the other.
+                      ;;"dhparams-4096.der"
+                      )
                     'x509-viewdh
                     'x509-mode
                     "DH Parameters: (4096 bit)"))
@@ -406,7 +415,10 @@ Repeat with `x509-dwim' which should produce the same result."
 (ert-deftest x509-viewpublickey ()
   "View public key."
   (view-test-helper '("CA/pki/key/jobbflykt-public.key"
-                      "CA/pki/key/jobbflykt-public.key.der")
+                      ;; See comment about public keys and diffie-hellman
+                      ;; parameter mixup in `x509-viewdh'
+                      ;;"CA/pki/key/jobbflykt-public.key.der"
+                      )
                     'x509-viewpublickey
                     'x509-mode
                     "Public-Key: (2048 bit)"))
@@ -431,21 +443,21 @@ Search for REGEX. If MATCH is `nil', look at beginning of whole regexp."
   "Check a few font lock faces in asn1mode buffer."
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "inf.der"))
-    (x509-viewasn1)
-    (unwind-protect
-        (progn
-          (goto-char (point-min))
-          (if (fboundp 'font-lock-ensure)
-              (font-lock-ensure)
-            (with-no-warnings
-              (font-lock-fontify-buffer)))
-          (check-face-helper "=\\(inf\\)" 'x509-constant-face 1)
-          (check-face-helper "cons" 'x509-asn1-sequence-face)
-          (check-face-helper "SEQUENCE" 'x509-asn1-sequence-face)
-          (check-face-helper "prim" 'x509-keyword-face)
-          (check-face-helper "INTEGER" 'x509-keyword-face)
-          (check-face-helper "EOC" 'x509-keyword-face))
-      (kill-buffer))))
+    (let ((result-buffer (x509-viewasn1)))
+      (unwind-protect
+          (with-current-buffer result-buffer
+            (goto-char (point-min))
+            (if (fboundp 'font-lock-ensure)
+                (font-lock-ensure)
+              (with-no-warnings
+                (font-lock-fontify-buffer)))
+            (check-face-helper "=\\(inf\\)" 'x509-constant-face 1)
+            (check-face-helper "cons" 'x509-asn1-sequence-face)
+            (check-face-helper "SEQUENCE" 'x509-asn1-sequence-face)
+            (check-face-helper "prim" 'x509-keyword-face)
+            (check-face-helper "INTEGER" 'x509-keyword-face)
+            (check-face-helper "EOC" 'x509-keyword-face))
+        (kill-buffer result-buffer)))))
 
 (ert-deftest x509--asn1-update-command-line-offset-arg ()
   "Test add, update and remove -offset N argument."
@@ -476,25 +488,25 @@ nested.der should contain:
 "
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "nested.der"))
-    (x509-viewasn1)
-    (unwind-protect
-        (progn
-          (x509--asn1-offset-down)
-          (should (equal x509--x509-asn1-mode-offset-stack '((2 . 1))))
-          ;; Move point and verify it's restored when going up later
-          (forward-char 4)
-          (x509--asn1-offset-down)
-          (should (equal x509--x509-asn1-mode-offset-stack '((4 . 5) (2 . 1))))
-          (should (looking-at "    0:d=0  hl=2 l=   1 prim: INTEGER           :-06"))
-          (x509--asn1-offset-up)
-          (should (equal x509--x509-asn1-mode-offset-stack '((2 . 1))))
-          (should (equal (point) 5))
-          (x509--asn1-offset-up)
-          (should (null x509--x509-asn1-mode-offset-stack))
-          ;; Going up from top does nothing
-          (x509--asn1-offset-up)
-          (should (looking-at "    0:d=0  hl=2 l=   5 cons: SEQUENCE")))
-      (kill-buffer))))
+    (let ((result-buffer (x509-viewasn1)))
+      (unwind-protect
+          (with-current-buffer result-buffer
+            (x509--asn1-offset-down)
+            (should (equal x509--x509-asn1-mode-offset-stack '((2 . 1))))
+            ;; Move point and verify it's restored when going up later
+            (forward-char 4)
+            (x509--asn1-offset-down)
+            (should (equal x509--x509-asn1-mode-offset-stack '((4 . 5) (2 . 1))))
+            (should (looking-at "    0:d=0  hl=2 l=   1 prim: INTEGER           :-06"))
+            (x509--asn1-offset-up)
+            (should (equal x509--x509-asn1-mode-offset-stack '((2 . 1))))
+            (should (equal (point) 5))
+            (x509--asn1-offset-up)
+            (should (null x509--x509-asn1-mode-offset-stack))
+            ;; Going up from top does nothing
+            (x509--asn1-offset-up)
+            (should (looking-at "    0:d=0  hl=2 l=   5 cons: SEQUENCE")))
+        (kill-buffer result-buffer)))))
 
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

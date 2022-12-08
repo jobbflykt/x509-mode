@@ -251,7 +251,7 @@ For example "Signature Value" is shown after
      Signature Algorithm: sha256WithRSAEncryption
 new> Signature Value:
           12:74:61...
-* TODO Use `eval-when-compile' when defining constants with `defconst'.
+* DONE Use `eval-when-compile' when defining constants with `defconst'.
 * TODO Use defmacro for creating view-functions.
 * TODO Add support for -strparse N argument in x509-asn1-mode.
 Similar to -offset but different starting offset. Need to figure out if

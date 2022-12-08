@@ -24,6 +24,6 @@ test:
 	$(BATCH) --eval "\
 	(progn \
 	  (message \"%s\" (emacs-version)) \
-          (load-file \"$(TOP)/x509-mode.el\") \)
+	  (load-file \"$(TOP)/x509-mode.el\") \
 	  (load-file \"$(TOP)/x509-mode-tests.el\") \
 	  (ert-run-tests-batch-and-exit))"

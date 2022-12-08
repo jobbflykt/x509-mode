@@ -320,98 +320,103 @@ Skip blank lines and comment lines.  Return list."
                   (split-string (buffer-string) "\n"))))
 
 (defconst x509--keywords
-  (regexp-opt
-   (x509--load-data-file "keywords.txt")))
+  (eval-when-compile
+    (regexp-opt
+     (x509--load-data-file "keywords.txt"))))
 
 (defconst x509--constants
-  (regexp-opt (x509--load-data-file "constants.txt") 'words))
+  (eval-when-compile
+    (regexp-opt (x509--load-data-file "constants.txt") 'words)))
 
 ;; Keyword: constant
 ;; E.g. "Signature Algorithm: sha1WithRSAEncryption"
 (defconst x509--keyword-w-constant
-  (concat (regexp-opt
-           (x509--load-data-file "keyword+constant.txt") t)
-          ;; Followed by ": constant"
-          ": *\\(.*\\)"))
+  (eval-when-compile
+    (concat (regexp-opt
+             (x509--load-data-file "keyword+constant.txt") t)
+            ;; Followed by ": constant"
+            ": *\\(.*\\)")))
 
 ;; Multiline Issuer and Subject, "-nameopt multiline"
 ;; E.g. "commonName                = GlobalSign Root CA"
 (defconst x509--multiline-name
-  (concat (regexp-opt
-           (x509--load-data-file "long-name.txt") t)
-          " *= \\(.*\\)"))
+  (eval-when-compile
+    (concat (regexp-opt
+             (x509--load-data-file "long-name.txt") t)
+            " *= \\(.*\\)")))
 
 (defconst x509-font-lock-keywords
-  (list
-   ;; Subject and Issuer, long names
-   `(,x509--multiline-name
-     (1 'x509-keyword-face)
-     (2 'x509-string-face))
+  (eval-when-compile
+    (list
+     ;; Subject and Issuer, long names
+     `(,x509--multiline-name
+       (1 'x509-keyword-face)
+       (2 'x509-string-face))
 
-   `(,x509--keywords . 'x509-keyword-face)
+     `(,x509--keywords . 'x509-keyword-face)
 
-   `(,x509--constants . 'x509-constant-face)
+     `(,x509--constants . 'x509-constant-face)
 
-   ;; Validity on a line alone (preceding "Not Before:")
-   '("^ +Validity ?$" . 'x509-keyword-face)
+     ;; Validity on a line alone (preceding "Not Before:")
+     '("^ +Validity ?$" . 'x509-keyword-face)
 
-   ;; Subject and Issuer, short names
-   ;; something=string until ',' or '/' or EOL
-   ;; E.g. CN=apa,OU=Räv
-   '("\\(\\<\\w+=\\)\\(.*?\\)\\(?:[,/]\\|$\\)"
-     (1 'x509-short-name-face)
-     (2 'x509-string-face))
+     ;; Subject and Issuer, short names
+     ;; something=string until ',' or '/' or EOL
+     ;; E.g. CN=apa,OU=Räv
+     '("\\(\\<\\w+=\\)\\(.*?\\)\\(?:[,/]\\|$\\)"
+       (1 'x509-short-name-face)
+       (2 'x509-string-face))
 
-   ;; something = string until ',' or EOL
-   ;; E.g. CN = ACCVRAIZ1, OU = PKIACCV, O = ACCV, C = ES
-   '("\\(\\<\\w+\\) = \\(.*?\\)\\(?:[,/]\\|$\\)"
-     (1 'x509-short-name-face)
-     (2 'x509-string-face))
+     ;; something = string until ',' or EOL
+     ;; E.g. CN = ACCVRAIZ1, OU = PKIACCV, O = ACCV, C = ES
+     '("\\(\\<\\w+\\) = \\(.*?\\)\\(?:[,/]\\|$\\)"
+       (1 'x509-short-name-face)
+       (2 'x509-string-face))
 
-   ;; URI: and CPS: . Highlight keyword. URL is handled by
-   ;; `x509--mark-browse-url-links'
-   '("\\<\\(URI:\\|CPS: \\)"
-     (1 'x509-keyword-face))
+     ;; URI: and CPS: . Highlight keyword. URL is handled by
+     ;; `x509--mark-browse-url-links'
+     '("\\<\\(URI:\\|CPS: \\)"
+       (1 'x509-keyword-face))
 
-   ;; DNS:string email:string othername:string
-   ;; until ',' or EOL
-   '("\\<\\(DNS:\\|email:\\|othername:\\)\\(.*?\\)\\(?:,\\|$\\)"
-     (1 'x509-keyword-face)
-     (2 'x509-string-face))
+     ;; DNS:string email:string othername:string
+     ;; until ',' or EOL
+     '("\\<\\(DNS:\\|email:\\|othername:\\)\\(.*?\\)\\(?:,\\|$\\)"
+       (1 'x509-keyword-face)
+       (2 'x509-string-face))
 
-   ;; Not Before: Jun 11 00:00:01 2014 GMT
-   ;; Date is "MATCH-ANCHORED", see help for variable font-lock-keywords
-   '("\\(Not Before\\): " (1 'x509-keyword-face)
-     (x509--match-date-in-future nil nil (0 'x509-warning-face)))
-   '("\\(Not After\\) : " (1 'x509-keyword-face)
-     (x509--match-date-in-past nil nil (0 'x509-warning-face))
-     (x509--match-date-near-now nil nil (0 'x509-near-warning-face)))
-   ;; For CRL's when Next Update is in the past
-   '("\\(Next Update\\): " (1 'x509-keyword-face)
-     (x509--match-date-in-past nil nil (0 'x509-warning-face)))
+     ;; Not Before: Jun 11 00:00:01 2014 GMT
+     ;; Date is "MATCH-ANCHORED", see help for variable font-lock-keywords
+     '("\\(Not Before\\): " (1 'x509-keyword-face)
+       (x509--match-date-in-future nil nil (0 'x509-warning-face)))
+     '("\\(Not After\\) : " (1 'x509-keyword-face)
+       (x509--match-date-in-past nil nil (0 'x509-warning-face))
+       (x509--match-date-near-now nil nil (0 'x509-near-warning-face)))
+     ;; For CRL's when Next Update is in the past
+     '("\\(Next Update\\): " (1 'x509-keyword-face)
+       (x509--match-date-in-past nil nil (0 'x509-warning-face)))
 
-   ;; Policy: OID
-   ;; Has precedence over Keyword: constant below
-   '("\\(Policy\\): \\([0-9]+\\.[0-9]+\\(:?\\.[0-9]+\\)*\\)"
-     (1 'x509-keyword-face)
-     (2 'x509-oid-face))
+     ;; Policy: OID
+     ;; Has precedence over Keyword: constant below
+     '("\\(Policy\\): \\([0-9]+\\.[0-9]+\\(:?\\.[0-9]+\\)*\\)"
+       (1 'x509-keyword-face)
+       (2 'x509-oid-face))
 
-   ;; E.g. Public Key Algorithm: rsaEncryption
-   `(,x509--keyword-w-constant
-     (1 'x509-keyword-face)
-     (2 'x509-constant-face))
+     ;; E.g. Public Key Algorithm: rsaEncryption
+     `(,x509--keyword-w-constant
+       (1 'x509-keyword-face)
+       (2 'x509-constant-face))
 
-   ;; CA:TRUE, CA:FALSE
-   ;; CA used to be keyword+argument but CA: can be part of hex-string
-   '("\\(CA\\):\\(TRUE\\|FALSE\\)"
-     (1 'x509-keyword-face)
-     (2 'x509-constant-face))
+     ;; CA:TRUE, CA:FALSE
+     ;; CA used to be keyword+argument but CA: can be part of hex-string
+     '("\\(CA\\):\\(TRUE\\|FALSE\\)"
+       (1 'x509-keyword-face)
+       (2 'x509-constant-face))
 
-   ;; Hex dumps At least two two-digit hex-numbers separated by `:'
-   ;; Can end in `:' for example in "Modulus"
-   ;; fa:09(:....)
-   '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$" .
-     'x509-hex-string-face))
+     ;; Hex dumps At least two two-digit hex-numbers separated by `:'
+     ;; Can end in `:' for example in "Modulus"
+     ;; fa:09(:....)
+     '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$" .
+       'x509-hex-string-face)))
   "OpenSSL x509 highlighting.")
 
 (defun x509-mode--kill-buffer()
@@ -916,55 +921,60 @@ Offset is calculated from offset on current line."
       (goto-char prevoius-pos))))
 
 (defconst x509--asn1-primitives-keywords
-  (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"
-                "OCTET_STRING" "OCTET STRING" "NULL" "OID"
-                "UTCTIME" "GENERALIZEDTIME" "ENUMERATED")))
+  (eval-when-compile
+    (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"
+                  "OCTET_STRING" "OCTET STRING" "NULL" "OID"
+                  "UTCTIME" "GENERALIZEDTIME" "ENUMERATED"))))
 
 (defconst x509--asn1-cons-keywords
-  (regexp-opt '("SEQUENCE" "SET")))
+  (eval-when-compile
+    (regexp-opt '("SEQUENCE" "SET"))))
 
 (defconst x509--asn1-strings
-  (concat (regexp-opt
-           ;; Keyword:
-           '("UTF8STRING" "PRINTABLESTRING" "IA5STRING")
-           t )   ; t = enclose in \\( \\) for easy subexpr reference
-          ;; Followed by a string
-          " *:\\(.*?\\)\\(?: *:\\|$\\)"))
+  (eval-when-compile
+    (concat (regexp-opt
+             ;; Keyword:
+             '("UTF8STRING" "PRINTABLESTRING" "IA5STRING")
+             t )   ; t = enclose in \\( \\) for easy subexpr reference
+            ;; Followed by a string
+            " *:\\(.*?\\)\\(?: *:\\|$\\)")))
 
 (defconst x509--asn1-oid
-  (concat (regexp-opt
-           ;; Keyword:
-           '("OID" "OBJECT")
-           t )   ; t = enclose in \\( \\) for easy subexpr reference
-          ;; Followed by an OID (derdigger) or object name (asn1parse)
-          " *:\\(.*?\\)\\(?: *:\\|$\\)"))
+  (eval-when-compile
+    (concat (regexp-opt
+             ;; Keyword:
+             '("OID" "OBJECT")
+             t )   ; t = enclose in \\( \\) for easy subexpr reference
+            ;; Followed by an OID (derdigger) or object name (asn1parse)
+            " *:\\(.*?\\)\\(?: *:\\|$\\)")))
 
 (defconst x509-asn1-font-lock-keywords
-  (list
-   ;; Undetermined length, i.e. when the length byte is 0x80 indicating
-   ;; zero following length bytes.
-   '("l=\\(inf\\) "
-     (1 'x509-constant-face))
-   ;; BOOLEAN, INTEGER and such
-   `(,x509--asn1-primitives-keywords . 'x509-keyword-face)
-   ;; SET, SEQUENCE
-   `(,x509--asn1-cons-keywords . 'x509-asn1-sequence-face)
-   ;; cons: as in constructed. Same font as SET and SEQUENCE
-   '("\\(cons\\):" (1 'x509-asn1-sequence-face))
-   ;; Like SET and SEQUENCE
-   '("\\(cont\\|appl\\|priv\\) \\[\\(.*?\\)\\]"
-     (1 'x509-asn1-sequence-face)
-     (2 'x509-string-face))
-   ;; Parsing error messages
-   '("error:.*\\|Error in encoding" . 'x509-warning-face)
-   ;; String type + string value
-   `(,x509--asn1-strings
-     (1 'x509-keyword-face)
-     (2 'x509-string-face))
-   ;; "OID" followed by oid
-   `(,x509--asn1-oid
-     (1 'x509-keyword-face)
-     (2 'x509-oid-face)))
+  (eval-when-compile
+    (list
+     ;; Undetermined length, i.e. when the length byte is 0x80 indicating
+     ;; zero following length bytes.
+     '("l=\\(inf\\) "
+       (1 'x509-constant-face))
+     ;; BOOLEAN, INTEGER and such
+     `(,x509--asn1-primitives-keywords . 'x509-keyword-face)
+     ;; SET, SEQUENCE
+     `(,x509--asn1-cons-keywords . 'x509-asn1-sequence-face)
+     ;; cons: as in constructed. Same font as SET and SEQUENCE
+     '("\\(cons\\):" (1 'x509-asn1-sequence-face))
+     ;; Like SET and SEQUENCE
+     '("\\(cont\\|appl\\|priv\\) \\[\\(.*?\\)\\]"
+       (1 'x509-asn1-sequence-face)
+       (2 'x509-string-face))
+     ;; Parsing error messages
+     '("error:.*\\|Error in encoding" . 'x509-warning-face)
+     ;; String type + string value
+     `(,x509--asn1-strings
+       (1 'x509-keyword-face)
+       (2 'x509-string-face))
+     ;; "OID" followed by oid
+     `(,x509--asn1-oid
+       (1 'x509-keyword-face)
+       (2 'x509-oid-face))))
   "openssl asn1parse highlighting")
 
 ;;;###autoload

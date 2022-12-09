@@ -257,3 +257,21 @@ new> Signature Value:
 Similar to -offset but different starting offset. Need to figure out if
 recursive -strparse makes sense and how it interacts with
 x509--asn1-offset-down and x509--asn1-offset-up.
+
+nested_bitstrings.bin
+SEQUENCE             30 0C
+  BITSTRING          03 0A 00
+    BITSTRING        03 07 00
+      BITSTRING      03 04 00
+        INTEGER FA   02 01 FA
+
+when strparse at offset 2, we need to record the header length and add 1 for
+the initial unused-bits byte. If we then go furter down, the new start is the current start + it's header length + 1.
+
+When x509--strparse-down:
+  record (offset delta) where strstart is hl + 1
+
+on a line:
+   x509--get-strparse-offset(strstart)
+     ;; where strstart is current strstart + delta
+     -> ( (+ strstart line-offset) (+ hl 1) )

@@ -143,6 +143,10 @@ Examine a date that is in the future within
 
 (ert-deftest x509--load-data-file()
   "Turn file into list of strings."
+  ;; If x509-mode was loaded from compiled, `x509--load-data-file' is not
+  ;; defined. It's only used to define constants when compiling. If loaded from
+  ;; source, then we can test it.
+  (skip-unless (fboundp 'x509--load-data-file))
   (let* ((text (concat "# comment 1\n"
                        "  \n"
                        "data 1\n"

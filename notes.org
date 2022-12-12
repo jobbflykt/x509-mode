@@ -275,3 +275,35 @@ on a line:
    x509--get-strparse-offset(strstart)
      ;; where strstart is current strstart + delta
      -> ( (+ strstart line-offset) (+ hl 1) )
+
+
+<2022-12-12 Mon 10:55>
+
+command         : 'strparse or 'offset
+start           : integer argument to command
+hl              : header lenght. 0 for offset, hl at start for strparse.
+point           : (point) in buffer when command is issued.
+
+
+current offset  : (let ((top (car stack)))
+                     (if top
+                         (+ (nth 1 top) (nth 2 top))
+                       0))
+
+                  i.e. start + hl
+
+"down"          : push (list 'offset
+                             (+ (current-offset) (offset-on-line) (hl-on-line))
+                             0
+                             (point))
+
+"strparse"      : push (list 'strparse
+                             (+ (current-offset) (offset-on-line))
+                             (hl-on-line)
+                             (point))
+
+"up"            : (let ((top (pop stack)))
+                     (when top
+                       (update-command (symbol-name (nth 0 top) (nth 1 top)))
+                       (execute)
+                       (goto-char (nth 3 top))))

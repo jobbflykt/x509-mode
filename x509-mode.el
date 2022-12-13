@@ -863,11 +863,19 @@ Ex ^ 63:d=1  hl=2 l=  34
   "Return header length at current ASN.1 line.
 
 Ex ^ 63:d=1  hl=2 l=  34
--> 2"
+-> 2
+
+If current line is a BITSTRING, we add 1 to the header length to
+account for the unused-bits byte."
   (save-excursion
     (move-beginning-of-line 1)
     (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
-        (string-to-number (match-string-no-properties 2))
+        (let ((hl (string-to-number (match-string-no-properties 2)))
+              (add-one (if (re-search-forward "BIT STRING"
+                                              (line-end-position) t)
+                           1
+                         0)))
+          (+ hl add-one))
       0)))
 
 (defun x509--asn1-update-command-line-start-arg(arguments command start)

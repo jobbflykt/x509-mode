@@ -302,8 +302,10 @@ current offset  : (let ((top (car stack)))
                              (hl-on-line)
                              (point))
 
-"up"            : (let ((top (pop stack)))
-                     (when top
-                       (update-command (symbol-name (nth 0 top) (nth 1 top)))
+"up"            : (let ((current (pop stack))
+                        (point (nth 4 current))
+                        (last (car stack)))
+                     (when last
+                       (update-command (nth 0 top) (nth 1 top)))
                        (execute)
-                       (goto-char (nth 3 top))))
+                       (goto-char point)))

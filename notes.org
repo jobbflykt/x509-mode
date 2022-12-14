@@ -277,22 +277,35 @@ on a line:
      -> ( (+ strstart line-offset) (+ hl 1) )
 
 
+<2022-12-12 Mon 10:55>
 
-((what offset hl))
-(('strparse 4 2) ('strparse 10 2) ('offset 8 0))
+command         : 'strparse or 'offset
+start           : integer argument to command
+hl              : header lenght. 0 for offset, hl at start for strparse.
+point           : (point) in buffer when command is issued.
 
--strparse 4
 
--strparse (+ 4 2 10) 16
+current offset  : (let ((top (car stack)))
+                     (if top
+                         (+ (nth 1 top) (nth 2 top))
+                       0))
 
--offset (+ 16 2 8) 26
+                  i.e. start + hl
 
-u (- 26 8 2
+"down"          : push (list 'offset
+                             (+ (current-offset) (offset-on-line) (hl-on-line))
+                             0
+                             (point))
 
--strparse 4  :  push ('strparse 0 2 (point))
+"strparse"      : push (list 'strparse
+                             (+ (current-offset) (offset-on-line))
+                             (hl-on-line)
+                             (point))
 
--strparse (+ 6 2) :   push ('strparse 4 2 (point))
-
-up -strparse 4
-
--offset 16        : push
+"up"            : (let ((current (pop stack))
+                        (point (nth 4 current))
+                        (last (car stack)))
+                     (when last
+                       (update-command (nth 0 top) (nth 1 top)))
+                       (execute)
+                       (goto-char point)))

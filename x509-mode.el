@@ -526,7 +526,7 @@ re-process the input buffer or to change the command altogether.")
 (put 'x509--x509-asn1-mode-shadow-arguments 'permanent-local t)
 
 (defvar-local x509--x509-asn1-mode-offset-stack nil
-  "Stack of (command start header-len pos) when drilling down in x509-asn1-mode.
+  "Stack of (command start header-len pos) for strparse/offset x509-asn1-mode.
 POS is the buffer position when going down. Used to restore pos
 when going back up.")
 ;; Make buffer local variable persist during major mode change.
@@ -897,15 +897,18 @@ Return updated argument string."
   "Add -offset N or -strparse N to command line and redisplay.
 COMMAND must be either \"-offset\" or \"-strparse\".
 When \"-offset\", N i set to current offset + offset on line + header length.
-When \"-strparse\", N i set to current offset + offset on line."
+When \"-strparse\", N i set to current offset + offset on line.
+
+Mileage may vary if mixing calls to strparse and offset. We try
+to get it right but it can get confusing.
+"
   (let* ((line-offset (x509--asn1-get-offset))
          (header-len (x509--asn1-get-header-len))
-         (add-header (if (string= command "-offset")
-                         header-len
-                       0))
+         (strparsep (string= command "-strparse"))
+         (add-header (if strparsep 0 header-len))
          (top (car x509--x509-asn1-mode-offset-stack))
          (current-offset (if top
-                             (+ (nth 1 top) (nth 2 top))
+                             (+ (nth 1 top) (if strparsep (nth 2 top) 0))
                            0))
          (new-offset (+ current-offset line-offset add-header))
          (new-args (x509--asn1-update-command-line-start-arg

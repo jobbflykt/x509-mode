@@ -253,7 +253,7 @@ new> Signature Value:
           12:74:61...
 * DONE Use `eval-when-compile' when defining constants with `defconst'.
 * TODO Use defmacro for creating view-functions.
-* TODO Add support for -strparse N argument in x509-asn1-mode.
+* DONE Add support for -strparse N argument in x509-asn1-mode.
 Similar to -offset but different starting offset. Need to figure out if
 recursive -strparse makes sense and how it interacts with
 x509--asn1-offset-down and x509--asn1-offset-up.
@@ -309,3 +309,21 @@ current offset  : (let ((top (car stack)))
                        (update-command (nth 0 top) (nth 1 top)))
                        (execute)
                        (goto-char point)))
+
+
+lo : Line offset
+hl : header len
+bs : bitsting extra byte
+co : current offset
+
+1) strparse : co=0 lo=2 = 2  push (co:2 hl:2 bs:1)
+2) strparse : co=2 chl=2 cbs=1 lo=0 = 5 push(co:5 hl:2 bs:1)
+3) strparse : co=5 chl=2 cbs=1 lo=0 = 8 push(co:8 hl:2 bs:1)
+
+
+1) offset : co=0 hl=2 bs=1 lo=2 = 5 push(co:5 hl:2 bs=1)
+2) offset : co=5 hl=2 bs=1 = 8 push(co:8 hl:2 bs=1)
+3) offset : co8 hl=2 bs=1 = 11 push(co:11 hl:2 bs=1)
+
+
+up -> top = (co:8 hl:2 bs=1)

@@ -496,20 +496,65 @@ nested.der should contain:
       (unwind-protect
           (with-current-buffer result-buffer
             (x509--asn1-offset-down)
-            (should (equal x509--x509-asn1-mode-offset-stack '((2 . 1))))
+            (should (equal x509--x509-asn1-mode-offset-stack
+                           '(("-offset" 2 2 1))))
             ;; Move point and verify it's restored when going up later
             (forward-char 4)
             (x509--asn1-offset-down)
-            (should (equal x509--x509-asn1-mode-offset-stack '((4 . 5) (2 . 1))))
-            (should (looking-at "    0:d=0  hl=2 l=   1 prim: INTEGER           :-06"))
+            (should (equal x509--x509-asn1-mode-offset-stack
+                           '(("-offset" 4 2 5) ("-offset" 2 2 1))))
+            (should (looking-at
+                     "    0:d=0  hl=2 l=   1 prim: INTEGER           :-06"))
             (x509--asn1-offset-up)
-            (should (equal x509--x509-asn1-mode-offset-stack '((2 . 1))))
+            (should (equal x509--x509-asn1-mode-offset-stack
+                           '(("-offset" 2 2 1))))
             (should (equal (point) 5))
             (x509--asn1-offset-up)
             (should (null x509--x509-asn1-mode-offset-stack))
             ;; Going up from top does nothing
             (x509--asn1-offset-up)
             (should (looking-at "    0:d=0  hl=2 l=   5 cons: SEQUENCE")))
+        (kill-buffer result-buffer)))))
+
+(ert-deftest x509--asn1-strparse()
+  "Verify that going down and up in nested ASN.1 structures works.
+nested_bitstrings.bin should contain:
+SEQUENCE             30 0C
+                     2
+  BITSTRING          03 0A 00
+                     5
+    BITSTRING        03 07 00
+                     8
+      BITSTRING      03 04 00
+                     11
+        INTEGER FA   02 01 FA
+"
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile
+                                     "nested_bitstrings.bin"))
+    (let ((result-buffer (x509-viewasn1)))
+      (unwind-protect
+          (with-current-buffer result-buffer
+            (forward-line 1)
+            (x509--asn1-strparse)
+            (should (equal x509--x509-asn1-mode-offset-stack
+                           '(("-strparse" 2 3 49))))
+            ;; Move point and verify it's restored when going up later
+            (forward-char 4)
+            (x509--asn1-strparse)
+            (should (equal x509--x509-asn1-mode-offset-stack
+                           '(("-strparse" 5 3 5) ("-strparse" 2 3 49))))
+            (should (looking-at
+                     "    0:d=0  hl=2 l=   4 prim: BIT STRING        "))
+            (x509--asn1-offset-up)
+            (should (equal x509--x509-asn1-mode-offset-stack
+                           '(("-strparse" 2 3 49))))
+            (should (equal (point) 5))
+            (x509--asn1-offset-up)
+            (should (null x509--x509-asn1-mode-offset-stack))
+            ;; Going up from top does nothing
+            (x509--asn1-offset-up)
+            (should (looking-at "    2:d=1  hl=2 l=  10 prim: BIT STRING")))
         (kill-buffer result-buffer)))))
 
 (provide 'x509-mode-tests)

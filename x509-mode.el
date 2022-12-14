@@ -878,7 +878,7 @@ account for the unused-bits byte."
           (+ hl add-one))
       0)))
 
-(defun x509--asn1-update-command-line-start-arg(arguments command start)
+(defun x509--asn1-update-command-line-start-arg (arguments command start)
   "Add, modify or remove -offset N or -strparse N argument in ARGUMENTS.
 Return updated argument string."
   (if (= start 0)

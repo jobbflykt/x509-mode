@@ -463,22 +463,22 @@ Search for REGEX. If MATCH is `nil', look at beginning of whole regexp."
             (check-face-helper "EOC" 'x509-keyword-face))
         (kill-buffer result-buffer)))))
 
-(ert-deftest x509--asn1-update-command-line-offset-arg ()
+(ert-deftest x509--asn1-update-command-line-start-arg ()
   "Test add, update and remove -offset N argument."
   ;; Zero offset. Don't add.
-  (should (string= (x509--asn1-update-command-line-offset-arg
+  (should (string= (x509--asn1-update-command-line-start-arg
                     "x" 0)
                    "x"))
   ;; Zero offset. Remove
-  (should (string= (x509--asn1-update-command-line-offset-arg
+  (should (string= (x509--asn1-update-command-line-start-arg
                     "x -offset 10 z" 0)
                    "x z"))
   ;; Add offset
-  (should (string= (x509--asn1-update-command-line-offset-arg
+  (should (string= (x509--asn1-update-command-line-start-arg
                     "x" 17)
                    "x -offset 17"))
   ;; Update offset
-  (should (string= (x509--asn1-update-command-line-offset-arg
+  (should (string= (x509--asn1-update-command-line-start-arg
                     "x -offset 989 y" 17)
                    "x -offset 17 y"))
   )

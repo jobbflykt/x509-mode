@@ -275,3 +275,24 @@ on a line:
    x509--get-strparse-offset(strstart)
      ;; where strstart is current strstart + delta
      -> ( (+ strstart line-offset) (+ hl 1) )
+
+
+
+((what offset hl))
+(('strparse 4 2) ('strparse 10 2) ('offset 8 0))
+
+-strparse 4
+
+-strparse (+ 4 2 10) 16
+
+-offset (+ 16 2 8) 26
+
+u (- 26 8 2
+
+-strparse 4  :  push ('strparse 0 2 (point))
+
+-strparse (+ 6 2) :   push ('strparse 4 2 (point))
+
+up -strparse 4
+
+-offset 16        : push

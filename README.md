@@ -38,8 +38,18 @@ Commands operate on PEM data around point by default. If point is in -----BEGIN/
 **t** toggle between x509-mode and x509-asn1-mode
 
 **q** quit and kill view buffer.
-v
-In x509-asn1-mode, additional keys can be used to parse nested ASN.1 structures. Place cursor on a line in the asn.1 buffer and press **d** to re-parse at that offset, going *down*. Press **u** to go *up*. Can be used repeatedly. Similarly, but with slightly different semantics, is **s** which calls asn1parse with the flag "-strparse N" where *N* is the offset at the current line. -strparse is used to parse BIT STRINGs and OCTET STRINGs as. The offset *N* is calculated differently for -strparse and -offset.
+
+In x509-asn1-mode, additional keys can be used to parse nested ASN.1 structures. Place cursor on a line in the asn.1 buffer and press:
+
+**d** to re-parse at that -offset, going *down*.
+
+**u** to go *up*. Can be used repeatedly.
+
+Similarly, but with slightly different semantics, is
+
+**s** which calls asn1parse with the flag "-strparse N".
+
+Where *N* is the offset at the current line. -strparse is used to parse BIT STRINGs and OCTET STRINGs as. The offset *N* is calculated differently for -strparse and -offset.
 
 ## Installation
 

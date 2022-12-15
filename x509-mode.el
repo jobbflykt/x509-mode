@@ -526,7 +526,7 @@ re-process the input buffer or to change the command altogether.")
 (put 'x509--x509-asn1-mode-shadow-arguments 'permanent-local t)
 
 (defvar-local x509--x509-asn1-mode-offset-stack nil
-  "Stack of pairs of (offset . pos) when drilling down in x509-asn1-mode.
+  "Stack of (command start header-len pos) for strparse/offset x509-asn1-mode.
 POS is the buffer position when going down. Used to restore pos
 when going back up.")
 ;; Make buffer local variable persist during major mode change.
@@ -852,74 +852,130 @@ different openssl commands until one succeeds.  Call
   "Return offset at current ASN.1 line.
 
 Ex ^ 63:d=1  hl=2 l=  34
--> 63 + 2 = 65"
+-> 63"
   (save-excursion
     (move-beginning-of-line 1)
     (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
-        (let ((pos (string-to-number (match-string-no-properties 1)))
-              (header-len (string-to-number (match-string-no-properties 2))))
-          (+ pos header-len))
+        (string-to-number (match-string-no-properties 1))
       0)))
 
-(defun x509--asn1-get-command-line-offset(args)
-  "Look for \"-offset N\" in ARGS string.
+(defun x509--asn1-get-header-len()
+  "Return header length at current ASN.1 line.
 
-Return N or 0 if no offset."
-  (if (string-match "-offset \\([0-9]+\\)" args)
-      (string-to-number (match-string 1 args))
-    0))
+Ex ^ 63:d=1  hl=2 l=  34
+-> 2
 
-(defun x509--asn1-update-command-line-offset-arg(arguments offset)
-  "Add, modify or remove -offset N argument in ARGUMENTS.
+If current line is a BITSTRING, we add 1 to the header length to
+account for the unused-bits byte."
+  (save-excursion
+    (move-beginning-of-line 1)
+    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
+        (let ((hl (string-to-number (match-string-no-properties 2)))
+              (add-one (if (re-search-forward "BIT STRING"
+                                              (line-end-position) t)
+                           1
+                         0)))
+          (+ hl add-one))
+      0)))
+
+(defun x509--asn1-update-command-line-start-arg (arguments command start)
+  "Add, modify or remove -offset N or -strparse N argument in ARGUMENTS.
 Return updated argument string."
-  (if (= offset 0)
-      ;; Remove -offset argument of zero
-      (if (string-match " *-offset [0-9]+" arguments)
-          (replace-match "" nil nil arguments)
+  (if (= start 0)
+      ;; Remove -offset|-strparse argument of zero
+      (if (string-match " *\\(?:-offset\\|-strparse\\) [0-9]+" arguments)
+          (replace-match "" nil nil arguments 0)
         arguments)
     ;; Replace existing argument
-    (if (string-match "-offset \\([0-9]+\\)" arguments)
-        (replace-match (number-to-string offset) nil nil arguments 1)
+    (if (string-match "\\(?:-offset\\|-strparse\\) [0-9]+" arguments)
+        (replace-match (concat command " " (number-to-string start))
+                       nil nil arguments 0)
       ;; Add new
-      (format "%s -offset %s" arguments offset))))
+      (format "%s %s %s" arguments command start))))
+
+(defvar x509--asn1-mode-name "asn1"
+  "Major mode name displayed in mode line.")
+
+(defun x509--asn1-update-mode-line ()
+  "Update command line mode name."
+  (let* ((top (car x509--x509-asn1-mode-offset-stack))
+         (command (if top
+                      (if (string= (nth 0 top) "-strparse")
+                          "s"
+                        "o")))
+         (offset (if top (nth 1 top)))
+         new-mode-name)
+    (if offset
+        (setq new-mode-name (format "%s[%s%s]"
+                                    x509--asn1-mode-name command offset))
+      (setq new-mode-name x509--asn1-mode-name))
+    (when (not (string= mode-name new-mode-name))
+      (setq mode-name new-mode-name)
+      (force-mode-line-update))))
+
+(defun x509--asn1-offset-strparse(command)
+  "Add -offset N or -strparse N to command line and redisplay.
+COMMAND must be either \"-offset\" or \"-strparse\".
+When \"-offset\", N i set to current offset + offset on line + header length.
+When \"-strparse\", N i set to current offset + offset on line.
+
+Mileage may vary if mixing calls to strparse and offset. We try
+to get it right but it can get confusing.
+"
+  (let* ((line-offset (x509--asn1-get-offset))
+         (header-len (x509--asn1-get-header-len))
+         (strparsep (string= command "-strparse"))
+         (add-header (if strparsep 0 header-len))
+         (top (car x509--x509-asn1-mode-offset-stack))
+         (current-offset (if top
+                             (+ (nth 1 top) (if strparsep (nth 2 top) 0))
+                           0))
+         (new-offset (+ current-offset line-offset add-header))
+         (new-args (x509--asn1-update-command-line-start-arg
+                    (or x509--x509-asn1-mode-shadow-arguments
+                        x509-asn1parse-default-arg)
+                    command
+                    new-offset)))
+    (if (> new-offset 0)
+        (push (list command new-offset header-len (point))
+              x509--x509-asn1-mode-offset-stack))
+    (x509--generic-view new-args 'x509--viewasn1-history
+                        'x509-asn1-mode
+                        x509--shadow-buffer (current-buffer))
+    (x509--asn1-update-mode-line)))
 
 (defun x509--asn1-offset-down()
   "Add -offset N argument to current asn1 command line and redisplay.
 Offset is calculated from offset on current line."
   (interactive)
-  (let* ((line-offset (x509--asn1-get-offset))
-         (current-offset (x509--asn1-get-command-line-offset
-                          (or x509--x509-asn1-mode-shadow-arguments
-                              x509-asn1parse-default-arg)))
-         (new-offset (+ line-offset current-offset))
-         (new-args (x509--asn1-update-command-line-offset-arg
-                    (or x509--x509-asn1-mode-shadow-arguments
-                        x509-asn1parse-default-arg)
-                    new-offset)))
-    (if (> new-offset 0)
-        (push (cons new-offset (point)) x509--x509-asn1-mode-offset-stack))
-    (x509--generic-view new-args 'x509--viewasn1-history
-                        'x509-asn1-mode
-                        x509--shadow-buffer (current-buffer))))
+  (x509--asn1-offset-strparse "-offset"))
+
+(defun x509--asn1-strparse()
+  "Add -strparse N argument to current asn1 command line and redisplay.
+Offset is calculated from offset on current line."
+  (interactive)
+  (x509--asn1-offset-strparse "-strparse"))
 
 (defun x509--asn1-offset-up()
   "Pop offset and redisplay."
   (interactive)
   (when (and (boundp 'x509--x509-asn1-mode-offset-stack)
              x509--x509-asn1-mode-offset-stack)
-    (let* ((popped (pop x509--x509-asn1-mode-offset-stack))
-           (prevoius-pos (cdr popped))
-           (new-offset (if x509--x509-asn1-mode-offset-stack
-                           (caar x509--x509-asn1-mode-offset-stack)
-                         0))
-           (new-args (x509--asn1-update-command-line-offset-arg
+    (let* ((current (pop x509--x509-asn1-mode-offset-stack))
+           (point (nth 3 current))
+           (up (car x509--x509-asn1-mode-offset-stack))
+           (command (if up (nth 0 up) "none"))
+           (offset (if up (nth 1 up) 0))
+           (new-args (x509--asn1-update-command-line-start-arg
                       (or x509--x509-asn1-mode-shadow-arguments
                           x509-asn1parse-default-arg)
-                      new-offset)))
+                      command
+                      offset)))
       (x509--generic-view new-args 'x509--viewasn1-history
                           'x509-asn1-mode
                           x509--shadow-buffer (current-buffer))
-      (goto-char prevoius-pos))))
+      (goto-char point)
+      (x509--asn1-update-mode-line))))
 
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords
@@ -979,7 +1035,7 @@ Offset is calculated from offset on current line."
   "openssl asn1parse highlighting")
 
 ;;;###autoload
-(define-derived-mode x509-asn1-mode fundamental-mode "asn1"
+(define-derived-mode x509-asn1-mode fundamental-mode x509--asn1-mode-name
   "Major mode for displaying openssl asn1parse output.
 
 \\{x509-asn1-mode-map}"
@@ -989,6 +1045,7 @@ Offset is calculated from offset on current line."
   (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
   (define-key x509-asn1-mode-map "e" 'x509--edit-params)
   (define-key x509-asn1-mode-map "d" 'x509--asn1-offset-down)
+  (define-key x509-asn1-mode-map "s" 'x509--asn1-strparse)
   (define-key x509-asn1-mode-map "u" 'x509--asn1-offset-up)
   (x509--mark-browse-http-links)
   (x509--mark-browse-oid))

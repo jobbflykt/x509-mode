@@ -893,6 +893,26 @@ Return updated argument string."
       ;; Add new
       (format "%s %s %s" arguments command start))))
 
+(defvar x509--asn1-mode-name "asn1"
+  "Major mode name displayed in mode line.")
+
+(defun x509--asn1-update-mode-line ()
+  "Update command line mode name."
+  (let* ((top (car x509--x509-asn1-mode-offset-stack))
+         (command (if top
+                      (if (string= (nth 0 top) "-strparse")
+                          "s"
+                        "o")))
+         (offset (if top (nth 1 top)))
+         new-mode-name)
+    (if offset
+        (setq new-mode-name (format "%s[%s%s]"
+                                    x509--asn1-mode-name command offset))
+      (setq new-mode-name x509--asn1-mode-name))
+    (when (not (string= mode-name new-mode-name))
+      (setq mode-name new-mode-name)
+      (force-mode-line-update))))
+
 (defun x509--asn1-offset-strparse(command)
   "Add -offset N or -strparse N to command line and redisplay.
 COMMAND must be either \"-offset\" or \"-strparse\".
@@ -921,7 +941,8 @@ to get it right but it can get confusing.
               x509--x509-asn1-mode-offset-stack))
     (x509--generic-view new-args 'x509--viewasn1-history
                         'x509-asn1-mode
-                        x509--shadow-buffer (current-buffer))))
+                        x509--shadow-buffer (current-buffer))
+    (x509--asn1-update-mode-line)))
 
 (defun x509--asn1-offset-down()
   "Add -offset N argument to current asn1 command line and redisplay.
@@ -953,7 +974,8 @@ Offset is calculated from offset on current line."
       (x509--generic-view new-args 'x509--viewasn1-history
                           'x509-asn1-mode
                           x509--shadow-buffer (current-buffer))
-      (goto-char point))))
+      (goto-char point)
+      (x509--asn1-update-mode-line))))
 
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords
@@ -1013,7 +1035,7 @@ Offset is calculated from offset on current line."
   "openssl asn1parse highlighting")
 
 ;;;###autoload
-(define-derived-mode x509-asn1-mode fundamental-mode "asn1"
+(define-derived-mode x509-asn1-mode fundamental-mode x509--asn1-mode-name
   "Major mode for displaying openssl asn1parse output.
 
 \\{x509-asn1-mode-map}"

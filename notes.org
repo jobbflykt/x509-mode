@@ -327,3 +327,13 @@ co : current offset
 
 
 up -> top = (co:8 hl:2 bs=1)
+* DONE Dynamic `mode-name' for x509-asn1-mode
+Reflect current -strparse N or -offset Nvalue.
+asn1[sN]
+asn1[oN]
+
+See `c-update-modeline' in lisp/progmodes/cc-cmds.el.gz
+It sets `mode-name' and calls `force-mode-line-update'.
+
+Create new function `x509--asn1-mode-line', called from
+`x509--asn1-offset-strparse' and `x509--asn1-offset-up'.

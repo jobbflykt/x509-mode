@@ -467,21 +467,20 @@ Search for REGEX. If MATCH is `nil', look at beginning of whole regexp."
   "Test add, update and remove -offset N argument."
   ;; Zero offset. Don't add.
   (should (string= (x509--asn1-update-command-line-start-arg
-                    "x" 0)
+                    "x" "-offset" 0)
                    "x"))
   ;; Zero offset. Remove
   (should (string= (x509--asn1-update-command-line-start-arg
-                    "x -offset 10 z" 0)
+                    "x -offset 10 z" "-offset" 0)
                    "x z"))
   ;; Add offset
   (should (string= (x509--asn1-update-command-line-start-arg
-                    "x" 17)
-                   "x -offset 17"))
+                    "x" "-strparse" 17)
+                   "x -strparse 17"))
   ;; Update offset
   (should (string= (x509--asn1-update-command-line-start-arg
-                    "x -offset 989 y" 17)
-                   "x -offset 17 y"))
-  )
+                    "x -offset 989 y" "-strparse" 17)
+                   "x -strparse 17 y")))
 
 (ert-deftest x509--asn1-down-up()
   "Verify that going down and up in nested ASN.1 structures works.

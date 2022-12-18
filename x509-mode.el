@@ -859,6 +859,18 @@ Ex ^ 63:d=1  hl=2 l=  34
         (string-to-number (match-string-no-properties 1))
       0)))
 
+(defun x509--asn1-get-total-length()
+  "Return header length + data length current ASN.1 line.
+
+Ex ^ 63:d=1  hl=2 l=  34
+-> 2 + 34 = 36"
+  (save-excursion
+    (move-beginning-of-line 1)
+    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\) *l= *\\([0-9]+\\)" nil t)
+        (+ (string-to-number (match-string-no-properties 2))
+           (string-to-number (match-string-no-properties 3)))
+      0)))
+
 (defun x509--asn1-get-header-len()
   "Return header length at current ASN.1 line.
 
@@ -977,6 +989,74 @@ Offset is calculated from offset on current line."
       (goto-char point)
       (x509--asn1-update-mode-line))))
 
+(defvar-local x509-asn1--last-point nil
+  "Used to detect when the point has moved.")
+
+(defvar-local x509-asn1--hexl-buffer nil
+  "Hex buffer matching asn1 input buffer")
+
+(defvar x509-asn1-overlays nil
+  "List of overlays to use.")
+
+(defun x509-asn1--remove-overlays ()
+  "Clean up overlays, assuming they are no longer needed."
+  (mapc #'delete-overlay x509-asn1-overlays)
+  (setq x509-asn1-overlays nil))
+
+(defun x509-asn1--setup-overlay (start end buf)
+  "Setup overlay with START and END in BUF."
+  (let ((o (make-overlay start end buf)))
+    (overlay-put o 'face 'region)
+    o))
+
+(defun x509-asn1--hexl-offset (offset)
+  "Return buffer point where byte at OFFSET starts."
+  (let* ((sixteens (/ offset 16))
+         (addresses (* 11 (+ 1 sixteens)))
+         (trailers  (* 17 sixteens))
+         (spaces (/ offset 2))
+         (bytes (* offset 2)))
+    (+ addresses trailers spaces bytes)))
+
+(defun x509-asn1--update-overlays()
+  (let* ((first (x509--asn1-get-offset))
+         (length (x509--asn1-get-total-length))
+         (last (+ first length))
+         (hexl-start (x509-asn1--hexl-offset first))
+         (hexl-end (x509-asn1--hexl-offset last)))
+    (with-current-buffer x509-asn1--hexl-buffer
+      (x509-asn1--remove-overlays)
+      ;; (if (eq ?  (char-after hexl-end))
+      ;;     (setq hexl-end (- hexl-end 1)))
+      (push (x509-asn1--setup-overlay hexl-start hexl-end (current-buffer))
+            x509-asn1-overlays))))
+
+(defun x509-asn1--post-command-hook()
+  (unless (eq (point) x509-asn1--last-point)
+    (setq x509-asn1--last-point (point))
+    (x509-asn1--update-overlays)))
+
+(defun x509-asn1-hexl()
+  "Display hex buffer matching current input puffer"
+  (interactive)
+  (let (data
+        hexl-buffer)
+    (with-current-buffer x509--shadow-buffer
+      (setq data (buffer-substring-no-properties (point-min) (point-max))))
+    (with-current-buffer (get-buffer-create "xhel")
+      (setq hexl-buffer (current-buffer))
+      (setq buffer-read-only nil)
+      (erase-buffer)
+      (insert data)
+      (let ((buffer-undo-list t))
+        (hexlify-buffer))
+      (read-only-mode)
+      (display-buffer (current-buffer) '(nil (inhibit-same-window . t))))
+    (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
+    ;;(run-at-time 0 nil #'x509-asn1--update-overlays)
+    (setq x509-asn1--hexl-buffer hexl-buffer)
+    ))
+
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords
     (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"
@@ -1047,6 +1127,7 @@ Offset is calculated from offset on current line."
   (define-key x509-asn1-mode-map "d" 'x509--asn1-offset-down)
   (define-key x509-asn1-mode-map "s" 'x509--asn1-strparse)
   (define-key x509-asn1-mode-map "u" 'x509--asn1-offset-up)
+  (define-key x509-asn1-mode-map "x" 'x509-asn1-hexl)
   (x509--mark-browse-http-links)
   (x509--mark-browse-oid))
 

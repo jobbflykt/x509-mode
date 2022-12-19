@@ -88,8 +88,8 @@ Examine a date that is in the future within
       (should-not (x509--match-date-near-now (point-max))))))
 
 (ert-deftest x509--date-near-now-not-active ()
-  "Ensure that dates in the near future is not matched when
-`x509-warn-near-expire-days' is nil."
+  "Ensure that dates in the near future is not matched.
+When `x509-warn-near-expire-days' is nil."
   (with-temp-buffer
     (let* ((x509-warn-near-expire-days nil)
            (days-ahead 1)
@@ -302,7 +302,7 @@ Examine a date that is in the future within
           (kill-buffer result-buffer))))))
 
 (ert-deftest x509--generic-view-asn1 ()
-  "Test creating a view buffer for x509-asn1-mode."
+  "Test creating a view buffer for `x509-asn1-mode'."
   (let ((expanded-args (concat x509-asn1parse-default-arg " -inform PEM")))
     (setq x509--test-history nil)
     (with-temp-buffer
@@ -387,7 +387,7 @@ Repeat with `x509-dwim' which should produce the same result."
                     "Certificate Revocation List (CRL):"))
 
 (ert-deftest x509-viewpkcs7 ()
-  "View p7"
+  "View p7."
   (view-test-helper '("CA/pki/pkcs7/jobbflykt.p7b"
                       "CA/pki/pkcs7/jobbflykt.p7b.der")
                     'x509-viewpkcs7
@@ -428,7 +428,7 @@ Repeat with `x509-dwim' which should produce the same result."
                     "Public-Key: (2048 bit)"))
 
 (ert-deftest x509-viewasn1 ()
-  "View ASN.1"
+  "View ASN.1."
   (view-test-helper "not-pki.der"
                     'x509-viewasn1
                     'x509-asn1-mode
@@ -436,7 +436,7 @@ Repeat with `x509-dwim' which should produce the same result."
 
 (defun check-face-helper(regex expected-face &optional match)
   "Check that face at `match-beginning' MATCH matches EXPECTED-FACE.
-Search for REGEX. If MATCH is `nil', look at beginning of whole regexp."
+Search for REGEX.  If MATCH is nil, look at beginning of whole regexp."
   (goto-char (point-min))
   (should (re-search-forward regex nil t))
   (let ((point (match-beginning (if match match 0))))
@@ -487,8 +487,7 @@ Search for REGEX. If MATCH is `nil', look at beginning of whole regexp."
 nested.der should contain:
     0:d=0  hl=2 l=   5 cons: SEQUENCE
     2:d=1  hl=2 l=   3 cons: SEQUENCE
-    4:d=2  hl=2 l=   1 prim: INTEGER           :-06
-"
+    4:d=2  hl=2 l=   1 prim: INTEGER           :-06"
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "nested.der"))
     (let ((result-buffer (x509-viewasn1)))
@@ -526,8 +525,7 @@ SEQUENCE             30 0C
                      8
       BITSTRING      03 04 00
                      11
-        INTEGER FA   02 01 FA
-"
+        INTEGER FA   02 01 FA"
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile
                                      "nested_bitstrings.bin"))

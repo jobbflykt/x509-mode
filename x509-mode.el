@@ -512,30 +512,26 @@ If point is not in a PEM region, the whole buffer is used."
           (replace-match "" nil nil)))
       new-buf)))
 
-(defvar-local x509--shadow-buffer nil
-  "Input buffer used for OpenSSL command.
+(defmacro defvar-local-persistent (var-name docstring)
+  "Define a buffer-local variable with DOCSTRING.
+Make it persist during major mode change."
+  `(progn
+     (defvar-local ,var-name nil ,docstring)
+     (put ',var-name 'permanent-local t)))
 
-Used when a view buffer wants to change command parameters and
-re-process the input buffer or to change the command altogether.")
-;; Make buffer local variable persist during major mode change.
-(put 'x509--shadow-buffer 'permanent-local t)
+(defvar-local-persistent x509--shadow-buffer
+  "Input buffer used for OpenSSL command.")
 
-(defvar-local x509--x509-mode-shadow-arguments nil
+(defvar-local-persistent x509--x509-mode-shadow-arguments
   "Current OpenSSL command arguments used in x509-mode.")
-;; Make buffer local variable persist during major mode change.
-(put 'x509--x509-mode-shadow-arguments 'permanent-local t)
 
-(defvar-local x509--x509-asn1-mode-shadow-arguments nil
+(defvar-local-persistent x509--x509-asn1-mode-shadow-arguments
   "Current OpenSSL command argument used in x509-asn1-mode.")
-;; Make buffer local variable persist during major mode change.
-(put 'x509--x509-asn1-mode-shadow-arguments 'permanent-local t)
 
-(defvar-local x509--x509-asn1-mode-offset-stack nil
+(defvar-local-persistent x509--x509-asn1-mode-offset-stack
   "Stack of (command start header-len pos) for strparse/offset x509-asn1-mode.
 POS is the buffer position when going down. Used to restore pos
 when going back up.")
-;; Make buffer local variable persist during major mode change.
-(put 'x509--x509-asn1-mode-offset-stack 'permanent-local t)
 
 (defun x509--kill-shadow-buffer ()
   "Kill buffer hook function.
@@ -933,6 +929,16 @@ Return updated argument string."
       (setq mode-name new-mode-name)
       (force-mode-line-update))))
 
+(defun x509--asn1-get-absolute-offset ()
+  "Calculate offset at line taking current -offset or -strparse."
+  (let* ((line-offset (x509--asn1-get-offset))
+         (top (car x509--x509-asn1-mode-offset-stack))
+         (strparsep (if top (string= (nth 0 top) "-strparse")))
+         (current-offset (if top
+                             (+ (nth 1 top) (if strparsep (nth 2 top) 0))
+                           0)))
+    (+ line-offset current-offset)))
+
 (defun x509--asn1-offset-strparse(command)
   "Add -offset N or -strparse N to command line and redisplay.
 COMMAND must be either \"-offset\" or \"-strparse\".
@@ -997,10 +1003,10 @@ Offset is calculated from offset on current line."
       (goto-char point)
       (x509--asn1-update-mode-line))))
 
-(defvar-local x509-asn1--last-point nil
+(defvar-local-persistent x509-asn1--last-point
   "Used to detect when the point has moved.")
 
-(defvar-local x509-asn1--hexl-buffer nil
+(defvar-local-persistent x509-asn1--hexl-buffer
   "Hex buffer matching asn1 input buffer")
 
 (defvar x509-asn1-overlays nil
@@ -1049,8 +1055,7 @@ Offset is calculated from offset on current line."
       (+ 1 addresses trailers spaces bytes))))
 
 (defun x509-asn1--update-overlays()
-  ;; FIXME calculate offset taking -offset and -strparse into account.
-  (let* ((first (x509--asn1-get-offset))
+  (let* ((first (x509--asn1-get-absolute-offset))
          (length (x509--asn1-get-total-length))
          (last (+ first length))
          (hexl-start (x509-asn1--hexl-offset-start first))
@@ -1079,19 +1084,17 @@ Offset is calculated from offset on current line."
       (setq buffer-read-only nil)
       (erase-buffer))
 
-    (with-current-buffer src-buffer
-      (goto-char (point-min))
-      (if (x509--pem-region)
-          ;; If PEM: Decode base64
-          (progn
-            (message "src-buffer is PEM")
-            (x509--process-buffer src-buffer
-                                  (split-string-and-unquote "enc -d -base64")
-                                  hexl-buffer))
-        ;; Else use src-buffer as is.
-        (message "src-buffer isn't pem")
-        (with-current-buffer hexl-buffer
-          (insert-buffer-substring-no-properties src-buffer))))
+    (if (string= "PEM" (x509--buffer-encoding src-buffer))
+        ;; If PEM: Decode base64
+        (progn
+          (message "src-buffer is PEM")
+          (x509--process-buffer src-buffer
+                                (split-string-and-unquote "enc -d -base64")
+                                hexl-buffer))
+      ;; Else use src-buffer as is.
+      (message "src-buffer isn't pem")
+      (with-current-buffer hexl-buffer
+        (insert-buffer-substring-no-properties src-buffer)))
 
     ;; Convert to hexl and display
     (with-current-buffer hexl-buffer

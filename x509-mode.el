@@ -448,7 +448,7 @@ Return string \"PEM\" or \"DER\"."
           "PEM"
         "DER"))))
 
-(defun x509--pem-region()
+(defun x509--pem-region ()
   "Determine if point is in region delimited by \"-----BEGIN\" \"-----END\".
 Return (begin . end) or nil"
   (save-excursion
@@ -458,7 +458,8 @@ Return (begin . end) or nil"
                 (re-search-backward "-----BEGIN \\(.*?\\)-----" nil t))
             (let ((begin (match-beginning 0))
                   (type (match-string-no-properties 1)))
-              (if (and (search-forward (concat "-----END " type "-----") nil t)
+              (if (and (search-forward (concat "-----END " type "-----")
+                                       nil t)
                        ;; Ensure point is between begin and end.
                        (< here (match-end 0)))
                   (cons begin (match-end 0)))))))))
@@ -538,9 +539,12 @@ when going back up.")
 
 (defun x509--kill-shadow-buffer ()
   "Kill buffer hook function.
-Run when killing a view buffer for cleaning up associated input buffer."
+Run when killing a view buffer for cleaning up associated input buffer.
+Also kill any hexl buffer."
   (when (bound-and-true-p x509--shadow-buffer)
-    (kill-buffer x509--shadow-buffer)))
+    (kill-buffer x509--shadow-buffer))
+  (when (bound-and-true-p x509-asn1--hexl-buffer)
+    (kill-buffer x509-asn1--hexl-buffer)))
 
 (defun x509--process-buffer(input-buf openssl-arguments &optional output-buf)
   "Create new buffer named \"*x-[buffer-name]*\".
@@ -1045,6 +1049,7 @@ Offset is calculated from offset on current line."
       (+ 1 addresses trailers spaces bytes))))
 
 (defun x509-asn1--update-overlays()
+  ;; FIXME calculate offset taking -offset and -strparse into account.
   (let* ((first (x509--asn1-get-offset))
          (length (x509--asn1-get-total-length))
          (last (+ first length))
@@ -1066,26 +1071,39 @@ Offset is calculated from offset on current line."
   "Display hex buffer matching current input puffer"
   (interactive)
   (let ((src-buffer x509--shadow-buffer)
+        ;; FIXME: Name of buffer
         (hexl-buffer (get-buffer-create "xhel")))
-
-    ;; FIXME: Determine if shadow-buffer if PEM encoded.
-    ;; If it is, hexl-buffer can be created by running the command
-    ;; openssl enc -d -base64 on the shadow-buffer and inserting the result in
-    ;; the hexl buffer, just like when doing other openssl view commands.
-    ;; If the shadow-buffer is not PEM, its content is inserted into the
-    ;; hexl-buffer as is.
 
     (with-current-buffer hexl-buffer
       (set-buffer-file-coding-system 'no-conversion)
       (setq buffer-read-only nil)
-      (erase-buffer)
-      (insert-buffer src-buffer)
+      (erase-buffer))
+
+    (with-current-buffer src-buffer
+      (goto-char (point-min))
+      (if (x509--pem-region)
+          ;; If PEM: Decode base64
+          (progn
+            (message "src-buffer is PEM")
+            (x509--process-buffer src-buffer
+                                  (split-string-and-unquote "enc -d -base64")
+                                  hexl-buffer))
+        ;; Else use src-buffer as is.
+        (message "src-buffer isn't pem")
+        (with-current-buffer hexl-buffer
+          (insert-buffer-substring-no-properties src-buffer))))
+
+    ;; Convert to hexl and display
+    (with-current-buffer hexl-buffer
+      (setq buffer-read-only nil)
       (let ((buffer-undo-list t))
         (hexlify-buffer))
       (read-only-mode)
       (display-buffer (current-buffer) '(nil (inhibit-same-window . t))))
+
+    ;; In the current buffer, i.e. the x509-asn1-mode buffer, add a hook
+    ;; that updates overlay in hexl buffer.
     (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
-    ;;(run-at-time 0 nil #'x509-asn1--update-overlays)
     (setq x509-asn1--hexl-buffer hexl-buffer)
     ))
 

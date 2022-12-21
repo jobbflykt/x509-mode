@@ -1013,7 +1013,7 @@ Offset is calculated from offset on current line."
     (overlay-put o 'face 'region)
     o))
 
-(defun x509-asn1--hexl-offset (offset)
+(defun x509-asn1--hexl-offset-start (offset)
   "Return buffer point where byte at OFFSET starts."
   (let* ((sixteens (/ offset 16))
          (addresses (* 10 (+ 1 sixteens)))
@@ -1023,16 +1023,37 @@ Offset is calculated from offset on current line."
     ;; Point is 1 based.
     (+ 1 addresses trailers spaces bytes)))
 
+(defun x509-asn1--hexl-offset-end (offset)
+  "Return buffer point where OFFSET ends."
+  (let* ((sixteens (/ offset 16))
+         (even-sixteen (and (> offset 0)
+                            (= 0 (mod offset 16))))
+         (count-addresses (if even-sixteen
+                              sixteens
+                            (1+ sixteens)))
+         (count-trailers (if even-sixteen
+                             (max 0 (1- sixteens))
+                           sixteens))
+         (addresses (* 10 count-addresses))
+         (trailers  (* 18 count-trailers))
+         (spaces (/ offset 2))
+         (bytes (* offset 2)))
+    (if (= 0 offset)
+        ;; Special. Don't risk end ahead of start.
+        (x509-asn1--hexl-offset-start offset)
+      ;; Point is 1 based.
+      (+ 1 addresses trailers spaces bytes))))
+
 (defun x509-asn1--update-overlays()
   (let* ((first (x509--asn1-get-offset))
          (length (x509--asn1-get-total-length))
          (last (+ first length))
-         (hexl-start (x509-asn1--hexl-offset first))
-         (hexl-end (x509-asn1--hexl-offset last)))
+         (hexl-start (x509-asn1--hexl-offset-start first))
+         (hexl-end (x509-asn1--hexl-offset-end last)))
     (with-current-buffer x509-asn1--hexl-buffer
       (x509-asn1--remove-overlays)
-      ;; (if (eq ?  (char-after hexl-end))
-      ;;     (setq hexl-end (- hexl-end 1)))
+      (if (eq ?  (char-after (1- hexl-end)))
+          (setq hexl-end (- hexl-end 1)))
       (push (x509-asn1--setup-overlay hexl-start hexl-end (current-buffer))
             x509-asn1-overlays))))
 

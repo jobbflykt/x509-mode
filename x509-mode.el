@@ -495,6 +495,7 @@ If point is not in a PEM region, the whole buffer is used."
          (new-buf (generate-new-buffer (generate-new-buffer-name
                                         (format " *in-x-%s*" (buffer-name))))))
     (with-current-buffer new-buf
+      (set-buffer-file-coding-system 'no-conversion)
       (if region
           (insert data)
         (insert-buffer src-buffer))
@@ -1046,6 +1047,7 @@ Offset is calculated from offset on current line."
   (let ((src-buffer x509--shadow-buffer)
         (hexl-buffer (get-buffer-create "xhel")))
     (with-current-buffer hexl-buffer
+      (set-buffer-file-coding-system 'no-conversion)
       (setq buffer-read-only nil)
       (erase-buffer)
       (insert-buffer src-buffer)

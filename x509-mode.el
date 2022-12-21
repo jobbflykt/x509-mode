@@ -490,11 +490,14 @@ If point is not in a PEM region, the whole buffer is used."
   (let* ((region (x509--pem-region))
          (begin (if region (car region) (point-min)))
          (end (if region (cdr region) (point-max)))
-         (data (buffer-substring-no-properties begin end))
+         (data (if region (buffer-substring-no-properties begin end)))
+         (src-buffer (current-buffer))
          (new-buf (generate-new-buffer (generate-new-buffer-name
                                         (format " *in-x-%s*" (buffer-name))))))
     (with-current-buffer new-buf
-      (insert data)
+      (if region
+          (insert data)
+        (insert-buffer src-buffer))
       ;; If in PEM region, try to strip non base-64 characters
       (when region
         (goto-char (point-min))
@@ -1039,15 +1042,12 @@ Offset is calculated from offset on current line."
 (defun x509-asn1-hexl()
   "Display hex buffer matching current input puffer"
   (interactive)
-  (let (data
-        hexl-buffer)
-    (with-current-buffer x509--shadow-buffer
-      (setq data (buffer-substring-no-properties (point-min) (point-max))))
-    (with-current-buffer (get-buffer-create "xhel")
-      (setq hexl-buffer (current-buffer))
+  (let ((src-buffer x509--shadow-buffer)
+        (hexl-buffer (get-buffer-create "xhel")))
+    (with-current-buffer hexl-buffer
       (setq buffer-read-only nil)
       (erase-buffer)
-      (insert data)
+      (insert-buffer src-buffer)
       (let ((buffer-undo-list t))
         (hexlify-buffer))
       (read-only-mode)

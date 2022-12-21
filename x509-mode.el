@@ -1015,11 +1015,12 @@ Offset is calculated from offset on current line."
 (defun x509-asn1--hexl-offset (offset)
   "Return buffer point where byte at OFFSET starts."
   (let* ((sixteens (/ offset 16))
-         (addresses (* 11 (+ 1 sixteens)))
-         (trailers  (* 17 sixteens))
+         (addresses (* 10 (+ 1 sixteens)))
+         (trailers  (* 18 sixteens))
          (spaces (/ offset 2))
          (bytes (* offset 2)))
-    (+ addresses trailers spaces bytes)))
+    ;; Point is 1 based.
+    (+ 1 addresses trailers spaces bytes)))
 
 (defun x509-asn1--update-overlays()
   (let* ((first (x509--asn1-get-offset))

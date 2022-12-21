@@ -1067,6 +1067,14 @@ Offset is calculated from offset on current line."
   (interactive)
   (let ((src-buffer x509--shadow-buffer)
         (hexl-buffer (get-buffer-create "xhel")))
+
+    ;; FIXME: Determine if shadow-buffer if PEM encoded.
+    ;; If it is, hexl-buffer can be created by running the command
+    ;; openssl enc -d -base64 on the shadow-buffer and inserting the result in
+    ;; the hexl buffer, just like when doing other openssl view commands.
+    ;; If the shadow-buffer is not PEM, its content is inserted into the
+    ;; hexl-buffer as is.
+
     (with-current-buffer hexl-buffer
       (set-buffer-file-coding-system 'no-conversion)
       (setq buffer-read-only nil)

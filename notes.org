@@ -337,3 +337,7 @@ It sets `mode-name' and calls `force-mode-line-update'.
 
 Create new function `x509--asn1-mode-line', called from
 `x509--asn1-offset-strparse' and `x509--asn1-offset-up'.
+* TODO Add package-lint to CI
+Run package-lint-batch-and-exit as part if CI.
+See for example https://github.com/purcell/ibuffer-vc/blob/master/Makefile
+* TODO Add checkdoc lint to CI

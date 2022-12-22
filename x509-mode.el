@@ -37,8 +37,8 @@
 ;;
 ;; Uses OpenSSL for viewing PEM and DER encoded PKI entities.
 ;;
-;; Prerequisites: OpenSSL. Customize the variable `x509-openssl-cmd' to name
-;; the openssl binary. Defaults are "openssl" on Linux (assuming it's on PATH)
+;; Prerequisites: OpenSSL.  Customize the variable `x509-openssl-cmd' to name
+;; the openssl binary.  Defaults are "openssl" on Linux (assuming it's on PATH)
 ;; and "C:/Program Files/Git/mingw64/bin/openssl.exe" on Windows (assuming Git
 ;; for Windows is installed in its default location).
 ;;
@@ -52,7 +52,7 @@
 ;; `x509-viewasn1' if it fails.
 ;;
 ;; If point is at the beginning of, or in, a PEM region, all view functions,
-;; including `x509-dwim', tries extra hard to use that region as input. This
+;; including `x509-dwim', tries extra hard to use that region as input.  This
 ;; often works even when there is other data ahead and after region and if the
 ;; region is indented or the lines are quoted.
 ;;
@@ -237,12 +237,12 @@ buffer position that bounds the search."
 (defcustom x509-warn-near-expire-days 30
   "Warn certificate expiration if time is near.
 
-Set to `nil' to inhibit warning."
+Set to nil to inhibit warning."
   :type 'integer
   :group 'x509)
 
 (defcustom x509-query-oid-url-format "https://oid-rep.orange-labs.fr/get/%s"
-  "Format string for constructing URL for querying OIDs
+  "A format string for constructing URL for querying OIDs.
 
 Used with `(format x509-query-oid-url-format oid)'"
   :type 'string
@@ -523,13 +523,14 @@ Make it persist during major mode change."
   "Input buffer used for OpenSSL command.")
 
 (defvar-local-persistent x509--x509-mode-shadow-arguments
-  "Current OpenSSL command arguments used in x509-mode.")
+  "Current OpenSSL command arguments used in `x509-mode'.")
 
 (defvar-local-persistent x509--x509-asn1-mode-shadow-arguments
-  "Current OpenSSL command argument used in x509-asn1-mode.")
+  "Current OpenSSL command argument used in `x509-asn1-mode'.")
 
 (defvar-local-persistent x509--x509-asn1-mode-offset-stack
-  "Stack of (command start header-len pos) for strparse/offset x509-asn1-mode.
+  "Stack of (command start header-len pos) for strparse/offset.
+In `x509-asn1-mod'.
 POS is the buffer position when going down. Used to restore pos
 when going back up.")
 
@@ -658,7 +659,7 @@ Switch to resulting buffer and return it."
     (_ nil)))
 
 (defun x509--toggle-mode(&optional edit)
-  "Toggle between asn1-mode and x509-mode.
+  "Toggle between asn1-mode and `x509-mode'.
 
 If EDIT is non-'nil', edit current command arguments and redisplay."
   (interactive)
@@ -798,7 +799,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 
 (defun x509--dwim-tester(openssl-commamd-args)
   "Test running OPENSSL-COMMAMD-ARGS in current buffer.
-Return t if return status is 0, otherwise nil. Use to determine
+Return t if return status is 0, otherwise nil.  Use to determine
 if the buffer contains data of certain type."
   (let* ((in-buf (x509--generate-input-buffer))
          (encoding (x509--buffer-encoding in-buf))
@@ -903,6 +904,8 @@ account for the unused-bits byte."
 
 (defun x509--asn1-update-command-line-start-arg (arguments command start)
   "Add, modify or remove -offset N or -strparse N argument in ARGUMENTS.
+COMMAND is either \"-offset\" or \"strparse\".
+START is the new N, can be 0.
 Return updated argument string."
   (if (= start 0)
       ;; Remove -offset|-strparse argument of zero
@@ -953,8 +956,7 @@ When \"-offset\", N i set to current offset + offset on line + header length.
 When \"-strparse\", N i set to current offset + offset on line.
 
 Mileage may vary if mixing calls to strparse and offset. We try
-to get it right but it can get confusing.
-"
+to get it right but it can get confusing."
   (let* ((line-offset (x509--asn1-get-offset))
          (header-len (x509--asn1-get-header-len))
          (strparsep (string= command "-strparse"))
@@ -1173,7 +1175,7 @@ Offset is calculated from offset on current line."
      `(,x509--asn1-oid
        (1 'x509-keyword-face)
        (2 'x509-oid-face))))
-  "openssl asn1parse highlighting")
+  "Openssl asn1parse highlighting.")
 
 ;;;###autoload
 (define-derived-mode x509-asn1-mode fundamental-mode x509--asn1-mode-name

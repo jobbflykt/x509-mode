@@ -533,6 +533,13 @@ In `x509-asn1-mod'.
 POS is the buffer position when going down. Used to restore pos
 when going back up.")
 
+(defvar-local-persistent x509-asn1--last-point
+  "Used to detect when the point has moved.
+For updating overlay in hexl buffer.")
+
+(defvar-local-persistent x509-asn1--hexl-buffer
+  "Hexl buffer that follows current line in `x509-asn1-mode'.")
+
 (defun x509--kill-shadow-buffer ()
   "Kill buffer hook function.
 Run when killing a view buffer for cleaning up associated input buffer.
@@ -1019,13 +1026,6 @@ Offset is calculated from offset on current line."
                           x509--shadow-buffer (current-buffer))
       (goto-char point)
       (x509--asn1-update-mode-line))))
-
-(defvar-local-persistent x509-asn1--last-point
-  "Used to detect when the point has moved.
-For updating overlay in hexl buffer.")
-
-(defvar-local-persistent x509-asn1--hexl-buffer
-  "Hexl buffer that follows current line in `x509-asn1-mode'.")
 
 (defvar x509-asn1--hexl-overlays nil
   "Current overlays in hexl buffer.")

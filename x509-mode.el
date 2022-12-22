@@ -615,6 +615,13 @@ Switch to resulting buffer and return it."
         (setq x509--x509-mode-shadow-arguments args)
       (setq x509--x509-asn1-mode-shadow-arguments args))
     (funcall mode)
+    ;; If we have a hexl buffer, (re-)add hook that updates overlays.
+    ;; The post-command-hook seems to be reset when changing mode.
+    ;; Is there a way to make it persist mode changes?
+    ;; Also re-set last point so that overlay is updated.
+    (when (bound-and-true-p x509-asn1--hexl-buffer)
+      (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
+      (setq x509-asn1--last-point nil))
     result-buffer))
 
 (defun x509--get-x509-toggle-mode-args ()
@@ -1068,9 +1075,10 @@ Offset is calculated from offset on current line."
             x509-asn1-overlays))))
 
 (defun x509-asn1--post-command-hook()
-  (unless (eq (point) x509-asn1--last-point)
-    (setq x509-asn1--last-point (point))
-    (x509-asn1--update-overlays)))
+  (when (boundp x509-asn1--last-point)
+    (unless (eq (point) x509-asn1--last-point)
+      (setq x509-asn1--last-point (point))
+      (x509-asn1--update-overlays))))
 
 (defun x509-asn1-hexl()
   "Display hex buffer matching current input puffer"

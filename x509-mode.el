@@ -458,8 +458,7 @@ Return (begin . end) or nil"
                 (re-search-backward "-----BEGIN \\(.*?\\)-----" nil t))
             (let ((begin (match-beginning 0))
                   (type (match-string-no-properties 1)))
-              (if (and (search-forward (concat "-----END " type "-----")
-                                       nil t)
+              (if (and (search-forward (concat "-----END " type "-----") nil t)
                        ;; Ensure point is between begin and end.
                        (< here (match-end 0)))
                   (cons begin (match-end 0)))))))))
@@ -497,9 +496,9 @@ If point is not in a PEM region, the whole buffer is used."
                                         (format " *in-x-%s*" (buffer-name))))))
     (with-current-buffer new-buf
       (set-buffer-file-coding-system 'no-conversion)
-      (if region
+      (if data
           (insert data)
-        (insert-buffer src-buffer))
+        (insert-buffer-substring-no-properties src-buffer))
       ;; If in PEM region, try to strip non base-64 characters
       (when region
         (goto-char (point-min))
@@ -513,7 +512,7 @@ If point is not in a PEM region, the whole buffer is used."
       new-buf)))
 
 (defmacro defvar-local-persistent (var-name docstring)
-  "Define a buffer-local variable with DOCSTRING.
+  "Define a buffer-local variable VAR-NAME with DOCSTRING.
 Make it persist during major mode change."
   `(progn
      (defvar-local ,var-name nil ,docstring)
@@ -543,12 +542,18 @@ Also kill any hexl buffer."
   (when (bound-and-true-p x509-asn1--hexl-buffer)
     (kill-buffer x509-asn1--hexl-buffer)))
 
-(defun x509--process-buffer(input-buf openssl-arguments &optional output-buf)
+(defun x509--process-buffer(input-buf openssl-arguments
+                                      &optional output-buf no-hooks)
   "Create new buffer named \"*x-[buffer-name]*\".
 
 Pass content INPUT-BUF to openssl with
 OPENSSL-ARGUMENTS. E.g. x509 -text.  If OUTPUT-BUF is non-'nil',
 out to that buffer instead of generating a new one.
+
+When NO-HOOKS is not nil, `kill-buffer-hook' and
+`x509--shadow-buffer' are not set. Can be used when decoding
+base64 and result buffer does not need special hooks and
+variables
 
 Return output buffer."
   (interactive)
@@ -562,9 +567,10 @@ Return output buffer."
     (with-current-buffer buf
       (setq buffer-read-only nil)
       (erase-buffer)
-      ;; Remember input-buffer and arguments
-      (setq x509--shadow-buffer input-buf)
-      (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t)
+      (unless no-hooks
+        ;; Remember input-buffer and arguments.
+        (setq x509--shadow-buffer input-buf)
+        (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t))
       (with-current-buffer input-buf
         (apply 'call-process-region args))
       (goto-char (point-min))
@@ -872,13 +878,14 @@ Ex ^ 63:d=1  hl=2 l=  34
       0)))
 
 (defun x509--asn1-get-total-length()
-  "Return header length + data length current ASN.1 line.
+  "Return header length + data length on current ASN.1 line.
 
 Ex ^ 63:d=1  hl=2 l=  34
 -> 2 + 34 = 36"
   (save-excursion
     (move-beginning-of-line 1)
-    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\) *l= *\\([0-9]+\\)" nil t)
+    (if (re-search-forward
+         "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\) *l= *\\([0-9]+\\)" nil t)
         (+ (string-to-number (match-string-no-properties 2))
            (string-to-number (match-string-no-properties 3)))
       0)))
@@ -940,12 +947,13 @@ Return updated argument string."
       (force-mode-line-update))))
 
 (defun x509--asn1-get-absolute-offset ()
-  "Calculate offset at line taking current -offset or -strparse."
+  "Calculate offset at line adding current -offset or -strparse."
   (let* ((line-offset (x509--asn1-get-offset))
          (top (car x509--x509-asn1-mode-offset-stack))
          (strparsep (if top (string= (nth 0 top) "-strparse")))
          (current-offset (if top
-                             (+ (nth 1 top) (if strparsep (nth 2 top) 0))
+                             (+ (nth 1 top)
+                                (if strparsep (nth 2 top) 0))
                            0)))
     (+ line-offset current-offset)))
 
@@ -1013,57 +1021,59 @@ Offset is calculated from offset on current line."
       (x509--asn1-update-mode-line))))
 
 (defvar-local-persistent x509-asn1--last-point
-  "Used to detect when the point has moved.")
+  "Used to detect when the point has moved.
+For updating overlay in hexl buffer.")
 
 (defvar-local-persistent x509-asn1--hexl-buffer
-  "Hex buffer matching asn1 input buffer")
+  "Hexl buffer that follows current line in `x509-asn1-mode'.")
 
-(defvar x509-asn1-overlays nil
-  "List of overlays to use.")
+(defvar x509-asn1--hexl-overlays nil
+  "Current overlays in hexl buffer.")
 
 (defun x509-asn1--remove-overlays ()
-  "Clean up overlays, assuming they are no longer needed."
-  (mapc #'delete-overlay x509-asn1-overlays)
-  (setq x509-asn1-overlays nil))
+  "Clean up hexl buffer overlays."
+  (mapc #'delete-overlay x509-asn1--hexl-overlays)
+  (setq x509-asn1--hexl-overlays nil))
 
 (defun x509-asn1--setup-overlay (start end buf)
   "Setup overlay with START and END in BUF."
-  (let ((o (make-overlay start end buf)))
-    (overlay-put o 'face 'region)
-    o))
+  (let ((overlay (make-overlay start end buf)))
+    (overlay-put overlay 'face 'region)
+    overlay))
 
 (defun x509-asn1--hexl-offset-start (offset)
-  "Return buffer point where byte at OFFSET starts."
-  (let* ((sixteens (/ offset 16))
-         (addresses (* 10 (+ 1 sixteens)))
-         (trailers  (* 18 sixteens))
+  "Return buffer point where byte at OFFSET start in a `hexl-mode' buffer."
+  (let* ((lines (/ offset 16))
+         (addresses (* 10 (+ 1 lines)))
+         (trailers  (* 18 lines))
          (spaces (/ offset 2))
          (bytes (* offset 2)))
     ;; Point is 1 based.
     (+ 1 addresses trailers spaces bytes)))
 
 (defun x509-asn1--hexl-offset-end (offset)
-  "Return buffer point where OFFSET ends."
-  (let* ((sixteens (/ offset 16))
+  "Return buffer point where OFFSET ends in a `hexl-mode' buffer."
+  (let* ((lines (/ offset 16))
          (even-sixteen (and (> offset 0)
                             (= 0 (mod offset 16))))
          (count-addresses (if even-sixteen
-                              sixteens
-                            (1+ sixteens)))
+                              lines
+                            (1+ lines)))
          (count-trailers (if even-sixteen
-                             (max 0 (1- sixteens))
-                           sixteens))
+                             (max 0 (1- lines))
+                           lines))
          (addresses (* 10 count-addresses))
          (trailers  (* 18 count-trailers))
          (spaces (/ offset 2))
          (bytes (* offset 2)))
     (if (= 0 offset)
-        ;; Special. Don't risk end ahead of start.
+        ;; Special. Ensure end >= start.
         (x509-asn1--hexl-offset-start offset)
       ;; Point is 1 based.
       (+ 1 addresses trailers spaces bytes))))
 
 (defun x509-asn1--update-overlays()
+  "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer."
   (let* ((first (x509--asn1-get-absolute-offset))
          (length (x509--asn1-get-total-length))
          (last (+ first length))
@@ -1074,51 +1084,60 @@ Offset is calculated from offset on current line."
       (if (eq ?  (char-after (1- hexl-end)))
           (setq hexl-end (- hexl-end 1)))
       (push (x509-asn1--setup-overlay hexl-start hexl-end (current-buffer))
-            x509-asn1-overlays))))
+            x509-asn1--hexl-overlays))))
 
 (defun x509-asn1--post-command-hook()
-  (when (boundp x509-asn1--last-point)
+  "Update hexl buffer overlay if point has moved."
+  (when (boundp 'x509-asn1--last-point)
     (unless (eq (point) x509-asn1--last-point)
       (setq x509-asn1--last-point (point))
       (x509-asn1--update-overlays))))
 
-(defun x509-asn1-hexl()
-  "Display hex buffer matching current input puffer"
+(defun x509-asn1-toggle-hexl()
+  "Display hex buffer matching current input puffer."
   (interactive)
-  (let ((src-buffer x509--shadow-buffer)
-        ;; FIXME: Name of buffer
-        (hexl-buffer (get-buffer-create "xhel")))
+  (if (bound-and-true-p x509-asn1--hexl-buffer)
+      (progn
+        (remove-hook 'post-command-hook #'x509-asn1--post-command-hook t)
+        (kill-buffer x509-asn1--hexl-buffer)
+        (setq x509-asn1--hexl-buffer nil)
+        (setq x509-asn1--last-point nil))
+    (let* ((src-buffer x509--shadow-buffer)
+           (hexl-buffer-name (replace-regexp-in-string
+                              "^ \\*in-x-" " *hexl-"
+                              (buffer-name src-buffer)))
+           (hexl-buffer (get-buffer-create hexl-buffer-name)))
 
-    (with-current-buffer hexl-buffer
-      (set-buffer-file-coding-system 'no-conversion)
-      (setq buffer-read-only nil)
-      (erase-buffer))
-
-    (if (string= "PEM" (x509--buffer-encoding src-buffer))
-        ;; If PEM: Decode base64
-        (progn
-          (message "src-buffer is PEM")
-          (x509--process-buffer src-buffer
-                                (split-string-and-unquote "enc -d -base64")
-                                hexl-buffer))
-      ;; Else use src-buffer as is.
-      (message "src-buffer isn't pem")
       (with-current-buffer hexl-buffer
-        (insert-buffer-substring-no-properties src-buffer)))
+        (set-buffer-file-coding-system 'no-conversion)
+        (setq buffer-read-only nil)
+        (erase-buffer))
 
-    ;; Convert to hexl and display
-    (with-current-buffer hexl-buffer
-      (setq buffer-read-only nil)
-      (let ((buffer-undo-list t))
-        (hexlify-buffer))
-      (read-only-mode)
-      (display-buffer (current-buffer) '(nil (inhibit-same-window . t))))
+      (if (string= "PEM" (x509--buffer-encoding src-buffer))
+          ;; If PEM: Decode base64
+          (progn
+            (message "src-buffer is PEM")
+            (x509--process-buffer src-buffer
+                                  (split-string-and-unquote "enc -d -base64")
+                                  hexl-buffer 'no-hooks))
+        ;; Else use src-buffer as is.
+        (message "src-buffer isn't pem")
+        (with-current-buffer hexl-buffer
+          (insert-buffer-substring-no-properties src-buffer)))
 
-    ;; In the current buffer, i.e. the x509-asn1-mode buffer, add a hook
-    ;; that updates overlay in hexl buffer.
-    (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
-    (setq x509-asn1--hexl-buffer hexl-buffer)
-    ))
+      ;; Convert to hexl and display
+      (with-current-buffer hexl-buffer
+        (setq buffer-read-only nil)
+        (let ((buffer-undo-list t))
+          (hexlify-buffer))
+        (read-only-mode)
+        (display-buffer (current-buffer) '(nil (inhibit-same-window . t))))
+
+      ;; In the current buffer, i.e. the x509-asn1-mode buffer, add a hook
+      ;; that updates overlay in hexl buffer.
+      (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
+      (setq x509-asn1--hexl-buffer hexl-buffer)
+      )))
 
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords
@@ -1190,7 +1209,7 @@ Offset is calculated from offset on current line."
   (define-key x509-asn1-mode-map "d" 'x509--asn1-offset-down)
   (define-key x509-asn1-mode-map "s" 'x509--asn1-strparse)
   (define-key x509-asn1-mode-map "u" 'x509--asn1-offset-up)
-  (define-key x509-asn1-mode-map "x" 'x509-asn1-hexl)
+  (define-key x509-asn1-mode-map "x" 'x509-asn1-toggle-hexl)
   (x509--mark-browse-http-links)
   (x509--mark-browse-oid))
 

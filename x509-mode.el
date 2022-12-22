@@ -511,33 +511,33 @@ If point is not in a PEM region, the whole buffer is used."
           (replace-match "" nil nil)))
       new-buf)))
 
-(defmacro defvar-local-persistent (var-name docstring)
+(defmacro x509-defvar-local-persistent (var-name docstring)
   "Define a buffer-local variable VAR-NAME with DOCSTRING.
 Make it persist during major mode change."
   `(progn
      (defvar-local ,var-name nil ,docstring)
      (put ',var-name 'permanent-local t)))
 
-(defvar-local-persistent x509--shadow-buffer
+(x509-defvar-local-persistent x509--shadow-buffer
   "Input buffer used for OpenSSL command.")
 
-(defvar-local-persistent x509--x509-mode-shadow-arguments
+(x509-defvar-local-persistent x509--x509-mode-shadow-arguments
   "Current OpenSSL command arguments used in `x509-mode'.")
 
-(defvar-local-persistent x509--x509-asn1-mode-shadow-arguments
+(x509-defvar-local-persistent x509--x509-asn1-mode-shadow-arguments
   "Current OpenSSL command argument used in `x509-asn1-mode'.")
 
-(defvar-local-persistent x509--x509-asn1-mode-offset-stack
+(x509-defvar-local-persistent x509--x509-asn1-mode-offset-stack
   "Stack of (command start header-len pos) for strparse/offset.
 In `x509-asn1-mod'.
 POS is the buffer position when going down. Used to restore pos
 when going back up.")
 
-(defvar-local-persistent x509-asn1--last-point
+(x509-defvar-local-persistent x509-asn1--last-point
   "Used to detect when the point has moved.
 For updating overlay in hexl buffer.")
 
-(defvar-local-persistent x509-asn1--hexl-buffer
+(x509-defvar-local-persistent x509-asn1--hexl-buffer
   "Hexl buffer that follows current line in `x509-asn1-mode'.")
 
 (defun x509--kill-shadow-buffer ()
@@ -1136,8 +1136,7 @@ Offset is calculated from offset on current line."
       ;; In the current buffer, i.e. the x509-asn1-mode buffer, add a hook
       ;; that updates overlay in hexl buffer.
       (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
-      (setq x509-asn1--hexl-buffer hexl-buffer)
-      )))
+      (setq x509-asn1--hexl-buffer hexl-buffer))))
 
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords

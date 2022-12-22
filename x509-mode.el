@@ -1082,10 +1082,11 @@ Offset is calculated from offset on current line."
 (defun x509--scroll-window (buffer point)
   "Recenter window showing BUFFER around point POINT unless POINT is visible."
   (if (not (x509--point-visible buffer point))
-      (if-let ((window (get-buffer-window buffer)))
+      (let ((window (get-buffer-window buffer)))
+        (when window
           (with-selected-window window
             (goto-char point)
-            (recenter)))))
+            (recenter))))))
 
 (defun x509-asn1--update-overlays()
   "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer."

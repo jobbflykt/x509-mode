@@ -1072,6 +1072,21 @@ Offset is calculated from offset on current line."
       ;; Point is 1 based.
       (+ 1 addresses trailers spaces bytes))))
 
+(defun x509--point-visible (buffer point)
+  "Check if POINT is visible in a window in BUFFER."
+  (cl-find-if (lambda (w)
+                      (and (>= point (window-start w))
+                           (<= point (window-end w))))
+              (get-buffer-window-list buffer)))
+
+(defun x509--scroll-window (buffer point)
+  "Recenter window showing BUFFER around point POINT unless POINT is visible."
+  (if (not (x509--point-visible buffer point))
+      (if-let ((window (get-buffer-window buffer)))
+          (with-selected-window window
+            (goto-char point)
+            (recenter)))))
+
 (defun x509-asn1--update-overlays()
   "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer."
   (let* ((first (x509--asn1-get-absolute-offset))
@@ -1084,7 +1099,9 @@ Offset is calculated from offset on current line."
       (if (eq ?  (char-after (1- hexl-end)))
           (setq hexl-end (- hexl-end 1)))
       (push (x509-asn1--setup-overlay hexl-start hexl-end (current-buffer))
-            x509-asn1--hexl-overlays))))
+            x509-asn1--hexl-overlays)
+      ;; Scroll buffer if region isn't visible
+      (x509--scroll-window x509-asn1--hexl-buffer hexl-start))))
 
 (defun x509-asn1--post-command-hook()
   "Update hexl buffer overlay if point has moved."
@@ -1104,7 +1121,7 @@ Offset is calculated from offset on current line."
         (setq x509-asn1--last-point nil))
     (let* ((src-buffer x509--shadow-buffer)
            (hexl-buffer-name (replace-regexp-in-string
-                              "^ \\*in-x-" " *hexl-"
+                              "^ \\*in-x-" "*hexl-"
                               (buffer-name src-buffer)))
            (hexl-buffer (get-buffer-create hexl-buffer-name)))
 

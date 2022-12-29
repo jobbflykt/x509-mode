@@ -540,6 +540,9 @@ For updating overlay in hexl buffer.")
 (x509-defvar-local-persistent x509-asn1--hexl-buffer
   "Hexl buffer that follows current line in `x509-asn1-mode'.")
 
+(x509-defvar-local-persistent x509-asn1--hexl-overlays
+  "Current overlays in hexl buffer.")
+
 (defun x509--kill-shadow-buffer ()
   "Kill buffer hook function.
 Run when killing a view buffer for cleaning up associated input buffer.
@@ -1026,9 +1029,6 @@ Offset is calculated from offset on current line."
                           x509--shadow-buffer (current-buffer))
       (goto-char point)
       (x509--asn1-update-mode-line))))
-
-(defvar x509-asn1--hexl-overlays nil
-  "Current overlays in hexl buffer.")
 
 (defun x509-asn1--remove-overlays ()
   "Clean up hexl buffer overlays."

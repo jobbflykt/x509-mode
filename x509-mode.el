@@ -1102,7 +1102,8 @@ Offset is calculated from offset on current line."
       (push (x509-asn1--setup-overlay hexl-start hexl-end (current-buffer))
             x509-asn1--hexl-overlays)
       ;; Scroll buffer if region isn't visible
-      (x509--scroll-window x509-asn1--hexl-buffer hexl-start))))
+      (x509--scroll-window x509-asn1--hexl-buffer hexl-start))
+    (display-buffer x509-asn1--hexl-buffer '(display-buffer-reuse-window))))
 
 (defun x509-asn1--post-command-hook()
   "Update hexl buffer overlay if point has moved."
@@ -1148,9 +1149,8 @@ Offset is calculated from offset on current line."
         (setq buffer-read-only nil)
         (let ((buffer-undo-list t))
           (hexlify-buffer))
-        (read-only-mode)
-        (display-buffer (current-buffer) '(nil (inhibit-same-window . t))))
-
+        (read-only-mode))
+      (display-buffer hexl-buffer '(display-buffer-reuse-window))
       ;; In the current buffer, i.e. the x509-asn1-mode buffer, add a hook
       ;; that updates overlay in hexl buffer.
       (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)

@@ -1072,6 +1072,14 @@ Offset is calculated from offset on current line."
       ;; Point is 1 based.
       (+ 1 addresses trailers spaces bytes))))
 
+(defun x509--display-buffer (buffer)
+  "Display BUFFER without switching to it.
+Used to display hexl buffer in `x509-asn1-mode'."
+  ;; Unsure what best practice is. This opens a new frame if there is no other
+  ;; windows which in my opinion less than ideal. But forcing to create a
+  ;; window by splitting is probably too intrusive.
+  (display-buffer buffer '(nil (inhibit-same-window . t))))
+
 (defun x509--point-visible (buffer point)
   "Check if POINT is visible in a window in BUFFER."
   (cl-find-if (lambda (w)
@@ -1102,8 +1110,7 @@ Offset is calculated from offset on current line."
       (push (x509-asn1--setup-overlay hexl-start hexl-end (current-buffer))
             x509-asn1--hexl-overlays)
       ;; Scroll buffer if region isn't visible
-      (x509--scroll-window x509-asn1--hexl-buffer hexl-start))
-    (display-buffer x509-asn1--hexl-buffer '(display-buffer-reuse-window))))
+      (x509--scroll-window x509-asn1--hexl-buffer hexl-start))))
 
 (defun x509-asn1--post-command-hook()
   "Update hexl buffer overlay if point has moved."
@@ -1150,7 +1157,7 @@ Offset is calculated from offset on current line."
         (let ((buffer-undo-list t))
           (hexlify-buffer))
         (read-only-mode))
-      (display-buffer hexl-buffer '(display-buffer-reuse-window))
+      (x509--display-buffer hexl-buffer)
       ;; In the current buffer, i.e. the x509-asn1-mode buffer, add a hook
       ;; that updates overlay in hexl buffer.
       (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)

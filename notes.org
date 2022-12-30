@@ -352,5 +352,6 @@ Ramains:
   local? To what buffer? Can we make it local to the hexl buffer and let update
   overlay get it from that buffer. Think there is function for getting buffer
   local values from another buffer.
+- [X] Prevent overlay to extend window width if possible.
 - [ ] Update README.md
 - [ ] Mention rmsbolt inspiration.

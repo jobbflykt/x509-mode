@@ -189,6 +189,11 @@ Example:
   '((t (:inherit link)))
   "Face for clickable URL links.")
 
+(defface x509-asn1-hexl-region
+  '((t (:inherit region :extend nil)))
+  "Face for highlighting region in hexl buffer following `x509-asn1-mode'."
+  :group 'x509-faces)
+
 (defun x509--match-date (cmp bound)
   "Return non-nil if it can find a date that CMP to current time.
 Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
@@ -1038,7 +1043,7 @@ Offset is calculated from offset on current line."
 (defun x509-asn1--setup-overlay (start end buf)
   "Setup overlay with START and END in BUF."
   (let ((overlay (make-overlay start end buf)))
-    (overlay-put overlay 'face 'region)
+    (overlay-put overlay 'face 'x509-asn1-hexl-region)
     overlay))
 
 (defun x509-asn1--hexl-offset-start (offset)

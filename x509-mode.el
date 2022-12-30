@@ -280,7 +280,7 @@ buffer position that bounds the search."
                                  (* x509-warn-near-expire-days 24 60 60)))))
    bound))
 
-(defun x509--mark-browse-url-links(regex face compose-url-fn)
+(defun x509--mark-browse-url-links (regex face compose-url-fn)
   "Make URLs clickable by making them buttons.
 
 REGEX is used to find and delimit button.
@@ -305,13 +305,13 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
            'action (lambda (button)
                      (browse-url (button-get button 'url)))))))))
 
-(defun x509--mark-browse-http-links()
+(defun x509--mark-browse-http-links ()
   "Make http URLs clickable by making them buttons."
   (x509--mark-browse-url-links "\\(file\\|https?\\)://[-_.:/A-Za-z0-9]+"
                                'x509-browse-url-face
                                (lambda (url) url)))
 
-(defun x509--mark-browse-oid()
+(defun x509--mark-browse-oid ()
   "Make OIDs clickable by making them buttons."
   (x509--mark-browse-url-links "\\(?:[0-9]+\\.\\)\\{3,\\}[0-9]+"
                                'x509-oid-link-face
@@ -431,7 +431,7 @@ Skip blank lines and comment lines.  Return list."
        'x509-hex-string-face)))
   "OpenSSL x509 highlighting.")
 
-(defun x509-mode--kill-buffer()
+(defun x509-mode--kill-buffer ()
   "Kill current buffer."
   (interactive)
   (set-buffer-modified-p nil)
@@ -449,7 +449,7 @@ Skip blank lines and comment lines.  Return list."
   (x509--mark-browse-http-links)
   (x509--mark-browse-oid))
 
-(defun x509--buffer-encoding(buffer)
+(defun x509--buffer-encoding (buffer)
   "Heuristic for identifying PEM or DER encoding in BUFFER.
 Return string \"PEM\" or \"DER\"."
   (with-current-buffer buffer
@@ -558,13 +558,15 @@ For updating overlay in hexl buffer.")
   "Kill buffer hook function.
 Run when killing a view buffer for cleaning up associated input buffer.
 Also kill any hexl buffer."
-  (when (bound-and-true-p x509--shadow-buffer)
+  (when (and (boundp 'x509--shadow-buffer)
+             (buffer-live-p x509--shadow-buffer))
     (kill-buffer x509--shadow-buffer))
-  (when (bound-and-true-p x509-asn1--hexl-buffer)
+  (when (and (boundp 'x509-asn1--hexl-buffer)
+             (buffer-live-p x509-asn1--hexl-buffer))
     (kill-buffer x509-asn1--hexl-buffer)))
 
-(defun x509--process-buffer(input-buf openssl-arguments
-                                      &optional output-buf no-hooks)
+(defun x509--process-buffer (input-buf openssl-arguments
+                                       &optional output-buf no-hooks)
   "Create new buffer named \"*x-[buffer-name]*\".
 
 Pass content INPUT-BUF to openssl with
@@ -611,7 +613,7 @@ Return argument string."
         (add-to-history history default)
         default))))
 
-(defun x509--add-inform-spec(arguments encoding)
+(defun x509--add-inform-spec (arguments encoding)
   "Add or modify \"-inform ENCODING\" in ARGUMENTS."
   (if (string-match "-inform \\(PEM\\|DER\\)" arguments)
       (replace-match encoding nil nil arguments 1)
@@ -685,7 +687,7 @@ Switch to resulting buffer and return it."
     ("asn1parse" 'x509--viewasn1-history)
     (_ nil)))
 
-(defun x509--toggle-mode(&optional edit)
+(defun x509--toggle-mode (&optional edit)
   "Toggle between asn1-mode and `x509-mode'.
 
 If EDIT is non-'nil', edit current command arguments and redisplay."
@@ -705,7 +707,7 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
       (x509--generic-view default-args history 'x509-mode
                           x509--shadow-buffer (current-buffer)))))
 
-(defun x509--edit-params()
+(defun x509--edit-params ()
   "Edit command parameters in current buffer."
   (interactive)
   (x509--toggle-mode t))
@@ -824,7 +826,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (setq buffer-read-only t)
     (x509-mode)))
 
-(defun x509--dwim-tester(openssl-commamd-args)
+(defun x509--dwim-tester (openssl-commamd-args)
   "Test running OPENSSL-COMMAMD-ARGS in current buffer.
 Return t if return status is 0, otherwise nil.  Use to determine
 if the buffer contains data of certain type."
@@ -887,7 +889,7 @@ different openssl commands until one succeeds.  Call
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode
 
-(defun x509--asn1-get-offset()
+(defun x509--asn1-get-offset ()
   "Return offset at current ASN.1 line.
 
 Ex ^ 63:d=1  hl=2 l=  34
@@ -898,7 +900,7 @@ Ex ^ 63:d=1  hl=2 l=  34
         (string-to-number (match-string-no-properties 1))
       0)))
 
-(defun x509--asn1-get-total-length()
+(defun x509--asn1-get-total-length ()
   "Return header length + data length on current ASN.1 line.
 
 Ex ^ 63:d=1  hl=2 l=  34
@@ -911,7 +913,7 @@ Ex ^ 63:d=1  hl=2 l=  34
            (string-to-number (match-string-no-properties 3)))
       0)))
 
-(defun x509--asn1-get-header-len()
+(defun x509--asn1-get-header-len ()
   "Return header length at current ASN.1 line.
 
 Ex ^ 63:d=1  hl=2 l=  34
@@ -978,7 +980,7 @@ Return updated argument string."
                            0)))
     (+ line-offset current-offset)))
 
-(defun x509--asn1-offset-strparse(command)
+(defun x509--asn1-offset-strparse (command)
   "Add -offset N or -strparse N to command line and redisplay.
 COMMAND must be either \"-offset\" or \"-strparse\".
 When \"-offset\", N i set to current offset + offset on line + header length.
@@ -1008,19 +1010,19 @@ to get it right but it can get confusing."
                         x509--shadow-buffer (current-buffer))
     (x509--asn1-update-mode-line)))
 
-(defun x509--asn1-offset-down()
+(defun x509--asn1-offset-down ()
   "Add -offset N argument to current asn1 command line and redisplay.
 Offset is calculated from offset on current line."
   (interactive)
   (x509--asn1-offset-strparse "-offset"))
 
-(defun x509--asn1-strparse()
+(defun x509--asn1-strparse ()
   "Add -strparse N argument to current asn1 command line and redisplay.
 Offset is calculated from offset on current line."
   (interactive)
   (x509--asn1-offset-strparse "-strparse"))
 
-(defun x509--asn1-offset-up()
+(defun x509--asn1-offset-up ()
   "Pop offset and redisplay."
   (interactive)
   (when (and (boundp 'x509--x509-asn1-mode-offset-stack)
@@ -1105,7 +1107,7 @@ Used to display hexl buffer in `x509-asn1-mode'."
             (goto-char point)
             (recenter))))))
 
-(defun x509-asn1--update-overlays()
+(defun x509-asn1--update-overlays ()
   "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer."
   (let* ((first (x509--asn1-get-absolute-offset))
          (length (x509--asn1-get-total-length))
@@ -1121,18 +1123,19 @@ Used to display hexl buffer in `x509-asn1-mode'."
       ;; Scroll buffer if region isn't visible
       (x509--scroll-window x509-asn1--hexl-buffer hexl-start))))
 
-(defun x509-asn1--post-command-hook()
+(defun x509-asn1--post-command-hook ()
   "Update hexl buffer overlay if point has moved."
   (if (and (boundp 'x509-asn1--hexl-buffer)
            (buffer-live-p x509-asn1--hexl-buffer)
            (boundp 'x509-asn1--last-point))
       (unless (eq (point) x509-asn1--last-point)
         (setq x509-asn1--last-point (point))
-        (x509-asn1--update-overlays))
+        (x509-asn1--update-overlays)
+        (x509--display-buffer x509-asn1--hexl-buffer))
     ;; No hexl buffer killed. Remove hook.
     (remove-hook 'post-command-hook #'x509-asn1--post-command-hook t)))
 
-(defun x509-asn1-toggle-hexl()
+(defun x509-asn1-toggle-hexl ()
   "Display hex buffer matching current input puffer."
   (interactive)
   (if (bound-and-true-p x509-asn1--hexl-buffer)

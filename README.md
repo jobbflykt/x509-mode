@@ -55,7 +55,7 @@ Also in x509-asn1-mode,
 
 **x** toggles viewing the underlying binary data in a hexl buffer.
 
-Movement in the x509-asn1-mode buffer is refelected in the hexl-buffer.
+Movement in the x509-asn1-mode buffer is reflected in the hexl-buffer (inspired by rmsbolt-mode).
 
 ## Installation
 

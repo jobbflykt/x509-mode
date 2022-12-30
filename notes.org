@@ -353,5 +353,5 @@ Ramains:
   overlay get it from that buffer. Think there is function for getting buffer
   local values from another buffer.
 - [X] Prevent overlay to extend window width if possible.
-- [ ] Update README.md
-- [ ] Mention rmsbolt inspiration.
+- [X] Update README.md
+- [X] Mention rmsbolt inspiration.

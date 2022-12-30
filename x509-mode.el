@@ -1075,9 +1075,7 @@ Offset is calculated from offset on current line."
 (defun x509--display-buffer (buffer)
   "Display BUFFER without switching to it.
 Used to display hexl buffer in `x509-asn1-mode'."
-  ;; Unsure what best practice is. This opens a new frame if there is no other
-  ;; windows which in my opinion less than ideal. But forcing to create a
-  ;; window by splitting is probably too intrusive.
+  ;; Unsure what best practice is.
   (display-buffer buffer '(nil (inhibit-same-window . t))))
 
 (defun x509--point-visible (buffer point)
@@ -1114,10 +1112,14 @@ Used to display hexl buffer in `x509-asn1-mode'."
 
 (defun x509-asn1--post-command-hook()
   "Update hexl buffer overlay if point has moved."
-  (when (boundp 'x509-asn1--last-point)
-    (unless (eq (point) x509-asn1--last-point)
-      (setq x509-asn1--last-point (point))
-      (x509-asn1--update-overlays))))
+  (if (and (boundp 'x509-asn1--hexl-buffer)
+           (buffer-live-p x509-asn1--hexl-buffer)
+           (boundp 'x509-asn1--last-point))
+      (unless (eq (point) x509-asn1--last-point)
+        (setq x509-asn1--last-point (point))
+        (x509-asn1--update-overlays))
+    ;; No hexl buffer killed. Remove hook.
+    (remove-hook 'post-command-hook #'x509-asn1--post-command-hook t)))
 
 (defun x509-asn1-toggle-hexl()
   "Display hex buffer matching current input puffer."
@@ -1156,8 +1158,8 @@ Used to display hexl buffer in `x509-asn1-mode'."
         (setq buffer-read-only nil)
         (let ((buffer-undo-list t))
           (hexlify-buffer))
-        (read-only-mode))
-      (x509--display-buffer hexl-buffer)
+        (read-only-mode)
+        (x509--display-buffer hexl-buffer))
       ;; In the current buffer, i.e. the x509-asn1-mode buffer, add a hook
       ;; that updates overlay in hexl buffer.
       (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)

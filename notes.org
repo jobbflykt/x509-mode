@@ -343,10 +343,11 @@ See for example https://github.com/purcell/ibuffer-vc/blob/master/Makefile
 * TODO Add checkdoc lint to CI
 * TODO hexl-mode buffer following x509-asn1-mode line.
 Ramains:
-- [ ] Test with emacs -Q
-- [ ] Test killing hexl buffer and then move around and toggle.
-- [ ] Can hexl buffer be made visible automatically if it's not when overlay is
-  updated?
+- [X] Test with emacs -Q
+- [X] Test killing hexl buffer and then move around and toggle.
+  Post command hook needs to detect that buffer is killed.
+- [X] Can hexl buffer be made visible automatically if it's not when overlay is
+  updated? WONTFIX.
 - [X] What happens when several hexl buffers are active? Should overlay list be
   local? To what buffer? Can we make it local to the hexl buffer and let update
   overlay get it from that buffer. Think there is function for getting buffer

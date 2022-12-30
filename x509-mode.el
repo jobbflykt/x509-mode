@@ -1154,13 +1154,10 @@ Used to display hexl buffer in `x509-asn1-mode'."
 
       (if (string= "PEM" (x509--buffer-encoding src-buffer))
           ;; If PEM: Decode base64
-          (progn
-            (message "src-buffer is PEM")
-            (x509--process-buffer src-buffer
-                                  (split-string-and-unquote "enc -d -base64")
-                                  hexl-buffer 'no-hooks))
+          (x509--process-buffer src-buffer
+                                (split-string-and-unquote "enc -d -base64")
+                                hexl-buffer 'no-hooks)
         ;; Else use src-buffer as is.
-        (message "src-buffer isn't pem")
         (with-current-buffer hexl-buffer
           (insert-buffer-substring-no-properties src-buffer)))
 

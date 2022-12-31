@@ -49,7 +49,13 @@ Similarly, but with slightly different semantics, is
 
 **s** which calls asn1parse with the flag "-strparse N".
 
-Where *N* is the offset at the current line. -strparse is used to parse BIT STRINGs and OCTET STRINGs as. The offset *N* is calculated differently for -strparse and -offset.
+Where *N* is the offset at the current line. -strparse is used to parse BIT STRINGs and OCTET STRINGs as. The offset *N** is calculated differently for -strparse and -offset.
+
+Also in x509-asn1-mode,
+
+**x** toggles viewing the underlying binary data in a hexl buffer.
+
+Movement in the x509-asn1-mode buffer is reflected in the hexl-buffer (inspired by rmsbolt-mode).
 
 ## Installation
 

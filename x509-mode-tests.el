@@ -434,6 +434,25 @@ Repeat with `x509-dwim' which should produce the same result."
                     'x509-asn1-mode
                     "UTF8STRING        :Hello x509-mode"))
 
+(ert-deftest x509-hexl ()
+  "Open hexl buffer from `x509-asn1-mode'."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "inf.der"))
+    (let ((view-buffer (x509-viewasn1)))
+      (unwind-protect
+          (with-current-buffer view-buffer
+            (x509-asn1-toggle-hexl)
+            (should (boundp 'x509-asn1--hexl-buffer))
+            (should (bufferp x509-asn1--hexl-buffer))
+            (with-current-buffer x509-asn1--hexl-buffer
+              (let ((hexl-str (buffer-substring-no-properties (point-min)
+                                                              (point-max))))
+                (should (string-match-p "00000000: 3080" hexl-str))))
+            (let ((hexl-buffer x509-asn1--hexl-buffer))
+              (kill-buffer view-buffer)
+              ;; hexl buffer should be killed when view buffer is.
+              (should-not (buffer-live-p hexl-buffer))))))))
+
 (defun check-face-helper(regex expected-face &optional match)
   "Check that face at `match-beginning' MATCH matches EXPECTED-FACE.
 Search for REGEX.  If MATCH is nil, look at beginning of whole regexp."

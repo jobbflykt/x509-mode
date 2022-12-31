@@ -341,7 +341,7 @@ Create new function `x509--asn1-mode-line', called from
 Run package-lint-batch-and-exit as part if CI.
 See for example https://github.com/purcell/ibuffer-vc/blob/master/Makefile
 * TODO Add checkdoc lint to CI
-* DONE hexl-mode buffer following x509-asn1-mode line.
+* TODO hexl-mode buffer following x509-asn1-mode line.
 Remains:
 - [X] Test with emacs -Q
 - [X] Test killing hexl buffer and then move around and toggle.
@@ -355,3 +355,6 @@ Remains:
 - [X] Prevent overlay to extend window width if possible.
 - [X] Update README.md
 - [X] Mention rmsbolt inspiration.
+- [X] Test inf, i.e infinite length structures.  What should happen? Treat
+  length as being zero since we can't (easily) know.
+- [X] Add unit tests.

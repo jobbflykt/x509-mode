@@ -896,7 +896,8 @@ Ex ^ 63:d=1  hl=2 l=  34
 -> 63"
   (save-excursion
     (move-beginning-of-line 1)
-    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
+    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)"
+                           (line-end-position) t)
         (string-to-number (match-string-no-properties 1))
       0)))
 
@@ -908,9 +909,13 @@ Ex ^ 63:d=1  hl=2 l=  34
   (save-excursion
     (move-beginning-of-line 1)
     (if (re-search-forward
-         "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\) *l= *\\([0-9]+\\)" nil t)
-        (+ (string-to-number (match-string-no-properties 2))
-           (string-to-number (match-string-no-properties 3)))
+         (concat "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\) "
+                 "*l= *\\(?:\\([0-9]+\\)\\|\\(inf\\)\\)")
+         (line-end-position) t)
+        (let* ((hl (string-to-number (match-string-no-properties 2)))
+               (len-str (match-string-no-properties 3))
+               (len (if len-str (string-to-number len-str) 0)))
+          (+ hl len))
       0)))
 
 (defun x509--asn1-get-header-len ()
@@ -923,7 +928,8 @@ If current line is a BITSTRING, we add 1 to the header length to
 account for the unused-bits byte."
   (save-excursion
     (move-beginning-of-line 1)
-    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)" nil t)
+    (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)"
+                           (line-end-position) t)
         (let ((hl (string-to-number (match-string-no-properties 2)))
               (add-one (if (re-search-forward "BIT STRING"
                                               (line-end-position) t)

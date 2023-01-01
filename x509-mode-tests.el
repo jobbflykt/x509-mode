@@ -451,7 +451,37 @@ Repeat with `x509-dwim' which should produce the same result."
             (let ((hexl-buffer x509-asn1--hexl-buffer))
               (kill-buffer view-buffer)
               ;; hexl buffer should be killed when view buffer is.
-              (should-not (buffer-live-p hexl-buffer))))))))
+              (should-not (buffer-live-p hexl-buffer))))
+        (kill-buffer view-buffer)))))
+
+(ert-deftest x509-hexl-from-pem-and-der ()
+  "Open hexl buffer from both PEM and DER version of cert.
+Hexl buffer content should be identical."
+  (let (der-hexl-content
+        pem-hexl-content)
+    (with-temp-buffer
+      (insert-file-contents-literally (find-testfile "oid_guy.cer"))
+      (let ((der-ans1-buff (x509-viewasn1)))
+        (unwind-protect
+            (with-current-buffer der-ans1-buff
+              (x509-asn1-toggle-hexl)
+              (with-current-buffer x509-asn1--hexl-buffer
+                (setq der-hexl-content (buffer-substring-no-properties
+                                        (point-min) (point-max)))))
+          (kill-buffer der-ans1-buff))
+        ))
+    (with-temp-buffer
+      (insert-file-contents-literally (find-testfile "oid_guy.crt"))
+      (let ((pem-ans1-buff (x509-viewasn1)))
+        (unwind-protect
+            (with-current-buffer pem-ans1-buff
+              (x509-asn1-toggle-hexl)
+              (with-current-buffer x509-asn1--hexl-buffer
+                (setq pem-hexl-content (buffer-substring-no-properties
+                                        (point-min) (point-max)))))
+          (kill-buffer pem-ans1-buff))
+        ))
+    (should (string= der-hexl-content pem-hexl-content))))
 
 (defun check-face-helper(regex expected-face &optional match)
   "Check that face at `match-beginning' MATCH matches EXPECTED-FACE.

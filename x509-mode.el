@@ -576,8 +576,9 @@ out to that buffer instead of generating a new one.
 
 When NO-HOOKS is not nil, `kill-buffer-hook' and
 `x509--shadow-buffer' are not set. Can be used when decoding
-base64 and result buffer does not need special hooks and
-variables
+base64 and result buffer does not need special hooks or
+variables.  NO-HOOKS also ensures that process output isn't
+decoded, i.e. data is inserted into buffer as binary.
 
 Return output buffer."
   (interactive)
@@ -596,7 +597,11 @@ Return output buffer."
         (setq x509--shadow-buffer input-buf)
         (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t))
       (with-current-buffer input-buf
-        (apply 'call-process-region args))
+        (if no-hooks
+            (let ((coding-system-for-read 'no-conversion)
+                  (coding-system-for-write 'no-conversion))
+              (apply 'call-process-region args))
+          (apply 'call-process-region args)))
       (goto-char (point-min))
       (set-buffer-modified-p nil)
       (setq buffer-read-only t))
@@ -1158,7 +1163,7 @@ Used to display hexl buffer in `x509-asn1-mode'."
            (hexl-buffer (get-buffer-create hexl-buffer-name)))
 
       (with-current-buffer hexl-buffer
-        (set-buffer-file-coding-system 'no-conversion)
+        (setq buffer-file-coding-system 'no-conversion)
         (setq buffer-read-only nil)
         (erase-buffer))
 

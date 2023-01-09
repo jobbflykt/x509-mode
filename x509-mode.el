@@ -1119,21 +1119,46 @@ Used to display hexl buffer in `x509-asn1-mode'."
             (goto-char point)
             (recenter))))))
 
+(defun x509-asn1--byte-offet-stripes(start-byte end-byte)
+  "Construct stripes of bytes mod 16.
+
+Starting from START-BYTE and ending before END-BYTE."
+  (let ((ranges '()))
+    (while (< start-byte end-byte)
+      (let* ((total-bytes (- end-byte start-byte))
+             (stripe-len (min total-bytes (- 16 (mod start-byte 16))))
+             (stripe-end (+ start-byte stripe-len)))
+        (push (cons start-byte stripe-end) ranges)
+        (setq start-byte (+ start-byte stripe-len))))
+    ranges))
+
+(defun x509-asn1--hexl-buffer-offset-stripes(start-byte end-byte)
+  "Construct stripes of offsets in a `hexl-mode' buffer."
+  (let ((byte-ranges (x509-asn1--byte-offet-stripes start-byte end-byte)))
+    (nreverse
+     (cl-mapcar (lambda (stripe)
+                  (cons (x509-asn1--hexl-offset-start (car stripe))
+                        (x509-asn1--hexl-offset-end (cdr stripe))))
+                byte-ranges))))
+
 (defun x509-asn1--update-overlays ()
   "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer."
   (let* ((first (x509--asn1-get-absolute-offset))
          (length (x509--asn1-get-total-length))
          (last (+ first length))
-         (hexl-start (x509-asn1--hexl-offset-start first))
-         (hexl-end (x509-asn1--hexl-offset-end last)))
+         (point-stripes (x509-asn1--hexl-buffer-offset-stripes first last)))
     (with-current-buffer x509-asn1--hexl-buffer
       (x509-asn1--remove-overlays)
-      (if (eq ?  (char-after (1- hexl-end)))
-          (setq hexl-end (- hexl-end 1)))
-      (push (x509-asn1--setup-overlay hexl-start hexl-end (current-buffer))
-            x509-asn1--hexl-overlays)
+      (cl-loop for stripe in point-stripes do
+               (let ((hexl-start (car stripe))
+                     (hexl-end (cdr stripe)))
+                 (if (eq ?  (char-after (1- hexl-end)))
+                     (setq hexl-end (- hexl-end 1)))
+                 (push (x509-asn1--setup-overlay hexl-start hexl-end
+                                                 (current-buffer))
+                       x509-asn1--hexl-overlays)))
       ;; Scroll buffer if region isn't visible
-      (x509--scroll-window x509-asn1--hexl-buffer hexl-start))))
+      (x509--scroll-window x509-asn1--hexl-buffer (caar point-stripes)))))
 
 (defun x509-asn1--post-command-hook ()
   "Update hexl buffer overlay if point has moved."

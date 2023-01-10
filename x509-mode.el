@@ -1157,8 +1157,11 @@ Starting from START-BYTE and ending before END-BYTE."
                  (push (x509-asn1--setup-overlay hexl-start hexl-end
                                                  (current-buffer))
                        x509-asn1--hexl-overlays)))
-      ;; Scroll buffer if region isn't visible
-      (x509--scroll-window x509-asn1--hexl-buffer (caar point-stripes)))))
+      ;; Scroll buffer if region isn't visible.
+      ;; `point-stripes' may not contain anything of we are out of bounds, e.g.
+      ;; when point is below last line in asn1 buffer.
+      (if-let ((start-region (caar point-stripes)))
+          (x509--scroll-window x509-asn1--hexl-buffer start-region)))))
 
 (defun x509-asn1--post-command-hook ()
   "Update hexl buffer overlay if point has moved."

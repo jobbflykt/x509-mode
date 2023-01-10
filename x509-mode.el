@@ -1076,6 +1076,16 @@ Offset is calculated from offset on current line."
     ;; Point is 1 based.
     (+ 1 addresses trailers spaces bytes)))
 
+(defun x509-asn1--hexl-char-offset-start (offset)
+  "Return buffer point where char at OFFSET start in a `hexl-mode' buffer."
+  (let* ((lines (/ offset 16))
+         (addresses (* 10 (+ 1 lines)))
+         (bytes (* 41 (+ 1 lines)))
+         (char-blocks (* lines 17))
+         (chars (mod offset 16)))
+    ;; Point is 1 based.
+    (+ 1 addresses bytes char-blocks chars)))
+
 (defun x509-asn1--hexl-offset-end (offset)
   "Return buffer point where OFFSET ends in a `hexl-mode' buffer."
   (let* ((lines (/ offset 16))
@@ -1096,6 +1106,30 @@ Offset is calculated from offset on current line."
         (x509-asn1--hexl-offset-start offset)
       ;; Point is 1 based.
       (+ 1 addresses trailers spaces bytes))))
+
+(defun x509-asn1--hexl-char-offset-end (offset)
+  "Return buffer point where OFFSET ends in a `hexl-mode' buffer."
+  (let* ((lines (/ offset 16))
+         (even-sixteen (and (> offset 0)
+                            (= 0 (mod offset 16))))
+         (whole-lines (if even-sixteen
+                              lines
+                            (1+ lines)))
+         (addresses (* 10 whole-lines))
+         (byte-blocks  (* 41 whole-lines))
+         (char-blocks (* lines 17))
+         (chars (mod offset 16)))
+    (if even-sixteen
+        (setq chars (- chars 1)))
+    (if (= 0 offset)
+        ;; Special. Ensure end >= start.
+        (x509-asn1--hexl-char-offset-start offset)
+      ;; Point is 1 based.
+      (+ 1 addresses byte-blocks char-blocks chars))))
+
+(defun foo()
+  (interactive)
+  (goto-char (x509-asn1--hexl-char-offset-end 16)))
 
 (defun x509--display-buffer (buffer)
   "Display BUFFER without switching to it.
@@ -1135,11 +1169,17 @@ Starting from START-BYTE and ending before END-BYTE."
 (defun x509-asn1--hexl-buffer-offset-stripes(start-byte end-byte)
   "Construct stripes of offsets in a `hexl-mode' buffer."
   (let ((byte-ranges (x509-asn1--byte-offet-stripes start-byte end-byte)))
-    (nreverse
-     (cl-mapcar (lambda (stripe)
-                  (cons (x509-asn1--hexl-offset-start (car stripe))
-                        (x509-asn1--hexl-offset-end (cdr stripe))))
-                byte-ranges))))
+    (append
+     (nreverse
+      (cl-mapcar (lambda (stripe)
+                   (cons (x509-asn1--hexl-offset-start (car stripe))
+                         (x509-asn1--hexl-offset-end (cdr stripe))))
+                 byte-ranges))
+     (nreverse
+      (cl-mapcar (lambda (stripe)
+                   (cons (x509-asn1--hexl-char-offset-start (car stripe))
+                         (x509-asn1--hexl-char-offset-end (cdr stripe))))
+                 byte-ranges)))))
 
 (defun x509-asn1--update-overlays ()
   "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer."

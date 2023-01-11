@@ -1101,6 +1101,9 @@ Offset is calculated from offset on current line."
          (trailers  (* 18 count-trailers))
          (spaces (/ offset 2))
          (bytes (* offset 2)))
+    ;; Don't include space after last byte in a row of 16.
+    (if even-sixteen
+        (setq spaces (1- spaces)))
     (if (= 0 offset)
         ;; Special. Ensure end >= start.
         (x509-asn1--hexl-offset-start offset)
@@ -1192,8 +1195,8 @@ Starting from START-BYTE and ending before END-BYTE."
       (cl-loop for stripe in point-stripes do
                (let ((hexl-start (car stripe))
                      (hexl-end (cdr stripe)))
-                 (if (eq ?  (char-after (1- hexl-end)))
-                     (setq hexl-end (- hexl-end 1)))
+                 ;; (if (eq ?  (char-after (1- hexl-end)))
+                 ;;     (setq hexl-end (- hexl-end 1)))
                  (push (x509-asn1--setup-overlay hexl-start hexl-end
                                                  (current-buffer))
                        x509-asn1--hexl-overlays)))

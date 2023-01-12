@@ -197,12 +197,12 @@ Example:
   "Face for clickable URL links.")
 
 (defface x509-asn1-hexl-header
-  '((t (:inherit highlight :extend nil)))
+  '((t (:inherit highlight :box (:line-width (1 . -1)))))
   "Face for highlighting ASN.1 header in hexl buffer in `x509-asn1-mode'."
   :group 'x509-faces)
 
 (defface x509-asn1-hexl-value
-  '((t (:inherit region :extend nil)))
+  '((t (:inherit region)))
   "Face for highlighting ASN.1 value in hexl buffer in `x509-asn1-mode'."
   :group 'x509-faces)
 

@@ -196,9 +196,14 @@ Example:
   '((t (:inherit link)))
   "Face for clickable URL links.")
 
-(defface x509-asn1-hexl-region
+(defface x509-asn1-hexl-header
+  '((t (:inherit highlight :extend nil)))
+  "Face for highlighting ASN.1 header in hexl buffer in `x509-asn1-mode'."
+  :group 'x509-faces)
+
+(defface x509-asn1-hexl-value
   '((t (:inherit region :extend nil)))
-  "Face for highlighting region in hexl buffer following `x509-asn1-mode'."
+  "Face for highlighting ASN.1 value in hexl buffer in `x509-asn1-mode'."
   :group 'x509-faces)
 
 (defun x509--match-date (cmp bound)
@@ -1060,10 +1065,11 @@ Offset is calculated from offset on current line."
   (mapc #'delete-overlay x509-asn1--hexl-overlays)
   (setq x509-asn1--hexl-overlays nil))
 
-(defun x509-asn1--setup-overlay (start end buf)
-  "Setup overlay with START and END in BUF."
+(defun x509-asn1--setup-overlay (start end buf face)
+  "Setup overlay with START and END in BUF.
+Use FACE."
   (let ((overlay (make-overlay start end buf)))
-    (overlay-put overlay 'face 'x509-asn1-hexl-region)
+    (overlay-put overlay 'face face)
     overlay))
 
 (defun x509-asn1--hexl-offset-start (offset)
@@ -1186,26 +1192,39 @@ characters in the rightmost column."
                          (x509-asn1--hexl-char-offset-end (cdr stripe))))
                  byte-ranges)))))
 
+(defun x509-asn1--apply-overlay-stripes(point-stripes face)
+  "Add overlays in current buffer spanning POINT-STRIPES using face FACE.
+
+Store created overlays in `x509-asn1--hexl-overlays'."
+  (cl-loop for stripe in point-stripes do
+           (let ((start (car stripe))
+                 (end (cdr stripe)))
+             (push (x509-asn1--setup-overlay start end (current-buffer) face)
+                   x509-asn1--hexl-overlays))))
+
 (defun x509-asn1--update-overlays ()
-  "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer."
-  (let* ((first (x509--asn1-get-absolute-offset))
-         (length (x509--asn1-get-total-length))
-         (last (+ first length))
-         (point-stripes (x509-asn1--hexl-buffer-offset-stripes first last)))
+  "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer.
+The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
+`x509-asn1-hexl-value' face."
+  (let* ((header-length (x509--asn1-get-header-len))
+         (total-length (x509--asn1-get-total-length))
+         (value-length (- total-length header-length))
+         (header-start (x509--asn1-get-absolute-offset))
+         (header-end (+ header-start header-length))
+         (value-start (+ header-start header-length))
+         (value-end (+ value-start value-length))
+         (header-stripes (x509-asn1--hexl-buffer-offset-stripes
+                          header-start header-end))
+         (value-stripes (x509-asn1--hexl-buffer-offset-stripes
+                         value-start value-end)))
     (with-current-buffer x509-asn1--hexl-buffer
       (x509-asn1--remove-overlays)
-      (cl-loop for stripe in point-stripes do
-               (let ((hexl-start (car stripe))
-                     (hexl-end (cdr stripe)))
-                 ;; (if (eq ?  (char-after (1- hexl-end)))
-                 ;;     (setq hexl-end (- hexl-end 1)))
-                 (push (x509-asn1--setup-overlay hexl-start hexl-end
-                                                 (current-buffer))
-                       x509-asn1--hexl-overlays)))
+      (x509-asn1--apply-overlay-stripes header-stripes 'x509-asn1-hexl-header)
+      (x509-asn1--apply-overlay-stripes value-stripes 'x509-asn1-hexl-value)
       ;; Scroll buffer if region isn't visible.
       ;; `point-stripes' may not contain anything of we are out of bounds, e.g.
       ;; when point is below last line in asn1 buffer.
-      (let ((start-region (caar point-stripes)))
+      (let ((start-region (caar header-stripes)))
         (if start-region
             (x509--scroll-window x509-asn1--hexl-buffer start-region))))))
 

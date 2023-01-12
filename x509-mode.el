@@ -1101,8 +1101,9 @@ Offset is calculated from offset on current line."
          (trailers  (* 18 count-trailers))
          (spaces (/ offset 2))
          (bytes (* offset 2)))
-    ;; Don't include space after last byte in a row of 16.
-    (if even-sixteen
+    ;; Don't include space after even byte
+    (if (and (> spaces 0)
+             (= 0 (mod offset 2)))
         (setq spaces (1- spaces)))
     (if (= 0 offset)
         ;; Special. Ensure end >= start.
@@ -1129,10 +1130,6 @@ Offset is calculated from offset on current line."
         (x509-asn1--hexl-char-offset-start offset)
       ;; Point is 1 based.
       (+ 1 addresses byte-blocks char-blocks chars))))
-
-(defun foo()
-  (interactive)
-  (goto-char (x509-asn1--hexl-char-offset-end 16)))
 
 (defun x509--display-buffer (buffer)
   "Display BUFFER without switching to it.
@@ -1170,7 +1167,12 @@ Starting from START-BYTE and ending before END-BYTE."
     ranges))
 
 (defun x509-asn1--hexl-buffer-offset-stripes(start-byte end-byte)
-  "Construct stripes of offsets in a `hexl-mode' buffer."
+  "Construct stripes of offsets in a `hexl-mode' buffer.
+
+Starting from START-BYTE and ending before END-BYTE.
+
+One set of stripes cover the hex bytes and one set cover the
+characters in the rightmost column."
   (let ((byte-ranges (x509-asn1--byte-offet-stripes start-byte end-byte)))
     (append
      (nreverse

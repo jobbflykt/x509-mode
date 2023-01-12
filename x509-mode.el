@@ -1221,9 +1221,9 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
       (x509-asn1--remove-overlays)
       (x509-asn1--apply-overlay-stripes header-stripes 'x509-asn1-hexl-header)
       (x509-asn1--apply-overlay-stripes value-stripes 'x509-asn1-hexl-value)
-      ;; Scroll buffer if region isn't visible.
-      ;; `point-stripes' may not contain anything of we are out of bounds, e.g.
-      ;; when point is below last line in asn1 buffer.
+      ;; Scroll buffer if region isn't visible.  `header-stripes' may not
+      ;; contain anything of we are out of bounds, e.g.  when point is below
+      ;; last line in asn1 buffer.
       (let ((start-region (caar header-stripes)))
         (if start-region
             (x509--scroll-window x509-asn1--hexl-buffer start-region))))))

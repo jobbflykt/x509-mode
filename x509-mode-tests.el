@@ -1,12 +1,12 @@
 ;;; x509-mode-tests.el --- Tests for x509-mode  -*- lexical-binding:t; coding:utf-8 -*-
 
-;; Copyright (C) 2022 Fredrik Axelsson <f.axelsson@gmail.com>
+;; Copyright (C) 2017-2023 Fredrik Axelsson <f.axelsson@gmail.com>
 
 ;; This file is not part of GNU Emacs.
 
 ;; MIT License
 ;;
-;; Copyright (c) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
+;; Copyright (C) 2017-2023 Fredrik Axelsson <f.axelsson@gmail.com>
 ;;
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to

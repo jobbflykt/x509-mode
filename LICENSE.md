@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2022 Fredrik Axelsson
+Copyright (C) 2017-2023 Fredrik Axelsson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

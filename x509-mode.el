@@ -1,6 +1,6 @@
 ;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL  -*- lexical-binding:t; coding:utf-8 -*-
 
-;; Copyright (C) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
+;; Copyright (C) 2017-2023 Fredrik Axelsson <f.axelsson@gmail.com>
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmail.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
@@ -10,7 +10,7 @@
 
 ;; MIT License
 ;;
-;; Copyright (c) 2017 Fredrik Axelsson <f.axelsson@gmail.com>
+;; Copyright (C) 2017-2023 Fredrik Axelsson <f.axelsson@gmail.com>
 ;;
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to

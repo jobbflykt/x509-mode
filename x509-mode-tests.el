@@ -496,7 +496,8 @@ Search for REGEX.  If MATCH is nil, look at beginning of whole regexp."
   "Check a few font lock faces in asn1mode buffer."
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "inf.der"))
-    (let ((result-buffer (x509-viewasn1)))
+    (let* ((x509-asn1-mode-hook nil)
+           (result-buffer (x509-viewasn1)))
       (unwind-protect
           (with-current-buffer result-buffer
             (goto-char (point-min))

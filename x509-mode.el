@@ -78,9 +78,10 @@
   :group 'convenience
   :link '(emacs-library-link :tag "Lisp File" "x509-mode.el"))
 
-(defcustom x509-openssl-cmd (if (eq system-type 'windows-nt)
-                                "C:/Program Files/Git/mingw64/bin/openssl.exe"
-                              "openssl")
+(defcustom x509-openssl-cmd
+  (if (eq system-type 'windows-nt)
+      "C:/Program Files/Git/mingw64/bin/openssl.exe"
+    "openssl")
   "Path to OpenSSL binary.
 
 Example:
@@ -107,32 +108,27 @@ Example:
   :type 'string
   :group 'x509)
 
-(defcustom x509-pkcs7-default-arg
-  "pkcs7 -noout -text -print_certs"
+(defcustom x509-pkcs7-default-arg "pkcs7 -noout -text -print_certs"
   "Default arguments for \"openssl pkcs7\" command."
   :type 'string
   :group 'x509)
 
-(defcustom x509-dhparam-default-arg
-  "dhparam -text -noout"
+(defcustom x509-dhparam-default-arg "dhparam -text -noout"
   "Default arguments for \"openssl dhparam\" command."
   :type 'string
   :group 'x509)
 
-(defcustom x509-pkey-default-arg
-  "pkey -text -noout"
+(defcustom x509-pkey-default-arg "pkey -text -noout"
   "Default arguments for \"openssl pkey\" command."
   :type 'string
   :group 'x509)
 
-(defcustom x509-pkey-pubin-default-arg
-  "pkey -text -noout -pubin"
+(defcustom x509-pkey-pubin-default-arg "pkey -text -noout -pubin"
   "Default arguments for \"openssl pkey -pubin\" command."
   :type 'string
   :group 'x509)
 
-(defcustom x509-asn1parse-default-arg
-  "asn1parse"
+(defcustom x509-asn1parse-default-arg "asn1parse"
   "Default arguments for \"openssl asn1parse\" command."
   :type 'string
   :group 'x509)
@@ -142,38 +138,31 @@ Example:
   :group 'x509
   :group 'faces)
 
-(defface x509-keyword-face
-  '((t (:inherit font-lock-builtin-face)))
+(defface x509-keyword-face '((t (:inherit font-lock-builtin-face)))
   "Face for keywords."
   :group 'x509-faces)
 
-(defface x509-constant-face
-  '((t (:inherit font-lock-constant-face)))
+(defface x509-constant-face '((t (:inherit font-lock-constant-face)))
   "Face for constants."
   :group 'x509-faces)
 
-(defface x509-short-name-face
-  '((t (:bold t)))
+(defface x509-short-name-face '((t (:bold t)))
   "Face for short names, e.g, CN and OU."
   :group 'x509-faces)
 
-(defface x509-string-face
-  '((t (:inherit font-lock-string-face)))
+(defface x509-string-face '((t (:inherit font-lock-string-face)))
   "Face for strings."
   :group 'x509-faces)
 
-(defface x509-hex-string-face
-  '((t (:inherit font-lock-comment-face)))
+(defface x509-hex-string-face '((t (:inherit font-lock-comment-face)))
   "Face for colon-separated hex values."
   :group 'x509-faces)
 
-(defface x509-oid-link-face
-  '((t (:inherit (link font-lock-constant-face))))
+(defface x509-oid-link-face '((t (:inherit (link font-lock-constant-face))))
   "Face for OID buttons."
   :group 'x509-faces)
 
-(defface x509-oid-face
-  '((t (:inherit font-lock-constant-face)))
+(defface x509-oid-face '((t (:inherit font-lock-constant-face)))
   "Face for symbolic, known, OIDs."
   :group 'x509-faces)
 
@@ -192,17 +181,14 @@ Example:
   "Face for near expire date/time values."
   :group 'x509-faces)
 
-(defface x509-browse-url-face
-  '((t (:inherit link)))
+(defface x509-browse-url-face '((t (:inherit link)))
   "Face for clickable URL links.")
 
-(defface x509-asn1-hexl-header
-  '((t (:inherit highlight :underline t)))
+(defface x509-asn1-hexl-header '((t (:inherit highlight :underline t)))
   "Face for highlighting ASN.1 header in hexl buffer in `x509-asn1-mode'."
   :group 'x509-faces)
 
-(defface x509-asn1-hexl-value
-  '((t (:inherit region)))
+(defface x509-asn1-hexl-value '((t (:inherit region)))
   "Face for highlighting ASN.1 value in hexl buffer in `x509-asn1-mode'."
   :group 'x509-faces)
 
@@ -215,13 +201,15 @@ and set ‘match-data’ appropriately if it succeeds; like
 position that bounds the search."
   (let ((mdata (match-data))
         (p (point)))
-    (if (re-search-forward
-         "[A-Z][a-z][a-z] +[0-9]+ ..:..:.. [0-9]\\{4\\} GMT" bound t)
+    (if (re-search-forward "[A-Z][a-z][a-z] +[0-9]+ ..:..:.. [0-9]\\{4\\} GMT"
+                           bound
+                           t)
         (if (condition-case nil
                 ;; Compare date to current time.
                 ;; date-to-time might fail on bogus time values or if time
                 ;; is to far in the past/future
-                (funcall cmp (date-to-time (match-string-no-properties 0))
+                (funcall cmp
+                         (date-to-time (match-string-no-properties 0))
                          (current-time))
               (error nil))
             ;; If compare true, return t.
@@ -281,9 +269,8 @@ buffer position that bounds the search."
      ;; and time is within decoded-time-delta from now
      (and x509-warn-near-expire-days
           (time-less-p now time)
-          (time-less-p time
-                       (time-add now
-                                 (* x509-warn-near-expire-days 24 60 60)))))
+          (time-less-p
+           time (time-add now (* x509-warn-near-expire-days 24 60 60)))))
    bound))
 
 (defun x509--mark-browse-url-links (regex face compose-url-fn)
@@ -302,29 +289,34 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
                (url (funcall compose-url-fn (match-string-no-properties 0)))
                (help-echo (format "Click to browse-url %s" url)))
           ;; The url is stored in the face property
-          (make-button
-           start end
-           'face face
-           'follow-link t
-           'url url
-           'help-echo help-echo
-           'action (lambda (button)
-                     (browse-url (button-get button 'url)))))))))
+          (make-button start end
+                       'face
+                       face
+                       'follow-link
+                       t
+                       'url
+                       url
+                       'help-echo
+                       help-echo
+                       'action
+                       (lambda (button)
+                         (browse-url (button-get button 'url)))))))))
 
 (defun x509--mark-browse-http-links ()
   "Make http URLs clickable by making them buttons."
-  (x509--mark-browse-url-links "\\(file\\|https?\\)://[-_.:/A-Za-z0-9]+"
-                               'x509-browse-url-face
-                               (lambda (url) url)))
+  (x509--mark-browse-url-links
+   "\\(file\\|https?\\)://[-_.:/A-Za-z0-9]+"
+   'x509-browse-url-face
+   (lambda (url) url)))
 
 (defun x509--mark-browse-oid ()
   "Make OIDs clickable by making them buttons."
-  (x509--mark-browse-url-links "\\(?:[0-9]+\\.\\)\\{3,\\}[0-9]+"
-                               'x509-oid-link-face
-                               (lambda (oid)
-                                 ;; Require OID at least 4 nodes deep to avoid
-                                 ;; false positives.
-                                 (format x509-query-oid-url-format oid))))
+  (x509--mark-browse-url-links
+   "\\(?:[0-9]+\\.\\)\\{3,\\}[0-9]+" 'x509-oid-link-face
+   (lambda (oid)
+     ;; Require OID at least 4 nodes deep to avoid
+     ;; false positives.
+     (format x509-query-oid-url-format oid))))
 
 (eval-when-compile
   (defun x509--load-data-file (filename)
@@ -332,15 +324,15 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
 Skip blank lines and comment lines.  Return list."
     (with-temp-buffer
       (insert-file-contents
-       (if (null load-file-name) filename
+       (if (null load-file-name)
+           filename
          (expand-file-name filename (file-name-directory load-file-name))))
-      (cl-remove-if (lambda (s) (string-match-p "^ *\\(?:#\\|$\\)" s))
-                    (split-string (buffer-string) "\n")))))
+      (cl-remove-if
+       (lambda (s) (string-match-p "^ *\\(?:#\\|$\\)" s))
+       (split-string (buffer-string) "\n")))))
 
 (eval-when-compile
-  (defconst x509--keywords
-    (regexp-opt
-     (x509--load-data-file "keywords.txt"))))
+  (defconst x509--keywords (regexp-opt (x509--load-data-file "keywords.txt"))))
 
 (eval-when-compile
   (defconst x509--constants
@@ -350,26 +342,23 @@ Skip blank lines and comment lines.  Return list."
 ;; E.g. "Signature Algorithm: sha1WithRSAEncryption"
 (eval-when-compile
   (defconst x509--keyword-w-constant
-    (concat (regexp-opt
-             (x509--load-data-file "keyword+constant.txt") t)
-            ;; Followed by ": constant"
-            ": *\\(.*\\)")))
+    (concat
+     (regexp-opt (x509--load-data-file "keyword+constant.txt") t)
+     ;; Followed by ": constant"
+     ": *\\(.*\\)")))
 
 ;; Multiline Issuer and Subject, "-nameopt multiline"
 ;; E.g. "commonName                = GlobalSign Root CA"
 (eval-when-compile
   (defconst x509--multiline-name
-    (concat (regexp-opt
-             (x509--load-data-file "long-name.txt") t)
-            " *= \\(.*\\)")))
+    (concat
+     (regexp-opt (x509--load-data-file "long-name.txt") t) " *= \\(.*\\)")))
 
 (defconst x509-font-lock-keywords
   (eval-when-compile
     (list
      ;; Subject and Issuer, long names
-     `(,x509--multiline-name
-       (1 'x509-keyword-face)
-       (2 'x509-string-face))
+     `(,x509--multiline-name (1 'x509-keyword-face) (2 'x509-string-face))
 
      `(,x509--keywords . 'x509-keyword-face)
 
@@ -393,8 +382,7 @@ Skip blank lines and comment lines.  Return list."
 
      ;; URI: and CPS: . Highlight keyword. URL is handled by
      ;; `x509--mark-browse-url-links'
-     '("\\<\\(URI:\\|CPS: \\)"
-       (1 'x509-keyword-face))
+     '("\\<\\(URI:\\|CPS: \\)" (1 'x509-keyword-face))
 
      ;; DNS:string email:string othername:string
      ;; until ',' or EOL
@@ -404,13 +392,16 @@ Skip blank lines and comment lines.  Return list."
 
      ;; Not Before: Jun 11 00:00:01 2014 GMT
      ;; Date is "MATCH-ANCHORED", see help for variable font-lock-keywords
-     '("\\(Not Before\\): " (1 'x509-keyword-face)
+     '("\\(Not Before\\): "
+       (1 'x509-keyword-face)
        (x509--match-date-in-future nil nil (0 'x509-warning-face)))
-     '("\\(Not After\\) : " (1 'x509-keyword-face)
+     '("\\(Not After\\) : "
+       (1 'x509-keyword-face)
        (x509--match-date-in-past nil nil (0 'x509-warning-face))
        (x509--match-date-near-now nil nil (0 'x509-near-warning-face)))
      ;; For CRL's when Next Update is in the past
-     '("\\(Next Update\\): " (1 'x509-keyword-face)
+     '("\\(Next Update\\): "
+       (1 'x509-keyword-face)
        (x509--match-date-in-past nil nil (0 'x509-warning-face)))
 
      ;; Policy: OID
@@ -421,8 +412,7 @@ Skip blank lines and comment lines.  Return list."
 
      ;; E.g. Public Key Algorithm: rsaEncryption
      `(,x509--keyword-w-constant
-       (1 'x509-keyword-face)
-       (2 'x509-constant-face))
+       (1 'x509-keyword-face) (2 'x509-constant-face))
 
      ;; CA:TRUE, CA:FALSE
      ;; CA used to be keyword+argument but CA: can be part of hex-string
@@ -433,7 +423,8 @@ Skip blank lines and comment lines.  Return list."
      ;; Hex dumps At least two two-digit hex-numbers separated by `:'
      ;; Can end in `:' for example in "Modulus"
      ;; fa:09(:....)
-     '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$" .
+     '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$"
+       .
        'x509-hex-string-face)))
   "OpenSSL x509 highlighting.")
 
@@ -444,16 +435,19 @@ Skip blank lines and comment lines.  Return list."
   (kill-buffer))
 
 ;;;###autoload
-(define-derived-mode x509-mode fundamental-mode "x509"
-  "Major mode for displaying OpenSSL output.
+(define-derived-mode
+ x509-mode
+ fundamental-mode
+ "x509"
+ "Major mode for displaying OpenSSL output.
 
 \\{x509-mode-map}"
-  (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
-  (define-key x509-mode-map "q" 'x509-mode--kill-buffer)
-  (define-key x509-mode-map "t" 'x509--toggle-mode)
-  (define-key x509-mode-map "e" 'x509--edit-params)
-  (x509--mark-browse-http-links)
-  (x509--mark-browse-oid))
+ (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
+ (define-key x509-mode-map "q" 'x509-mode--kill-buffer)
+ (define-key x509-mode-map "t" 'x509--toggle-mode)
+ (define-key x509-mode-map "e" 'x509--edit-params)
+ (x509--mark-browse-http-links)
+ (x509--mark-browse-oid))
 
 (defun x509--buffer-encoding (buffer)
   "Heuristic for identifying PEM or DER encoding in BUFFER.
@@ -505,12 +499,21 @@ certificate that is embedded as string in code.
 
 If point is not in a PEM region, the whole buffer is used."
   (let* ((region (x509--pem-region))
-         (begin (if region (car region) (point-min)))
-         (end (if region (cdr region) (point-max)))
-         (data (if region (buffer-substring-no-properties begin end)))
+         (begin
+          (if region
+              (car region)
+            (point-min)))
+         (end
+          (if region
+              (cdr region)
+            (point-max)))
+         (data
+          (if region
+              (buffer-substring-no-properties begin end)))
          (src-buffer (current-buffer))
-         (new-buf (generate-new-buffer (generate-new-buffer-name
-                                        (format " *in-x-%s*" (buffer-name))))))
+         (new-buf
+          (generate-new-buffer
+           (generate-new-buffer-name (format " *in-x-%s*" (buffer-name))))))
     (with-current-buffer new-buf
       (set-buffer-file-coding-system 'no-conversion)
       (if data
@@ -519,8 +522,9 @@ If point is not in a PEM region, the whole buffer is used."
       ;; If in PEM region, try to strip non base-64 characters
       (when region
         (goto-char (point-min))
-        (while (re-search-forward
-                "^[^-A-Za-z0-9+=/]+\\|[^-A-Za-z0-9+=/]+$" nil t)
+        (while (re-search-forward "^[^-A-Za-z0-9+=/]+\\|[^-A-Za-z0-9+=/]+$"
+                                  nil
+                                  t)
           (replace-match "" nil nil))
         ;; Strip \n from eol. Can be seen in C code.
         (goto-char (point-min))
@@ -532,47 +536,52 @@ If point is not in a PEM region, the whole buffer is used."
   "Define a buffer-local variable VAR-NAME with DOCSTRING.
 Make it persist during major mode change."
   `(progn
-     (defvar-local ,var-name nil ,docstring)
+     (defvar-local ,var-name nil
+       ,docstring)
      (put ',var-name 'permanent-local t)))
 
-(x509-defvar-local-persistent x509--shadow-buffer
-  "Input buffer used for OpenSSL command.")
+(x509-defvar-local-persistent
+ x509--shadow-buffer "Input buffer used for OpenSSL command.")
 
-(x509-defvar-local-persistent x509--x509-mode-shadow-arguments
-  "Current OpenSSL command arguments used in `x509-mode'.")
+(x509-defvar-local-persistent
+ x509--x509-mode-shadow-arguments
+ "Current OpenSSL command arguments used in `x509-mode'.")
 
-(x509-defvar-local-persistent x509--x509-asn1-mode-shadow-arguments
-  "Current OpenSSL command argument used in `x509-asn1-mode'.")
+(x509-defvar-local-persistent
+ x509--x509-asn1-mode-shadow-arguments
+ "Current OpenSSL command argument used in `x509-asn1-mode'.")
 
-(x509-defvar-local-persistent x509--x509-asn1-mode-offset-stack
-  "Stack of (command start header-len pos) for strparse/offset.
+(x509-defvar-local-persistent
+ x509--x509-asn1-mode-offset-stack
+ "Stack of (command start header-len pos) for strparse/offset.
 In `x509-asn1-mod'.
 POS is the buffer position when going down. Used to restore pos
 when going back up.")
 
-(x509-defvar-local-persistent x509-asn1--last-point
-  "Used to detect when the point has moved.
+(x509-defvar-local-persistent
+ x509-asn1--last-point
+ "Used to detect when the point has moved.
 For updating overlay in hexl buffer.")
 
-(x509-defvar-local-persistent x509-asn1--hexl-buffer
-  "Hexl buffer that follows current line in `x509-asn1-mode'.")
+(x509-defvar-local-persistent
+ x509-asn1--hexl-buffer
+ "Hexl buffer that follows current line in `x509-asn1-mode'.")
 
-(x509-defvar-local-persistent x509-asn1--hexl-overlays
-  "Current overlays in hexl buffer.")
+(x509-defvar-local-persistent
+ x509-asn1--hexl-overlays "Current overlays in hexl buffer.")
 
 (defun x509--kill-shadow-buffer ()
   "Kill buffer hook function.
 Run when killing a view buffer for cleaning up associated input buffer.
 Also kill any hexl buffer."
-  (when (and (boundp 'x509--shadow-buffer)
-             (buffer-live-p x509--shadow-buffer))
+  (when (and (boundp 'x509--shadow-buffer) (buffer-live-p x509--shadow-buffer))
     (kill-buffer x509--shadow-buffer))
   (when (and (boundp 'x509-asn1--hexl-buffer)
              (buffer-live-p x509-asn1--hexl-buffer))
     (kill-buffer x509-asn1--hexl-buffer)))
 
-(defun x509--process-buffer (input-buf openssl-arguments
-                                       &optional output-buf no-hooks)
+(defun x509--process-buffer
+    (input-buf openssl-arguments &optional output-buf no-hooks)
   "Create new buffer named \"*x-[buffer-name]*\".
 
 Pass content INPUT-BUF to openssl with
@@ -587,13 +596,14 @@ decoded, i.e. data is inserted into buffer as binary.
 
 Return output buffer."
   (interactive)
-  (let* ((buf (or output-buf
-                  (generate-new-buffer (generate-new-buffer-name
-                                        (format "*x-%s*" (buffer-name))))))
+  (let* ((buf
+          (or output-buf
+              (generate-new-buffer
+               (generate-new-buffer-name (format "*x-%s*" (buffer-name))))))
          ;; Operate on whole buffer. Output to buf
-         (args (append
-                (list nil nil x509-openssl-cmd nil buf nil)
-                openssl-arguments)))
+         (args
+          (append
+           (list nil nil x509-openssl-cmd nil buf nil) openssl-arguments)))
     (with-current-buffer buf
       (setq buffer-read-only nil)
       (erase-buffer)
@@ -647,9 +657,9 @@ Switch to resulting buffer and return it."
          (encoding (x509--buffer-encoding in-buf))
          (initial (x509--add-inform-spec default encoding))
          (args (x509--read-arguments "arguments: " initial history))
-         (result-buffer (x509--process-buffer
-                         in-buf
-                         (split-string-and-unquote args) output-buf)))
+         (result-buffer
+          (x509--process-buffer in-buf (split-string-and-unquote args)
+                                output-buf)))
     (switch-to-buffer result-buffer)
     ;; Remember what arguments where used.
     (if (eq mode 'x509-mode)
@@ -667,20 +677,22 @@ Switch to resulting buffer and return it."
 
 (defun x509--get-x509-toggle-mode-args ()
   "Ask user for command and return default arguments for that command."
-  (let* ((collection '(("cert" . x509-x509-default-arg)
-                       ("req" . x509-req-default-arg)
-                       ("crl" . x509-crl-default-arg)
-                       ("pkcs7" . x509-pkcs7-default-arg)
-                       ("dhparam" . x509-dhparam-default-arg)
-                       ("key" . x509-pkey-default-arg)
-                       ("publickey" . x509-pkey-pubin-default-arg)
-                       ("asn1parse" . x509-asn1parse-default-arg)))
-         (choice (completing-read
-                  "Parse as: "          ; PROMPT
-                  collection            ; COLLECTION
-                  nil                   ; PREDICATE
-                  t                     ; REQUIRE-MATCH
-                  )))
+  (let* ((collection
+          '(("cert" . x509-x509-default-arg)
+            ("req" . x509-req-default-arg)
+            ("crl" . x509-crl-default-arg)
+            ("pkcs7" . x509-pkcs7-default-arg)
+            ("dhparam" . x509-dhparam-default-arg)
+            ("key" . x509-pkey-default-arg)
+            ("publickey" . x509-pkey-pubin-default-arg)
+            ("asn1parse" . x509-asn1parse-default-arg)))
+         (choice
+          (completing-read
+           "Parse as: " ; PROMPT
+           collection ; COLLECTION
+           nil ; PREDICATE
+           t ; REQUIRE-MATCH
+           )))
     (symbol-value (cdr (assoc choice collection)))))
 
 (defun x509--get-x509-history (args)
@@ -691,8 +703,7 @@ Switch to resulting buffer and return it."
     ("crl" 'x509--viewcrl-history)
     ("pkcs7" 'x509--viewpkcs7-history)
     ("dhparam" 'x509--viewdh-history)
-    ("pkey"
-     (if (string-match-p "-pubin" args)
+    ("pkey" (if (string-match-p "-pubin" args)
          'x509--viewpublickey-history
        'x509--viewkey-history))
     ("asn1parse" 'x509--viewasn1-history)
@@ -705,18 +716,21 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
   (interactive)
   (if edit
       (setq current-prefix-arg '(4)))
-  (if (or (and edit (derived-mode-p 'x509-asn1-mode))   ; Edit asn1 mode
+  (if (or (and edit (derived-mode-p 'x509-asn1-mode)) ; Edit asn1 mode
           (and (not edit) (derived-mode-p 'x509-mode))) ; Toggle to asn1
-      (let ((default-args (or x509--x509-asn1-mode-shadow-arguments
-                              x509-asn1parse-default-arg)))
-        (x509--generic-view default-args 'x509--viewasn1-history
-                            'x509-asn1-mode
-                            x509--shadow-buffer (current-buffer)))
-    (let* ((default-args (or x509--x509-mode-shadow-arguments
-                             (x509--get-x509-toggle-mode-args)))
+      (let ((default-args
+             (or x509--x509-asn1-mode-shadow-arguments
+                 x509-asn1parse-default-arg)))
+        (x509--generic-view
+         default-args 'x509--viewasn1-history 'x509-asn1-mode
+         x509--shadow-buffer (current-buffer)))
+    (let* ((default-args
+            (or x509--x509-mode-shadow-arguments
+                (x509--get-x509-toggle-mode-args)))
            (history (x509--get-x509-history default-args)))
       (x509--generic-view default-args history 'x509-mode
-                          x509--shadow-buffer (current-buffer)))))
+                          x509--shadow-buffer
+                          (current-buffer)))))
 
 (defun x509--edit-params ()
   "Edit command parameters in current buffer."
@@ -724,18 +738,20 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
   (x509--toggle-mode t))
 
 ;; ---------------------------------------------------------------------------
-(defvar x509--viewcert-history nil "History list for `x509-viewcert'.")
+(defvar x509--viewcert-history nil
+  "History list for `x509-viewcert'.")
 ;;;###autoload
 (defun x509-viewcert ()
   "Parse current buffer as a certificate file.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-x509-default-arg 'x509--viewcert-history
-                      'x509-mode))
+  (x509--generic-view
+   x509-x509-default-arg 'x509--viewcert-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
-(defvar x509--viewreq-history nil "History list for `x509-viewreq'.")
+(defvar x509--viewreq-history nil
+  "History list for `x509-viewreq'.")
 ;;;###autoload
 (defun x509-viewreq ()
   "Parse current buffer as a certificate request file.
@@ -745,7 +761,8 @@ With \\[universal-argument] prefix, you can edit the command arguments."
   (x509--generic-view x509-req-default-arg 'x509--viewreq-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
-(defvar x509--viewcrl-history nil "History list for `x509-viewcrl'.")
+(defvar x509--viewcrl-history nil
+  "History list for `x509-viewcrl'.")
 ;;;###autoload
 (defun x509-viewcrl ()
   "Parse current buffer as a CRL file.
@@ -755,7 +772,8 @@ With \\[universal-argument] prefix, you can edit the command arguments."
   (x509--generic-view x509-crl-default-arg 'x509--viewcrl-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
-(defvar x509--viewpkcs7-history nil "History list for `x509-viewpkcs7'.")
+(defvar x509--viewpkcs7-history nil
+  "History list for `x509-viewpkcs7'.")
 ;;;###autoload
 (defun x509-viewpkcs7 ()
   "Parse current buffer as a PKCS#7 file.
@@ -765,23 +783,25 @@ switch to output details.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-pkcs7-default-arg 'x509--viewpkcs7-history
-                      'x509-mode))
+  (x509--generic-view
+   x509-pkcs7-default-arg 'x509--viewpkcs7-history 'x509-mode))
 
 
 ;; ---------------------------------------------------------------------------
-(defvar x509--viewdh-history nil "History list for `x509-viewdh'.")
+(defvar x509--viewdh-history nil
+  "History list for `x509-viewdh'.")
 ;;;###autoload
 (defun x509-viewdh ()
   "Parse current buffer as a DH-parameter file.
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-dhparam-default-arg 'x509--viewdh-history
-                      'x509-mode))
+  (x509--generic-view
+   x509-dhparam-default-arg 'x509--viewdh-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
-(defvar x509--viewkey-history nil "History list for `x509-viewkey'.")
+(defvar x509--viewkey-history nil
+  "History list for `x509-viewkey'.")
 ;;;###autoload
 (defun x509-viewkey ()
   "Display x509 private key using the OpenSSL pkey command.
@@ -799,8 +819,8 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-pkey-pubin-default-arg
-                      'x509--viewpublickey-history 'x509-mode))
+  (x509--generic-view
+   x509-pkey-pubin-default-arg 'x509--viewpublickey-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewlegacykey-history nil
@@ -818,18 +838,21 @@ ARGS are arguments to the openssl command.
 
 With \\[universal-argument] prefix, you can edit the command arguments.
 For example to enter pass-phrase, add -passin pass:PASSPHRASE."
-  (interactive (list (x509--read-arguments
-                      "pkey args: "
-                      (format "%s -inform %s -in \"%s\""
-                              x509-pkey-default-arg
-                              (x509--buffer-encoding (current-buffer))
-                              (buffer-file-name))
-                      'x509--viewlegacykey-history)))
-  (let* ((buf (generate-new-buffer (generate-new-buffer-name
-                                    (format "*x-%s*" (buffer-name))))))
-    (setq args (append
-                (list x509-openssl-cmd nil buf nil)
-                (split-string-and-unquote args)))
+  (interactive (list
+                (x509--read-arguments
+                 "pkey args: "
+                 (format "%s -inform %s -in \"%s\""
+                         x509-pkey-default-arg
+                         (x509--buffer-encoding (current-buffer))
+                         (buffer-file-name))
+                 'x509--viewlegacykey-history)))
+  (let* ((buf
+          (generate-new-buffer
+           (generate-new-buffer-name (format "*x-%s*" (buffer-name))))))
+    (setq args
+          (append
+           (list x509-openssl-cmd nil buf nil)
+           (split-string-and-unquote args)))
     (apply 'call-process args)
     (switch-to-buffer buf)
     (goto-char (point-min))
@@ -846,12 +869,13 @@ if the buffer contains data of certain type."
          (args (x509--add-inform-spec openssl-commamd-args encoding))
          ;; Arguments to `call-process-region'. Just run the command and
          ;; discard the output.
-         (proc-args (append
-                     (list nil nil x509-openssl-cmd nil nil nil)
-                     (split-string-and-unquote args))))
-    (prog1
-        (= 0 (with-current-buffer in-buf
-               (apply 'call-process-region proc-args)))
+         (proc-args
+          (append
+           (list nil nil x509-openssl-cmd nil nil nil)
+           (split-string-and-unquote args))))
+    (prog1 (= 0
+              (with-current-buffer in-buf
+                (apply 'call-process-region proc-args)))
       (kill-buffer in-buf))))
 
 ;; ---------------------------------------------------------------------------
@@ -866,18 +890,13 @@ different openssl commands until one succeeds.  Call
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
      (call-interactively 'x509-viewcert))
-    ("CERTIFICATE REQUEST"
-     (call-interactively 'x509-viewreq))
-    ("DH PARAMETERS"
-     (call-interactively 'x509-viewdh))
-    ("PKCS7"
-     (call-interactively 'x509-viewpkcs7))
+    ("CERTIFICATE REQUEST" (call-interactively 'x509-viewreq))
+    ("DH PARAMETERS" (call-interactively 'x509-viewdh))
+    ("PKCS7" (call-interactively 'x509-viewpkcs7))
     ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
      (call-interactively 'x509-viewkey))
-    ("PUBLIC KEY"
-     (call-interactively 'x509-viewpublickey))
-    ("X509 CRL"
-     (call-interactively 'x509-viewcrl))
+    ("PUBLIC KEY" (call-interactively 'x509-viewpublickey))
+    ("X509 CRL" (call-interactively 'x509-viewcrl))
     (_
      (cond
       ((x509--dwim-tester x509-x509-default-arg)
@@ -908,7 +927,8 @@ Ex ^ 63:d=1  hl=2 l=  34
   (save-excursion
     (move-beginning-of-line 1)
     (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)"
-                           (line-end-position) t)
+                           (line-end-position)
+                           t)
         (string-to-number (match-string-no-properties 1))
       0)))
 
@@ -919,13 +939,16 @@ Ex ^ 63:d=1  hl=2 l=  34
 -> 2 + 34 = 36"
   (save-excursion
     (move-beginning-of-line 1)
-    (if (re-search-forward
-         (concat "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\) "
-                 "*l= *\\(?:\\([0-9]+\\)\\|\\(inf\\)\\)")
-         (line-end-position) t)
+    (if (re-search-forward (concat
+                            "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\) "
+                            "*l= *\\(?:\\([0-9]+\\)\\|\\(inf\\)\\)")
+                           (line-end-position) t)
         (let* ((hl (string-to-number (match-string-no-properties 2)))
                (len-str (match-string-no-properties 3))
-               (len (if len-str (string-to-number len-str) 0)))
+               (len
+                (if len-str
+                    (string-to-number len-str)
+                  0)))
           (+ hl len))
       0)))
 
@@ -940,12 +963,13 @@ account for the unused-bits byte."
   (save-excursion
     (move-beginning-of-line 1)
     (if (re-search-forward "^ *\\([0-9]+\\):d=[0-9]+ *hl=\\([0-9]+\\)"
-                           (line-end-position) t)
+                           (line-end-position)
+                           t)
         (let ((hl (string-to-number (match-string-no-properties 2)))
-              (add-one (if (re-search-forward "BIT STRING"
-                                              (line-end-position) t)
-                           1
-                         0)))
+              (add-one
+               (if (re-search-forward "BIT STRING" (line-end-position) t)
+                   1
+                 0)))
           (+ hl add-one))
       0)))
 
@@ -962,7 +986,10 @@ Return updated argument string."
     ;; Replace existing argument
     (if (string-match "\\(?:-offset\\|-strparse\\) [0-9]+" arguments)
         (replace-match (concat command " " (number-to-string start))
-                       nil nil arguments 0)
+                       nil
+                       nil
+                       arguments
+                       0)
       ;; Add new
       (format "%s %s %s" arguments command start))))
 
@@ -972,15 +999,18 @@ Return updated argument string."
 (defun x509--asn1-update-mode-line ()
   "Update command line mode name."
   (let* ((top (car x509--x509-asn1-mode-offset-stack))
-         (command (if top
-                      (if (string= (nth 0 top) "-strparse")
-                          "s"
-                        "o")))
-         (offset (if top (nth 1 top)))
+         (command
+          (if top
+              (if (string= (nth 0 top) "-strparse")
+                  "s"
+                "o")))
+         (offset
+          (if top
+              (nth 1 top)))
          new-mode-name)
     (if offset
-        (setq new-mode-name (format "%s[%s%s]"
-                                    x509--asn1-mode-name command offset))
+        (setq new-mode-name
+              (format "%s[%s%s]" x509--asn1-mode-name command offset))
       (setq new-mode-name x509--asn1-mode-name))
     (when (not (string= mode-name new-mode-name))
       (setq mode-name new-mode-name)
@@ -990,11 +1020,16 @@ Return updated argument string."
   "Calculate offset at line adding current -offset or -strparse."
   (let* ((line-offset (x509--asn1-get-offset))
          (top (car x509--x509-asn1-mode-offset-stack))
-         (strparsep (if top (string= (nth 0 top) "-strparse")))
-         (current-offset (if top
-                             (+ (nth 1 top)
-                                (if strparsep (nth 2 top) 0))
-                           0)))
+         (strparsep
+          (if top
+              (string= (nth 0 top) "-strparse")))
+         (current-offset
+          (if top
+              (+ (nth 1 top)
+                 (if strparsep
+                     (nth 2 top)
+                   0))
+            0)))
     (+ line-offset current-offset)))
 
 (defun x509--asn1-offset-strparse (command)
@@ -1008,23 +1043,30 @@ to get it right but it can get confusing."
   (let* ((line-offset (x509--asn1-get-offset))
          (header-len (x509--asn1-get-header-len))
          (strparsep (string= command "-strparse"))
-         (add-header (if strparsep 0 header-len))
+         (add-header
+          (if strparsep
+              0
+            header-len))
          (top (car x509--x509-asn1-mode-offset-stack))
-         (current-offset (if top
-                             (+ (nth 1 top) (if strparsep (nth 2 top) 0))
-                           0))
+         (current-offset
+          (if top
+              (+ (nth 1 top)
+                 (if strparsep
+                     (nth 2 top)
+                   0))
+            0))
          (new-offset (+ current-offset line-offset add-header))
-         (new-args (x509--asn1-update-command-line-start-arg
-                    (or x509--x509-asn1-mode-shadow-arguments
-                        x509-asn1parse-default-arg)
-                    command
-                    new-offset)))
+         (new-args
+          (x509--asn1-update-command-line-start-arg
+           (or x509--x509-asn1-mode-shadow-arguments
+               x509-asn1parse-default-arg)
+           command new-offset)))
     (if (> new-offset 0)
         (push (list command new-offset header-len (point))
               x509--x509-asn1-mode-offset-stack))
-    (x509--generic-view new-args 'x509--viewasn1-history
-                        'x509-asn1-mode
-                        x509--shadow-buffer (current-buffer))
+    (x509--generic-view new-args 'x509--viewasn1-history 'x509-asn1-mode
+                        x509--shadow-buffer
+                        (current-buffer))
     (x509--asn1-update-mode-line)))
 
 (defun x509--asn1-offset-down ()
@@ -1047,16 +1089,22 @@ Offset is calculated from offset on current line."
     (let* ((current (pop x509--x509-asn1-mode-offset-stack))
            (point (nth 3 current))
            (up (car x509--x509-asn1-mode-offset-stack))
-           (command (if up (nth 0 up) "none"))
-           (offset (if up (nth 1 up) 0))
-           (new-args (x509--asn1-update-command-line-start-arg
-                      (or x509--x509-asn1-mode-shadow-arguments
-                          x509-asn1parse-default-arg)
-                      command
-                      offset)))
-      (x509--generic-view new-args 'x509--viewasn1-history
-                          'x509-asn1-mode
-                          x509--shadow-buffer (current-buffer))
+           (command
+            (if up
+                (nth 0 up)
+              "none"))
+           (offset
+            (if up
+                (nth 1 up)
+              0))
+           (new-args
+            (x509--asn1-update-command-line-start-arg
+             (or x509--x509-asn1-mode-shadow-arguments
+                 x509-asn1parse-default-arg)
+             command offset)))
+      (x509--generic-view new-args 'x509--viewasn1-history 'x509-asn1-mode
+                          x509--shadow-buffer
+                          (current-buffer))
       (goto-char point)
       (x509--asn1-update-mode-line))))
 
@@ -1076,7 +1124,7 @@ Use FACE."
   "Return buffer point where byte at OFFSET start in a `hexl-mode' buffer."
   (let* ((lines (/ offset 16))
          (addresses (* 10 (+ 1 lines)))
-         (trailers  (* 18 lines))
+         (trailers (* 18 lines))
          (spaces (/ offset 2))
          (bytes (* offset 2)))
     ;; Point is 1 based.
@@ -1095,21 +1143,21 @@ Use FACE."
 (defun x509-asn1--hexl-offset-end (offset)
   "Return buffer point where OFFSET ends in a `hexl-mode' buffer."
   (let* ((lines (/ offset 16))
-         (even-sixteen (and (> offset 0)
-                            (= 0 (mod offset 16))))
-         (count-addresses (if even-sixteen
-                              lines
-                            (1+ lines)))
-         (count-trailers (if even-sixteen
-                             (max 0 (1- lines))
-                           lines))
+         (even-sixteen (and (> offset 0) (= 0 (mod offset 16))))
+         (count-addresses
+          (if even-sixteen
+              lines
+            (1+ lines)))
+         (count-trailers
+          (if even-sixteen
+              (max 0 (1- lines))
+            lines))
          (addresses (* 10 count-addresses))
-         (trailers  (* 18 count-trailers))
+         (trailers (* 18 count-trailers))
          (spaces (/ offset 2))
          (bytes (* offset 2)))
     ;; Don't include space after even byte
-    (if (and (> spaces 0)
-             (= 0 (mod offset 2)))
+    (if (and (> spaces 0) (= 0 (mod offset 2)))
         (setq spaces (1- spaces)))
     (if (= 0 offset)
         ;; Special. Ensure end >= start.
@@ -1120,13 +1168,13 @@ Use FACE."
 (defun x509-asn1--hexl-char-offset-end (offset)
   "Return buffer point where OFFSET ends in a `hexl-mode' buffer."
   (let* ((lines (/ offset 16))
-         (even-sixteen (and (> offset 0)
-                            (= 0 (mod offset 16))))
-         (whole-lines (if even-sixteen
-                              lines
-                            (1+ lines)))
+         (even-sixteen (and (> offset 0) (= 0 (mod offset 16))))
+         (whole-lines
+          (if even-sixteen
+              lines
+            (1+ lines)))
          (addresses (* 10 whole-lines))
-         (byte-blocks  (* 41 whole-lines))
+         (byte-blocks (* 41 whole-lines))
          (char-blocks (* lines 17))
          (chars (mod offset 16)))
     (if even-sixteen
@@ -1145,10 +1193,10 @@ Used to display hexl buffer in `x509-asn1-mode'."
 
 (defun x509--point-visible (buffer point)
   "Check if POINT is visible in a window in BUFFER."
-  (cl-find-if (lambda (w)
-                      (and (>= point (window-start w))
-                           (<= point (window-end w))))
-              (get-buffer-window-list buffer)))
+  (cl-find-if
+   (lambda (w)
+     (and (>= point (window-start w)) (<= point (window-end w))))
+   (get-buffer-window-list buffer)))
 
 (defun x509--scroll-window (buffer point)
   "Recenter window showing BUFFER around point POINT unless POINT is visible."
@@ -1159,7 +1207,7 @@ Used to display hexl buffer in `x509-asn1-mode'."
             (goto-char point)
             (recenter))))))
 
-(defun x509-asn1--byte-offet-stripes(start-byte end-byte)
+(defun x509-asn1--byte-offet-stripes (start-byte end-byte)
   "Construct stripes of bytes mod 16.
 
 Starting from START-BYTE and ending before END-BYTE."
@@ -1172,7 +1220,7 @@ Starting from START-BYTE and ending before END-BYTE."
         (setq start-byte (+ start-byte stripe-len))))
     ranges))
 
-(defun x509-asn1--hexl-buffer-offset-stripes(start-byte end-byte)
+(defun x509-asn1--hexl-buffer-offset-stripes (start-byte end-byte)
   "Construct stripes of offsets in a `hexl-mode' buffer.
 
 Starting from START-BYTE and ending before END-BYTE.
@@ -1182,25 +1230,30 @@ characters in the rightmost column."
   (let ((byte-ranges (x509-asn1--byte-offet-stripes start-byte end-byte)))
     (append
      (nreverse
-      (cl-mapcar (lambda (stripe)
-                   (cons (x509-asn1--hexl-offset-start (car stripe))
-                         (x509-asn1--hexl-offset-end (cdr stripe))))
-                 byte-ranges))
+      (cl-mapcar
+       (lambda (stripe)
+         (cons
+          (x509-asn1--hexl-offset-start (car stripe))
+          (x509-asn1--hexl-offset-end (cdr stripe))))
+       byte-ranges))
      (nreverse
-      (cl-mapcar (lambda (stripe)
-                   (cons (x509-asn1--hexl-char-offset-start (car stripe))
-                         (x509-asn1--hexl-char-offset-end (cdr stripe))))
-                 byte-ranges)))))
+      (cl-mapcar
+       (lambda (stripe)
+         (cons
+          (x509-asn1--hexl-char-offset-start (car stripe))
+          (x509-asn1--hexl-char-offset-end (cdr stripe))))
+       byte-ranges)))))
 
-(defun x509-asn1--apply-overlay-stripes(point-stripes face)
+(defun x509-asn1--apply-overlay-stripes (point-stripes face)
   "Add overlays in current buffer spanning POINT-STRIPES using face FACE.
 
 Store created overlays in `x509-asn1--hexl-overlays'."
-  (cl-loop for stripe in point-stripes do
-           (let ((start (car stripe))
-                 (end (cdr stripe)))
-             (push (x509-asn1--setup-overlay start end (current-buffer) face)
-                   x509-asn1--hexl-overlays))))
+  (cl-loop
+   for stripe in point-stripes do
+   (let ((start (car stripe))
+         (end (cdr stripe)))
+     (push (x509-asn1--setup-overlay start end (current-buffer) face)
+           x509-asn1--hexl-overlays))))
 
 (defun x509-asn1--update-overlays ()
   "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer.
@@ -1213,10 +1266,10 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
          (header-end (+ header-start header-length))
          (value-start (+ header-start header-length))
          (value-end (+ value-start value-length))
-         (header-stripes (x509-asn1--hexl-buffer-offset-stripes
-                          header-start header-end))
-         (value-stripes (x509-asn1--hexl-buffer-offset-stripes
-                         value-start value-end)))
+         (header-stripes
+          (x509-asn1--hexl-buffer-offset-stripes header-start header-end))
+         (value-stripes
+          (x509-asn1--hexl-buffer-offset-stripes value-start value-end)))
     (with-current-buffer x509-asn1--hexl-buffer
       (x509-asn1--remove-overlays)
       (x509-asn1--apply-overlay-stripes header-stripes 'x509-asn1-hexl-header)
@@ -1250,9 +1303,9 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
         (setq x509-asn1--hexl-buffer nil)
         (setq x509-asn1--last-point nil))
     (let* ((src-buffer x509--shadow-buffer)
-           (hexl-buffer-name (replace-regexp-in-string
-                              "^ \\*in-x-" "*hexl-"
-                              (buffer-name src-buffer)))
+           (hexl-buffer-name
+            (replace-regexp-in-string
+             "^ \\*in-x-" "*hexl-" (buffer-name src-buffer)))
            (hexl-buffer (get-buffer-create hexl-buffer-name)))
 
       (with-current-buffer hexl-buffer
@@ -1262,9 +1315,9 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
 
       (if (string= "PEM" (x509--buffer-encoding src-buffer))
           ;; If PEM: Decode base64
-          (x509--process-buffer src-buffer
-                                (split-string-and-unquote "enc -d -base64")
-                                hexl-buffer 'no-hooks)
+          (x509--process-buffer
+           src-buffer (split-string-and-unquote "enc -d -base64")
+           hexl-buffer 'no-hooks)
         ;; Else use src-buffer as is.
         (with-current-buffer hexl-buffer
           (insert-buffer-substring-no-properties src-buffer)))
@@ -1283,39 +1336,50 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
 
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords
-    (regexp-opt '("prim" "EOC" "BOOLEAN" "INTEGER" "BIT_STRING" "BIT STRING"
-                  "OCTET_STRING" "OCTET STRING" "NULL" "OID"
-                  "UTCTIME" "GENERALIZEDTIME" "ENUMERATED"))))
+    (regexp-opt
+     '("prim"
+       "EOC"
+       "BOOLEAN"
+       "INTEGER"
+       "BIT_STRING"
+       "BIT STRING"
+       "OCTET_STRING"
+       "OCTET STRING"
+       "NULL"
+       "OID"
+       "UTCTIME"
+       "GENERALIZEDTIME"
+       "ENUMERATED"))))
 
 (eval-when-compile
-  (defconst x509--asn1-cons-keywords
-    (regexp-opt '("SEQUENCE" "SET"))))
+  (defconst x509--asn1-cons-keywords (regexp-opt '("SEQUENCE" "SET"))))
 
 (eval-when-compile
   (defconst x509--asn1-strings
-    (concat (regexp-opt
-             ;; Keyword:
-             '("UTF8STRING" "PRINTABLESTRING" "IA5STRING")
-             t )   ; t = enclose in \\( \\) for easy subexpr reference
-            ;; Followed by a string
-            " *:\\(.*?\\)\\(?: *:\\|$\\)")))
+    (concat
+     (regexp-opt
+      ;; Keyword:
+      '("UTF8STRING" "PRINTABLESTRING" "IA5STRING")
+      t) ; t = enclose in \\( \\) for easy subexpr reference
+     ;; Followed by a string
+     " *:\\(.*?\\)\\(?: *:\\|$\\)")))
 
 (eval-when-compile
   (defconst x509--asn1-oid
-    (concat (regexp-opt
-             ;; Keyword:
-             '("OID" "OBJECT")
-             t )   ; t = enclose in \\( \\) for easy subexpr reference
-            ;; Followed by an OID (derdigger) or object name (asn1parse)
-            " *:\\(.*?\\)\\(?: *:\\|$\\)")))
+    (concat
+     (regexp-opt
+      ;; Keyword:
+      '("OID" "OBJECT")
+      t) ; t = enclose in \\( \\) for easy subexpr reference
+     ;; Followed by an OID (derdigger) or object name (asn1parse)
+     " *:\\(.*?\\)\\(?: *:\\|$\\)")))
 
 (defconst x509-asn1-font-lock-keywords
   (eval-when-compile
     (list
      ;; Undetermined length, i.e. when the length byte is 0x80 indicating
      ;; zero following length bytes.
-     '("l=\\(inf\\) "
-       (1 'x509-constant-face))
+     '("l=\\(inf\\) " (1 'x509-constant-face))
      ;; BOOLEAN, INTEGER and such
      `(,x509--asn1-primitives-keywords . 'x509-keyword-face)
      ;; SET, SEQUENCE
@@ -1329,33 +1393,33 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
      ;; Parsing error messages
      '("error:.*\\|Error in encoding" . 'x509-warning-face)
      ;; String type + string value
-     `(,x509--asn1-strings
-       (1 'x509-keyword-face)
-       (2 'x509-string-face))
+     `(,x509--asn1-strings (1 'x509-keyword-face) (2 'x509-string-face))
      ;; "OID" followed by oid
-     `(,x509--asn1-oid
-       (1 'x509-keyword-face)
-       (2 'x509-oid-face))))
+     `(,x509--asn1-oid (1 'x509-keyword-face) (2 'x509-oid-face))))
   "Openssl asn1parse highlighting.")
 
 ;;;###autoload
-(define-derived-mode x509-asn1-mode fundamental-mode x509--asn1-mode-name
-  "Major mode for displaying openssl asn1parse output.
+(define-derived-mode
+ x509-asn1-mode
+ fundamental-mode
+ x509--asn1-mode-name
+ "Major mode for displaying openssl asn1parse output.
 
 \\{x509-asn1-mode-map}"
-  (set (make-local-variable 'font-lock-defaults)
-       '(x509-asn1-font-lock-keywords t))
-  (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)
-  (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
-  (define-key x509-asn1-mode-map "e" 'x509--edit-params)
-  (define-key x509-asn1-mode-map "d" 'x509--asn1-offset-down)
-  (define-key x509-asn1-mode-map "s" 'x509--asn1-strparse)
-  (define-key x509-asn1-mode-map "u" 'x509--asn1-offset-up)
-  (define-key x509-asn1-mode-map "x" 'x509-asn1-toggle-hexl)
-  (x509--mark-browse-http-links)
-  (x509--mark-browse-oid))
+ (set
+  (make-local-variable 'font-lock-defaults) '(x509-asn1-font-lock-keywords t))
+ (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)
+ (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
+ (define-key x509-asn1-mode-map "e" 'x509--edit-params)
+ (define-key x509-asn1-mode-map "d" 'x509--asn1-offset-down)
+ (define-key x509-asn1-mode-map "s" 'x509--asn1-strparse)
+ (define-key x509-asn1-mode-map "u" 'x509--asn1-offset-up)
+ (define-key x509-asn1-mode-map "x" 'x509-asn1-toggle-hexl)
+ (x509--mark-browse-http-links)
+ (x509--mark-browse-oid))
 
-(defvar x509--viewasn1-history nil "History list for `x509-viewasn1'.")
+(defvar x509--viewasn1-history nil
+  "History list for `x509-viewasn1'.")
 
 ;;;###autoload
 (defun x509-viewasn1 ()
@@ -1363,8 +1427,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
 
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
-  (x509--generic-view x509-asn1parse-default-arg 'x509--viewasn1-history
-                      'x509-asn1-mode))
+  (x509--generic-view
+   x509-asn1parse-default-arg 'x509--viewasn1-history 'x509-asn1-mode))
 
 (provide 'x509-asn1-mode)
 (provide 'x509-mode)

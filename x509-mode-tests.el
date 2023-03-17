@@ -333,15 +333,15 @@ When `x509-warn-near-expire-days' is nil."
 
 (ert-deftest x509--get-x509-history ()
   "Verify that all commands return expected history variables."
-  (should (equal 'x509--viewcert-history (x509--get-x509-history "x509")))
-  (should (equal 'x509--viewreq-history (x509--get-x509-history "req")))
-  (should (equal 'x509--viewcrl-history (x509--get-x509-history "crl")))
-  (should (equal 'x509--viewpkcs7-history (x509--get-x509-history "pkcs7")))
-  (should (equal 'x509--viewdh-history (x509--get-x509-history "dhparam")))
-  (should (equal 'x509--viewkey-history (x509--get-x509-history "pkey")))
+  (should (equal 'x509-viewcert-history (x509--get-x509-history "x509")))
+  (should (equal 'x509-viewreq-history (x509--get-x509-history "req")))
+  (should (equal 'x509-viewcrl-history (x509--get-x509-history "crl")))
+  (should (equal 'x509-viewpkcs7-history (x509--get-x509-history "pkcs7")))
+  (should (equal 'x509-viewdh-history (x509--get-x509-history "dhparam")))
+  (should (equal 'x509-viewkey-history (x509--get-x509-history "pkey")))
   (should
-   (equal 'x509--viewpublickey-history (x509--get-x509-history "pkey -pubin")))
-  (should (equal 'x509--viewasn1-history (x509--get-x509-history "asn1parse")))
+   (equal 'x509-viewpublickey-history (x509--get-x509-history "pkey -pubin")))
+  (should (equal 'x509-viewasn1-history (x509--get-x509-history "asn1parse")))
   (should (equal nil (x509--get-x509-history "UNKNOWN"))))
 
 

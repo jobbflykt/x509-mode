@@ -698,15 +698,15 @@ Switch to resulting buffer and return it."
 (defun x509--get-x509-history (args)
   "Return history variable that matches command ARGS."
   (pcase (car (split-string-and-unquote args))
-    ("x509" 'x509--viewcert-history)
-    ("req" 'x509--viewreq-history)
-    ("crl" 'x509--viewcrl-history)
-    ("pkcs7" 'x509--viewpkcs7-history)
-    ("dhparam" 'x509--viewdh-history)
+    ("x509" 'x509-viewcert-history)
+    ("req" 'x509-viewreq-history)
+    ("crl" 'x509-viewcrl-history)
+    ("pkcs7" 'x509-viewpkcs7-history)
+    ("dhparam" 'x509-viewdh-history)
     ("pkey" (if (string-match-p "-pubin" args)
-         'x509--viewpublickey-history
-       'x509--viewkey-history))
-    ("asn1parse" 'x509--viewasn1-history)
+         'x509-viewpublickey-history
+       'x509-viewkey-history))
+    ("asn1parse" 'x509-viewasn1-history)
     (_ nil)))
 
 (defun x509--toggle-mode (&optional edit)
@@ -721,9 +721,9 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
       (let ((default-args
              (or x509--x509-asn1-mode-shadow-arguments
                  x509-asn1parse-default-arg)))
-        (x509--generic-view
-         default-args 'x509--viewasn1-history 'x509-asn1-mode
-         x509--shadow-buffer (current-buffer)))
+        (x509--generic-view default-args 'x509-viewasn1-history 'x509-asn1-mode
+                            x509--shadow-buffer
+                            (current-buffer)))
     (let* ((default-args
             (or x509--x509-mode-shadow-arguments
                 (x509--get-x509-toggle-mode-args)))
@@ -738,92 +738,66 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
   (x509--toggle-mode t))
 
 ;; ---------------------------------------------------------------------------
-(defvar x509--viewcert-history nil
-  "History list for `x509-viewcert'.")
-;;;###autoload
-(defun x509-viewcert ()
-  "Parse current buffer as a certificate file.
+;; Produces a variable <name>-history and a function <name> which calls
+;; `x509--generic-view'. The produced function is marked for autoloading.
+(defmacro define-view-command (name default-arg mode docstring)
+  `(progn
+     (defvar ,(intern (concat (symbol-name name) "-history")) nil
+       ,(concat "History list for `" (symbol-name name) "'."))
+     (defun ,name ()
+       ,(concat
+         docstring
+         "\n\nWith `\\[universal-argument]' prefix, you can edit the command arguments.")
+       (interactive)
+       (x509--generic-view
+        ,default-arg ',(intern (concat (symbol-name name) "-history")) ,mode))
+     (autoload ',name "x509-mode" nil t)))
 
-With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive)
-  (x509--generic-view
-   x509-x509-default-arg 'x509--viewcert-history 'x509-mode))
+(define-view-command
+ x509-viewcert
+ x509-x509-default-arg
+ 'x509-mode
+ "Parse current buffer as a certificate file.")
 
-;; ---------------------------------------------------------------------------
-(defvar x509--viewreq-history nil
-  "History list for `x509-viewreq'.")
-;;;###autoload
-(defun x509-viewreq ()
-  "Parse current buffer as a certificate request file.
+(define-view-command
+ x509-viewreq
+ x509-req-default-arg
+ 'x509-mode
+ "Parse current buffer as a certificate request file.")
 
-With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive)
-  (x509--generic-view x509-req-default-arg 'x509--viewreq-history 'x509-mode))
+(define-view-command
+ x509-viewcrl
+ x509-crl-default-arg
+ 'x509-mode
+ "Parse current buffer as a CRL file.")
 
-;; ---------------------------------------------------------------------------
-(defvar x509--viewcrl-history nil
-  "History list for `x509-viewcrl'.")
-;;;###autoload
-(defun x509-viewcrl ()
-  "Parse current buffer as a CRL file.
-
-With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive)
-  (x509--generic-view x509-crl-default-arg 'x509--viewcrl-history 'x509-mode))
-
-;; ---------------------------------------------------------------------------
-(defvar x509--viewpkcs7-history nil
-  "History list for `x509-viewpkcs7'.")
-;;;###autoload
-(defun x509-viewpkcs7 ()
-  "Parse current buffer as a PKCS#7 file.
+(define-view-command
+ x509-viewpkcs7 x509-pkcs7-default-arg 'x509-mode
+ "Parse current buffer as a PKCS#7 file.
 
 Output only certificates and CRLs by default.  Add the \"-print\"
-switch to output details.
+switch to output details.")
 
-With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive)
-  (x509--generic-view
-   x509-pkcs7-default-arg 'x509--viewpkcs7-history 'x509-mode))
+(define-view-command
+ x509-viewdh
+ x509-dhparam-default-arg
+ 'x509-mode
+ "Parse current buffer as a DH-parameter file.")
 
+(define-view-command
+ x509-viewkey
+ x509-pkey-default-arg
+ 'x509-mode
+ "Display x509 private key using the OpenSSL pkey command.")
 
-;; ---------------------------------------------------------------------------
-(defvar x509--viewdh-history nil
-  "History list for `x509-viewdh'.")
-;;;###autoload
-(defun x509-viewdh ()
-  "Parse current buffer as a DH-parameter file.
-
-With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive)
-  (x509--generic-view
-   x509-dhparam-default-arg 'x509--viewdh-history 'x509-mode))
-
-;; ---------------------------------------------------------------------------
-(defvar x509--viewkey-history nil
-  "History list for `x509-viewkey'.")
-;;;###autoload
-(defun x509-viewkey ()
-  "Display x509 private key using the OpenSSL pkey command.
-
-With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive)
-  (x509--generic-view x509-pkey-default-arg 'x509--viewkey-history 'x509-mode))
+(define-view-command
+ x509-viewpublickey
+ x509-pkey-pubin-default-arg
+ 'x509-mode
+ "Display x509 public key using the OpenSSL pkey command.")
 
 ;; ---------------------------------------------------------------------------
-(defvar x509--viewpublickey-history nil
-  "History list for `x509-publicviewkey'.")
-;;;###autoload
-(defun x509-viewpublickey ()
-  "Display x509 public key using the OpenSSL pkey command.
-
-With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive)
-  (x509--generic-view
-   x509-pkey-pubin-default-arg 'x509--viewpublickey-history 'x509-mode))
-
-;; ---------------------------------------------------------------------------
-(defvar x509--viewlegacykey-history nil
+(defvar x509-viewlegacykey-history nil
   "History list for `x509-viewlegacykey'.")
 ;; Special. older openssl pkey cannot read from stdin so we need to use
 ;; buffer's file.
@@ -845,7 +819,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
                          x509-pkey-default-arg
                          (x509--buffer-encoding (current-buffer))
                          (buffer-file-name))
-                 'x509--viewlegacykey-history)))
+                 'x509-viewlegacykey-history)))
   (let* ((buf
           (generate-new-buffer
            (generate-new-buffer-name (format "*x-%s*" (buffer-name))))))
@@ -1102,7 +1076,7 @@ Offset is calculated from offset on current line."
              (or x509--x509-asn1-mode-shadow-arguments
                  x509-asn1parse-default-arg)
              command offset)))
-      (x509--generic-view new-args 'x509--viewasn1-history 'x509-asn1-mode
+      (x509--generic-view new-args 'x509-viewasn1-history 'x509-asn1-mode
                           x509--shadow-buffer
                           (current-buffer))
       (goto-char point)
@@ -1418,17 +1392,11 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))
 
-(defvar x509--viewasn1-history nil
-  "History list for `x509-viewasn1'.")
-
-;;;###autoload
-(defun x509-viewasn1 ()
-  "Parse current buffer as ASN.1.
-
-With \\[universal-argument] prefix, you can edit the command arguments."
-  (interactive)
-  (x509--generic-view
-   x509-asn1parse-default-arg 'x509--viewasn1-history 'x509-asn1-mode))
+(define-view-command
+ x509-viewasn1
+ x509-asn1parse-default-arg
+ 'x509-asn1-mode
+ "Parse current buffer as ASN.1.")
 
 (provide 'x509-asn1-mode)
 (provide 'x509-mode)

@@ -744,7 +744,7 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
   "Produces a variable NAME-history and a function NAME.
 DEFAULT-ARG is the default argument string variable name,
 e.g `x509-x509-default-arg'.
-MODE is the symbol mode that view command ends up in, e.g 'x509-mode.
+MODE is the symbol mode that view command ends up in, e.g \\='x509-mode.
 DOCSTRING is the docstring for the generated function."
   `(progn
      (defvar ,(intern (concat (symbol-name name) "-history")) nil

@@ -740,7 +740,12 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
 ;; ---------------------------------------------------------------------------
 ;; Produces a variable <name>-history and a function <name> which calls
 ;; `x509--generic-view'. The produced function is marked for autoloading.
-(defmacro define-view-command (name default-arg mode docstring)
+(defmacro x509-define-view-command (name default-arg mode docstring)
+  "Produces a variable NAME-history and a function NAME.
+DEFAULT-ARG is the default argument string variable name,
+e.g `x509-x509-default-arg'.
+MODE is the symbol mode that view command ends up in, e.g 'x509-mode.
+DOCSTRING is the docstring for the generated function."
   `(progn
      (defvar ,(intern (concat (symbol-name name) "-history")) nil
        ,(concat "History list for `" (symbol-name name) "'."))
@@ -753,44 +758,44 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
         ,default-arg ',(intern (concat (symbol-name name) "-history")) ,mode))
      (autoload ',name "x509-mode" nil t)))
 
-(define-view-command
+(x509-define-view-command
  x509-viewcert
  x509-x509-default-arg
  'x509-mode
  "Parse current buffer as a certificate file.")
 
-(define-view-command
+(x509-define-view-command
  x509-viewreq
  x509-req-default-arg
  'x509-mode
  "Parse current buffer as a certificate request file.")
 
-(define-view-command
+(x509-define-view-command
  x509-viewcrl
  x509-crl-default-arg
  'x509-mode
  "Parse current buffer as a CRL file.")
 
-(define-view-command
+(x509-define-view-command
  x509-viewpkcs7 x509-pkcs7-default-arg 'x509-mode
  "Parse current buffer as a PKCS#7 file.
 
 Output only certificates and CRLs by default.  Add the \"-print\"
 switch to output details.")
 
-(define-view-command
+(x509-define-view-command
  x509-viewdh
  x509-dhparam-default-arg
  'x509-mode
  "Parse current buffer as a DH-parameter file.")
 
-(define-view-command
+(x509-define-view-command
  x509-viewkey
  x509-pkey-default-arg
  'x509-mode
  "Display x509 private key using the OpenSSL pkey command.")
 
-(define-view-command
+(x509-define-view-command
  x509-viewpublickey
  x509-pkey-pubin-default-arg
  'x509-mode
@@ -1392,7 +1397,7 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))
 
-(define-view-command
+(x509-define-view-command
  x509-viewasn1
  x509-asn1parse-default-arg
  'x509-asn1-mode

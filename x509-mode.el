@@ -747,7 +747,7 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
      (defun ,name ()
        ,(concat
          docstring
-         "\n\nWith `\\[universal-argument]' prefix, you can edit the command arguments.")
+         "\n\nWith `\\[universal-argument]' prefix, the command arguments can be edited.")
        (interactive)
        (x509--generic-view
         ,default-arg ',(intern (concat (symbol-name name) "-history")) ,mode))
@@ -1038,7 +1038,7 @@ to get it right but it can get confusing."
     (if (> new-offset 0)
         (push (list command new-offset header-len (point))
               x509--x509-asn1-mode-offset-stack))
-    (x509--generic-view new-args 'x509--viewasn1-history 'x509-asn1-mode
+    (x509--generic-view new-args 'x509-viewasn1-history 'x509-asn1-mode
                         x509--shadow-buffer
                         (current-buffer))
     (x509--asn1-update-mode-line)))
@@ -1345,7 +1345,7 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
       ;; Keyword:
       '("OID" "OBJECT")
       t) ; t = enclose in \\( \\) for easy subexpr reference
-     ;; Followed by an OID (derdigger) or object name (asn1parse)
+     ;; Followed by an OID or object name.
      " *:\\(.*?\\)\\(?: *:\\|$\\)")))
 
 (defconst x509-asn1-font-lock-keywords

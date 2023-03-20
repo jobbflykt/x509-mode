@@ -759,28 +759,28 @@ DOCSTRING is the docstring for the generated function."
         ',(intern (concat (symbol-name name) "-history"))
         ,mode))))
 
-;;;###autoload (autoload 'x509-viewcert "x509-mode")
+;;;###autoload (autoload 'x509-viewcert "x509-mode" "View X509 certificate." t)
 (x509-define-view-command
  x509-viewcert
  x509-x509-default-arg
  'x509-mode
  "Parse current buffer as a certificate file.")
 
-;;;###autoload (autoload 'x509-viewreq "x509-mode")
+;;;###autoload (autoload 'x509-viewreq "x509-mode" "View X509 request." t)
 (x509-define-view-command
  x509-viewreq
  x509-req-default-arg
  'x509-mode
  "Parse current buffer as a certificate request file.")
 
-;;;###autoload (autoload 'x509-viewcrl "x509-mode")
+;;;###autoload (autoload 'x509-viewcrl "x509-mode" "View CRL." t)
 (x509-define-view-command
  x509-viewcrl
  x509-crl-default-arg
  'x509-mode
  "Parse current buffer as a CRL file.")
 
-;;;###autoload (autoload 'x509-viewpkcs7 "x509-mode")
+;;;###autoload (autoload 'x509-viewpkcs7 "x509-mode" "View PKCS7." t)
 (x509-define-view-command
  x509-viewpkcs7 x509-pkcs7-default-arg 'x509-mode
  "Parse current buffer as a PKCS#7 file.
@@ -788,21 +788,21 @@ DOCSTRING is the docstring for the generated function."
 Output only certificates and CRLs by default.  Add the \"-print\"
 switch to output details.")
 
-;;;###autoload (autoload 'x509-viewdh "x509-mode")
+;;;###autoload (autoload 'x509-viewdh "x509-mode" "View DH-parameters." t)
 (x509-define-view-command
  x509-viewdh
  x509-dhparam-default-arg
  'x509-mode
  "Parse current buffer as a DH-parameter file.")
 
-;;;###autoload (autoload 'x509-viewkey "x509-mode")
+;;;###autoload (autoload 'x509-viewkey "x509-mode" "View private key." t)
 (x509-define-view-command
  x509-viewkey
  x509-pkey-default-arg
  'x509-mode
  "Display x509 private key using the OpenSSL pkey command.")
 
-;;;###autoload (autoload 'x509-viewpublickey "x509-mode")
+;;;###autoload (autoload 'x509-viewpublickey "x509-mode" "View public key." t)
 (x509-define-view-command
  x509-viewpublickey
  x509-pkey-pubin-default-arg
@@ -1405,7 +1405,7 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))
 
-;;;###autoload (autoload 'x509-viewasn1 "x509-mode")
+;;;###autoload (autoload 'x509-viewasn1 "x509-mode" "View ASN.1" t)
 (x509-define-view-command
  x509-viewasn1
  x509-asn1parse-default-arg

@@ -160,3 +160,16 @@ pathlen
 Certificate Request
 Attributes
 Requested Extensions
+
+# openssl/include/openssl/obj_mac.h
+CT Precertificate SCTs:
+
+# openssl/crypto/ct/ct_prn.c
+# Certificate Transparency
+Signed Certificate Timestamp:
+Version   :
+Log       :
+Log ID    :
+Timestamp :
+Extensions:
+Signature :

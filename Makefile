@@ -2,8 +2,11 @@
 
 all: lisp
 
+DEPS = compat
+
 TOP := .
-LOAD_PATH = -L $(TOP)
+LOAD_PATH += $(addprefix -L ../,$(DEPS))
+LOAD_PATH += -L $(TOP)
 EMACS ?= emacs
 BATCH = $(EMACS) -Q --batch $(LOAD_PATH)
 

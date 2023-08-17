@@ -4,7 +4,7 @@
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmail.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "25.1") (compat "29.1.4.2"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -71,6 +71,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'compat)
 
 (defgroup x509 nil
   "View certificates, CRLs, keys and other related files using OpenSSL."
@@ -443,9 +444,9 @@ Skip blank lines and comment lines.  Return list."
 
 \\{x509-mode-map}"
  (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
- (define-key x509-mode-map "q" 'x509-mode--kill-buffer)
- (define-key x509-mode-map "t" 'x509--toggle-mode)
- (define-key x509-mode-map "e" 'x509--edit-params)
+ (keymap-set x509-mode-map "q" #'x509-mode--kill-buffer)
+ (keymap-set x509-mode-map "t" #'x509--toggle-mode)
+ (keymap-set x509-mode-map "e" #'x509--edit-params)
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))
 
@@ -1408,13 +1409,13 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
 \\{x509-asn1-mode-map}"
  (set
   (make-local-variable 'font-lock-defaults) '(x509-asn1-font-lock-keywords t))
- (define-key x509-asn1-mode-map "q" 'x509-mode--kill-buffer)
- (define-key x509-asn1-mode-map "t" 'x509--toggle-mode)
- (define-key x509-asn1-mode-map "e" 'x509--edit-params)
- (define-key x509-asn1-mode-map "d" 'x509--asn1-offset-down)
- (define-key x509-asn1-mode-map "s" 'x509--asn1-strparse)
- (define-key x509-asn1-mode-map "u" 'x509--asn1-offset-up)
- (define-key x509-asn1-mode-map "x" 'x509-asn1-toggle-hexl)
+ (keymap-set x509-asn1-mode-map "q" #'x509-mode--kill-buffer)
+ (keymap-set x509-asn1-mode-map "t" #'x509--toggle-mode)
+ (keymap-set x509-asn1-mode-map "e" #'x509--edit-params)
+ (keymap-set x509-asn1-mode-map "d" #'x509--asn1-offset-down)
+ (keymap-set x509-asn1-mode-map "s" #'x509--asn1-strparse)
+ (keymap-set x509-asn1-mode-map "u" #'x509--asn1-offset-up)
+ (keymap-set x509-asn1-mode-map "x" #'x509-asn1-toggle-hexl)
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))
 

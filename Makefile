@@ -6,19 +6,20 @@ TOP := .
 LOAD_PATH += -L $(TOP)
 EMACS ?= emacs
 BATCH = $(EMACS) -Q --batch $(LOAD_PATH)
-REQUIRES = package-lint compat
+REQUIRES = compat
 PACKAGES="(progn \
   (require 'package) \
-  (push '(\"melpa\" . \"https://melpa.org/packages/\") package-archives) \
-  (push '(\"gnu-elpa\" . \"http://mirrors.rockylinux.org/melpa/gnu-elpa/\") \
-        package-archives) \
   (package-initialize) \
   (dolist (pkg '(${REQUIRES})) \
     (unless (package-installed-p pkg) \
       (unless (assoc pkg package-archive-contents) \
         (package-refresh-contents)) \
-      (package-install pkg))) \
-  )"
+      (package-install pkg))))"
+
+# Future: Add package-lint to REQUIRES and melpa to package-archives.
+#         Create a target with runs -f package-lint-batch-and-exit x509-mode.el
+# REQUIRES += package-lint
+# (push '(\"melpa\" . \"https://melpa.org/packages/\") package-archives) \
 
 ELS = x509-mode.el
 ELCS = $(ELS:.el=.elc)

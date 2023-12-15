@@ -920,7 +920,7 @@ different openssl commands until one succeeds.  Call
       ((x509--dwim-tester x509-pkcs7-default-arg)
        (call-interactively #'x509-viewpkcs7))
       (t
-       (call-interactively '#x509-viewasn1))))))
+       (call-interactively #'x509-viewasn1))))))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

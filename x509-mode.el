@@ -319,7 +319,6 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
      ;; false positives.
      (format x509-query-oid-url-format oid))))
 
-(eval-when-compile
   (defun x509--load-data-file (filename)
     "Split FILENAME linewise into a list.
 Skip blank lines and comment lines.  Return list."
@@ -340,30 +339,26 @@ Skip blank lines and comment lines.  Return list."
         (insert-file-contents path)
         (cl-remove-if
          (lambda (s) (string-match-p "^ *\\(?:#\\|$\\)" s))
-         (split-string (buffer-string) "\n"))))))
+         (split-string (buffer-string) "\n")))))
 
-(eval-when-compile
-  (defconst x509--keywords (regexp-opt (x509--load-data-file "keywords.txt"))))
+  (defconst x509--keywords (regexp-opt (x509--load-data-file "keywords.txt")))
 
-(eval-when-compile
   (defconst x509--constants
-    (regexp-opt (x509--load-data-file "constants.txt") 'words)))
+    (regexp-opt (x509--load-data-file "constants.txt") 'words))
 
 ;; Keyword: constant
 ;; E.g. "Signature Algorithm: sha1WithRSAEncryption"
-(eval-when-compile
   (defconst x509--keyword-w-constant
     (concat
      (regexp-opt (x509--load-data-file "keyword+constant.txt") t)
      ;; Followed by ": constant"
-     ": *\\(.*\\)")))
+     ": *\\(.*\\)"))
 
 ;; Multiline Issuer and Subject, "-nameopt multiline"
 ;; E.g. "commonName                = GlobalSign Root CA"
-(eval-when-compile
   (defconst x509--multiline-name
     (concat
-     (regexp-opt (x509--load-data-file "long-name.txt") t) " *= \\(.*\\)")))
+     (regexp-opt (x509--load-data-file "long-name.txt") t) " *= \\(.*\\)"))
 
 (defconst x509-font-lock-keywords
   (eval-when-compile

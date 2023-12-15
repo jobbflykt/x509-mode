@@ -329,6 +329,11 @@ Skip blank lines and comment lines.  Return list."
              filename)
             ((bound-and-true-p load-file-name)
              (expand-file-name filename (file-name-directory load-file-name)))
+            ((file-exists-p
+              (expand-file-name filename
+                                "/home/runner/work/x509-mode/x509-mode"))
+              (expand-file-name filename
+                                "/home/runner/work/x509-mode/x509-mode"))
             (t
              filename))))
       (with-temp-buffer
@@ -621,8 +626,8 @@ Return output buffer."
         (if no-hooks
             (let ((coding-system-for-read 'no-conversion)
                   (coding-system-for-write 'no-conversion))
-              (apply 'call-process-region args))
-          (apply 'call-process-region args)))
+              (apply #'call-process-region args))
+          (apply #'call-process-region args)))
       (goto-char (point-min))
       (set-buffer-modified-p nil)
       (setq buffer-read-only t))
@@ -859,7 +864,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
           (append
            (list x509-openssl-cmd nil buf nil)
            (split-string-and-unquote args)))
-    (apply 'call-process args)
+    (apply #'call-process args)
     (switch-to-buffer buf)
     (goto-char (point-min))
     (set-buffer-modified-p nil)
@@ -881,7 +886,7 @@ if the buffer contains data of certain type."
            (split-string-and-unquote args))))
     (prog1 (= 0
               (with-current-buffer in-buf
-                (apply 'call-process-region proc-args)))
+                (apply #'call-process-region proc-args)))
       (kill-buffer in-buf))))
 
 ;; ---------------------------------------------------------------------------

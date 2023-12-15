@@ -611,13 +611,13 @@ Return output buffer."
       (unless no-hooks
         ;; Remember input-buffer and arguments.
         (setq x509--shadow-buffer input-buf)
-        (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t))
+        (add-hook 'kill-buffer-hook #'x509--kill-shadow-buffer nil t))
       (with-current-buffer input-buf
         (if no-hooks
             (let ((coding-system-for-read 'no-conversion)
                   (coding-system-for-write 'no-conversion))
-              (apply 'call-process-region args))
-          (apply 'call-process-region args)))
+              (apply #'call-process-region args))
+          (apply #'call-process-region args)))
       (goto-char (point-min))
       (set-buffer-modified-p nil)
       (setq buffer-read-only t))
@@ -854,7 +854,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
           (append
            (list x509-openssl-cmd nil buf nil)
            (split-string-and-unquote args)))
-    (apply 'call-process args)
+    (apply #'call-process args)
     (switch-to-buffer buf)
     (goto-char (point-min))
     (set-buffer-modified-p nil)
@@ -876,7 +876,7 @@ if the buffer contains data of certain type."
            (split-string-and-unquote args))))
     (prog1 (= 0
               (with-current-buffer in-buf
-                (apply 'call-process-region proc-args)))
+                (apply #'call-process-region proc-args)))
       (kill-buffer in-buf))))
 
 ;; ---------------------------------------------------------------------------
@@ -890,32 +890,32 @@ different openssl commands until one succeeds.  Call
   (interactive)
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
-     (call-interactively 'x509-viewcert))
-    ("CERTIFICATE REQUEST" (call-interactively 'x509-viewreq))
-    ("DH PARAMETERS" (call-interactively 'x509-viewdh))
-    ("PKCS7" (call-interactively 'x509-viewpkcs7))
+     (call-interactively #'x509-viewcert))
+    ("CERTIFICATE REQUEST" (call-interactively #'x509-viewreq))
+    ("DH PARAMETERS" (call-interactively #'x509-viewdh))
+    ("PKCS7" (call-interactively #'x509-viewpkcs7))
     ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
-     (call-interactively 'x509-viewkey))
-    ("PUBLIC KEY" (call-interactively 'x509-viewpublickey))
-    ("X509 CRL" (call-interactively 'x509-viewcrl))
+     (call-interactively #'x509-viewkey))
+    ("PUBLIC KEY" (call-interactively #'x509-viewpublickey))
+    ("X509 CRL" (call-interactively #'x509-viewcrl))
     (_
      (cond
       ((x509--dwim-tester x509-x509-default-arg)
-       (call-interactively 'x509-viewcert))
+       (call-interactively #'x509-viewcert))
       ((x509--dwim-tester x509-crl-default-arg)
-       (call-interactively 'x509-viewcrl))
+       (call-interactively #'x509-viewcrl))
       ((x509--dwim-tester x509-pkey-default-arg)
-       (call-interactively 'x509-viewkey))
+       (call-interactively #'x509-viewkey))
       ((x509--dwim-tester x509-pkey-pubin-default-arg)
-       (call-interactively 'x509-viewpublickey))
+       (call-interactively #'x509-viewpublickey))
       ((x509--dwim-tester x509-req-default-arg)
-       (call-interactively 'x509-viewreq))
+       (call-interactively #'x509-viewreq))
       ((x509--dwim-tester x509-dhparam-default-arg)
-       (call-interactively 'x509-viewdh))
+       (call-interactively #'x509-viewdh))
       ((x509--dwim-tester x509-pkcs7-default-arg)
-       (call-interactively 'x509-viewpkcs7))
+       (call-interactively #'x509-viewpkcs7))
       (t
-       (call-interactively 'x509-viewasn1))))))
+       (call-interactively #'x509-viewasn1))))))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

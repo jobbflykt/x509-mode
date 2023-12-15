@@ -327,7 +327,7 @@ Skip blank lines and comment lines.  Return list."
            (cond
             ((file-exists-p filename)
              filename)
-            (load-file
+            ((bound-and-true-p load-file-name)
              (expand-file-name filename (file-name-directory load-file-name)))
             (t
              filename))))

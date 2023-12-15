@@ -329,8 +329,8 @@ Skip blank lines and comment lines.  Return list."
              filename)
             (load-file
              (expand-file-name filename (file-name-directory load-file-name)))
-            t
-            filename)))
+            (t
+             filename))))
       (with-temp-buffer
         (insert-file-contents path)
         (cl-remove-if

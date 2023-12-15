@@ -361,7 +361,6 @@ Skip blank lines and comment lines.  Return list."
      (regexp-opt (x509--load-data-file "long-name.txt") t) " *= \\(.*\\)"))
 
 (defconst x509-font-lock-keywords
-  (eval-when-compile
     (list
      ;; Subject and Issuer, long names
      `(,x509--multiline-name (1 'x509-keyword-face) (2 'x509-string-face))
@@ -431,7 +430,7 @@ Skip blank lines and comment lines.  Return list."
      ;; fa:09(:....)
      '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$"
        .
-       'x509-hex-string-face)))
+       'x509-hex-string-face))
   "OpenSSL x509 highlighting.")
 
 (defun x509-mode--kill-buffer ()
@@ -1340,7 +1339,6 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
       (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
       (setq x509-asn1--hexl-buffer hexl-buffer))))
 
-(eval-when-compile
   (defconst x509--asn1-primitives-keywords
     (regexp-opt
      '("prim"
@@ -1355,12 +1353,10 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
        "OID"
        "UTCTIME"
        "GENERALIZEDTIME"
-       "ENUMERATED"))))
+       "ENUMERATED")))
 
-(eval-when-compile
-  (defconst x509--asn1-cons-keywords (regexp-opt '("SEQUENCE" "SET"))))
+  (defconst x509--asn1-cons-keywords (regexp-opt '("SEQUENCE" "SET")))
 
-(eval-when-compile
   (defconst x509--asn1-strings
     (concat
      (regexp-opt
@@ -1368,9 +1364,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
       '("UTF8STRING" "PRINTABLESTRING" "IA5STRING")
       t) ; t = enclose in \\( \\) for easy subexpr reference
      ;; Followed by a string
-     " *:\\(.*?\\)\\(?: *:\\|$\\)")))
+     " *:\\(.*?\\)\\(?: *:\\|$\\)"))
 
-(eval-when-compile
   (defconst x509--asn1-oid
     (concat
      (regexp-opt
@@ -1378,10 +1373,9 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
       '("OID" "OBJECT")
       t) ; t = enclose in \\( \\) for easy subexpr reference
      ;; Followed by an OID (derdigger) or object name (asn1parse)
-     " *:\\(.*?\\)\\(?: *:\\|$\\)")))
+     " *:\\(.*?\\)\\(?: *:\\|$\\)"))
 
 (defconst x509-asn1-font-lock-keywords
-  (eval-when-compile
     (list
      ;; Undetermined length, i.e. when the length byte is 0x80 indicating
      ;; zero following length bytes.
@@ -1401,7 +1395,7 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
      ;; String type + string value
      `(,x509--asn1-strings (1 'x509-keyword-face) (2 'x509-string-face))
      ;; "OID" followed by oid
-     `(,x509--asn1-oid (1 'x509-keyword-face) (2 'x509-oid-face))))
+     `(,x509--asn1-oid (1 'x509-keyword-face) (2 'x509-oid-face)))
   "Openssl asn1parse highlighting.")
 
 ;;;###autoload

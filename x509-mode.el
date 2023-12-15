@@ -323,14 +323,19 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
   (defun x509--load-data-file (filename)
     "Split FILENAME linewise into a list.
 Skip blank lines and comment lines.  Return list."
-    (with-temp-buffer
-      (insert-file-contents
-       (if (null load-file-name)
-           filename
-         (expand-file-name filename (file-name-directory load-file-name))))
-      (cl-remove-if
-       (lambda (s) (string-match-p "^ *\\(?:#\\|$\\)" s))
-       (split-string (buffer-string) "\n")))))
+    (let ((path
+           (cond
+            ((file-exists-p filename)
+             filename)
+            (load-file
+             (expand-file-name filename (file-name-directory load-file-name)))
+            t
+            filename)))
+      (with-temp-buffer
+        (insert-file-contents path)
+        (cl-remove-if
+         (lambda (s) (string-match-p "^ *\\(?:#\\|$\\)" s))
+         (split-string (buffer-string) "\n"))))))
 
 (eval-when-compile
   (defconst x509--keywords (regexp-opt (x509--load-data-file "keywords.txt"))))
@@ -611,7 +616,7 @@ Return output buffer."
       (unless no-hooks
         ;; Remember input-buffer and arguments.
         (setq x509--shadow-buffer input-buf)
-        (add-hook 'kill-buffer-hook 'x509--kill-shadow-buffer nil t))
+        (add-hook 'kill-buffer-hook #'x509--kill-shadow-buffer nil t))
       (with-current-buffer input-buf
         (if no-hooks
             (let ((coding-system-for-read 'no-conversion)
@@ -890,32 +895,32 @@ different openssl commands until one succeeds.  Call
   (interactive)
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
-     (call-interactively 'x509-viewcert))
-    ("CERTIFICATE REQUEST" (call-interactively 'x509-viewreq))
-    ("DH PARAMETERS" (call-interactively 'x509-viewdh))
-    ("PKCS7" (call-interactively 'x509-viewpkcs7))
+     (call-interactively #'x509-viewcert))
+    ("CERTIFICATE REQUEST" (call-interactively #'x509-viewreq))
+    ("DH PARAMETERS" (call-interactively #'x509-viewdh))
+    ("PKCS7" (call-interactively #'x509-viewpkcs7))
     ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
-     (call-interactively 'x509-viewkey))
-    ("PUBLIC KEY" (call-interactively 'x509-viewpublickey))
-    ("X509 CRL" (call-interactively 'x509-viewcrl))
+     (call-interactively #'x509-viewkey))
+    ("PUBLIC KEY" (call-interactively #'x509-viewpublickey))
+    ("X509 CRL" (call-interactively #'x509-viewcrl))
     (_
      (cond
       ((x509--dwim-tester x509-x509-default-arg)
-       (call-interactively 'x509-viewcert))
+       (call-interactively #'x509-viewcert))
       ((x509--dwim-tester x509-crl-default-arg)
-       (call-interactively 'x509-viewcrl))
+       (call-interactively #'x509-viewcrl))
       ((x509--dwim-tester x509-pkey-default-arg)
-       (call-interactively 'x509-viewkey))
+       (call-interactively #'x509-viewkey))
       ((x509--dwim-tester x509-pkey-pubin-default-arg)
-       (call-interactively 'x509-viewpublickey))
+       (call-interactively #'x509-viewpublickey))
       ((x509--dwim-tester x509-req-default-arg)
-       (call-interactively 'x509-viewreq))
+       (call-interactively #'x509-viewreq))
       ((x509--dwim-tester x509-dhparam-default-arg)
-       (call-interactively 'x509-viewdh))
+       (call-interactively #'x509-viewdh))
       ((x509--dwim-tester x509-pkcs7-default-arg)
-       (call-interactively 'x509-viewpkcs7))
+       (call-interactively #'x509-viewpkcs7))
       (t
-       (call-interactively 'x509-viewasn1))))))
+       (call-interactively '#x509-viewasn1))))))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

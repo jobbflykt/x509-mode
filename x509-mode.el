@@ -618,7 +618,13 @@ Return output buffer."
                   (coding-system-for-write 'no-conversion))
               (apply #'call-process-region args))
           (apply #'call-process-region args)))
+      ;; Since OpenSSL 3, there is a warning when reading input from stdin and
+      ;; not from a file specified by an -in parameter. Delete that warning
+      ;; line from the output. "Warning: Reading certificate from stdin since
+      ;; no -in or -new option is given"
       (goto-char (point-min))
+      (if (looking-at-p "Warning: Reading ")
+          (delete-line))
       (set-buffer-modified-p nil)
       (setq buffer-read-only t))
     buf))

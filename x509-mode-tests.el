@@ -562,12 +562,12 @@ nested.der should contain:
     (let ((result-buffer (x509-viewasn1)))
       (unwind-protect
           (with-current-buffer result-buffer
-            (x509--asn1-offset-down)
+            (x509-asn1-offset-down)
             (should
              (equal x509--x509-asn1-mode-offset-stack '(("-offset" 2 2 1))))
             ;; Move point and verify it's restored when going up later
             (forward-char 4)
-            (x509--asn1-offset-down)
+            (x509-asn1-offset-down)
             (should
              (equal
               x509--x509-asn1-mode-offset-stack
@@ -575,18 +575,18 @@ nested.der should contain:
             (should
              (looking-at
               "    0:d=0  hl=2 l=   1 prim: INTEGER           :-06"))
-            (x509--asn1-offset-up)
+            (x509-asn1-offset-up)
             (should
              (equal x509--x509-asn1-mode-offset-stack '(("-offset" 2 2 1))))
             (should (equal (point) 5))
-            (x509--asn1-offset-up)
+            (x509-asn1-offset-up)
             (should (null x509--x509-asn1-mode-offset-stack))
             ;; Going up from top does nothing
-            (x509--asn1-offset-up)
+            (x509-asn1-offset-up)
             (should (looking-at "    0:d=0  hl=2 l=   5 cons: SEQUENCE")))
         (kill-buffer result-buffer)))))
 
-(ert-deftest x509--asn1-strparse ()
+(ert-deftest x509-asn1-strparse ()
   "Verify that going down and up in nested ASN.1 structures works.
 nested_bitstrings.bin should contain:
 SEQUENCE             30 0C
@@ -604,26 +604,26 @@ SEQUENCE             30 0C
       (unwind-protect
           (with-current-buffer result-buffer
             (forward-line 1)
-            (x509--asn1-strparse)
+            (x509-asn1-strparse)
             (should
              (equal x509--x509-asn1-mode-offset-stack '(("-strparse" 2 3 49))))
             ;; Move point and verify it's restored when going up later
             (forward-char 4)
-            (x509--asn1-strparse)
+            (x509-asn1-strparse)
             (should
              (equal
               x509--x509-asn1-mode-offset-stack
               '(("-strparse" 5 3 5) ("-strparse" 2 3 49))))
             (should
              (looking-at "    0:d=0  hl=2 l=   4 prim: BIT STRING        "))
-            (x509--asn1-offset-up)
+            (x509-asn1-offset-up)
             (should
              (equal x509--x509-asn1-mode-offset-stack '(("-strparse" 2 3 49))))
             (should (equal (point) 5))
-            (x509--asn1-offset-up)
+            (x509-asn1-offset-up)
             (should (null x509--x509-asn1-mode-offset-stack))
             ;; Going up from top does nothing
-            (x509--asn1-offset-up)
+            (x509-asn1-offset-up)
             (should (looking-at "    2:d=1  hl=2 l=  10 prim: BIT STRING")))
         (kill-buffer result-buffer)))))
 

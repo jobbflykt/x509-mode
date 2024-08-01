@@ -429,7 +429,7 @@ Skip blank lines and comment lines.  Return list."
        'x509-hex-string-face)))
   "OpenSSL x509 highlighting.")
 
-(defun x509-mode--kill-buffer ()
+(defun x509-mode-kill-buffer ()
   "Kill current buffer."
   (interactive)
   (set-buffer-modified-p nil)
@@ -446,9 +446,9 @@ Skip blank lines and comment lines.  Return list."
  :interactive nil
  :group 'x509
  (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
- (keymap-set x509-mode-map "q" #'x509-mode--kill-buffer)
- (keymap-set x509-mode-map "t" #'x509--toggle-mode)
- (keymap-set x509-mode-map "e" #'x509--edit-params)
+ (keymap-set x509-mode-map "q" #'x509-mode-kill-buffer)
+ (keymap-set x509-mode-map "t" #'x509-toggle-mode)
+ (keymap-set x509-mode-map "e" #'x509-edit-params)
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))
 
@@ -598,7 +598,6 @@ variables.  NO-HOOKS also ensures that process output isn't
 decoded, i.e. data is inserted into buffer as binary.
 
 Return output buffer."
-  (interactive)
   (let* ((buf
           (or output-buf
               (generate-new-buffer
@@ -718,7 +717,7 @@ Switch to resulting buffer and return it."
     ("asn1parse" 'x509--viewasn1-history)
     (_ nil)))
 
-(defun x509--toggle-mode (&optional edit)
+(defun x509-toggle-mode (&optional edit)
   "Toggle between asn1-mode and `x509-mode'.
 
 If EDIT is non-'nil', edit current command arguments and redisplay."
@@ -741,10 +740,10 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
                           x509--shadow-buffer
                           (current-buffer)))))
 
-(defun x509--edit-params ()
+(defun x509-edit-params ()
   "Edit command parameters in current buffer."
   (interactive)
-  (x509--toggle-mode t))
+  (x509-toggle-mode t))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewcert-history nil
@@ -1078,19 +1077,19 @@ to get it right but it can get confusing."
                         (current-buffer))
     (x509--asn1-update-mode-line)))
 
-(defun x509--asn1-offset-down ()
+(defun x509-asn1-offset-down ()
   "Add -offset N argument to current asn1 command line and redisplay.
 Offset is calculated from offset on current line."
   (interactive)
   (x509--asn1-offset-strparse "-offset"))
 
-(defun x509--asn1-strparse ()
+(defun x509-asn1-strparse ()
   "Add -strparse N argument to current asn1 command line and redisplay.
 Offset is calculated from offset on current line."
   (interactive)
   (x509--asn1-offset-strparse "-strparse"))
 
-(defun x509--asn1-offset-up ()
+(defun x509-asn1-offset-up ()
   "Pop offset and redisplay."
   (interactive)
   (when (and (boundp 'x509--x509-asn1-mode-offset-stack)
@@ -1419,12 +1418,12 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
  :group 'x509
  (set
   (make-local-variable 'font-lock-defaults) '(x509-asn1-font-lock-keywords t))
- (keymap-set x509-asn1-mode-map "q" #'x509-mode--kill-buffer)
- (keymap-set x509-asn1-mode-map "t" #'x509--toggle-mode)
- (keymap-set x509-asn1-mode-map "e" #'x509--edit-params)
- (keymap-set x509-asn1-mode-map "d" #'x509--asn1-offset-down)
- (keymap-set x509-asn1-mode-map "s" #'x509--asn1-strparse)
- (keymap-set x509-asn1-mode-map "u" #'x509--asn1-offset-up)
+ (keymap-set x509-asn1-mode-map "q" #'x509-mode-kill-buffer)
+ (keymap-set x509-asn1-mode-map "t" #'x509-toggle-mode)
+ (keymap-set x509-asn1-mode-map "e" #'x509-edit-params)
+ (keymap-set x509-asn1-mode-map "d" #'x509-asn1-offset-down)
+ (keymap-set x509-asn1-mode-map "s" #'x509-asn1-strparse)
+ (keymap-set x509-asn1-mode-map "u" #'x509-asn1-offset-up)
  (keymap-set x509-asn1-mode-map "x" #'x509-asn1-toggle-hexl)
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))

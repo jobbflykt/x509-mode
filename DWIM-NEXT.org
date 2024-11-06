@@ -1,0 +1,11 @@
+- Add a buffer variable that records the source buffer.
+- Add a buffer variable that records the current point in the source buffer.
+- NEXT should determine the curren active region in the source buffer
+  and look for a region after it.
+- If a new region is found, it should replace the content in the shadow-buffer
+  and the x509 buffer should be regenerated as if x509-edit-params.
+- Point should be moved in the source buffer and recorded.
+- Similarly, PREV, can be implemented.
+- Bind to n and p in x509-mode and x509-asn1-mode.
+- If no next of prev region is found, just leave buffer unchanged and display a
+  message in the message buffer.

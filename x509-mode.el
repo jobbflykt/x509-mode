@@ -897,7 +897,19 @@ if the buffer contains data of certain type."
 (defun x509-dwim-next ()
   "Look for the next -----BEGIN header after the current.
 
-If found, call `x509-dwim', with point at the beginning of that region."
+If found, call `x509-dwim', with point at the beginning of that region.
+
+Problems:
+- shadow save region point and use that to find next/prev region.
+  Don't actually move point in src buffer.
+- Generic view should be called with the mode of the current buffer.
+- default-args to generic-view should be:
+  1) Same as the current args if the current mode x509-asn1-mode
+  2) Same as the current args if the next region is of the same type.
+  3) The default arguments for the next region type
+- history should be that matching the new args (already working)
+- Direction Next/Prev should be a parameter
+"
   (interactive)
   ;; Check if we are in a x509-mode or x509-asn1-mode buffer
   (if-let* ((current-buffer (current-buffer))

@@ -544,6 +544,9 @@ Make it persist during major mode change."
      (put ',var-name 'permanent-local t)))
 
 (x509-defvar-local-persistent
+ x509--src-buffer "Original buffer where x509 view command was run.")
+
+(x509-defvar-local-persistent
  x509--shadow-buffer "Input buffer used for OpenSSL command.")
 
 (x509-defvar-local-persistent
@@ -661,7 +664,8 @@ existing input buffer instead of creating one.  If OUTPUT-BUF is
 non-'nil', use that instead of creating a new one.
 
 Switch to resulting buffer and return it."
-  (let* ((in-buf (or input-buf (x509--generate-input-buffer)))
+  (let* ((src-buffer (current-buffer))
+         (in-buf (or input-buf (x509--generate-input-buffer)))
          (encoding (x509--buffer-encoding in-buf))
          (initial (x509--add-inform-spec default encoding))
          (args (x509--read-arguments "arguments: " initial history))
@@ -669,6 +673,8 @@ Switch to resulting buffer and return it."
           (x509--process-buffer in-buf (split-string-and-unquote args)
                                 output-buf)))
     (switch-to-buffer result-buffer)
+    ;; Remember the original source buffer.
+    (setq x509--src-buffer src-buffer)
     ;; Remember what arguments where used.
     (if (eq mode 'x509-mode)
         (setq x509--x509-mode-shadow-arguments args)
@@ -887,6 +893,48 @@ if the buffer contains data of certain type."
       (kill-buffer in-buf))))
 
 ;; ---------------------------------------------------------------------------
+;;;###autoload
+(defun x509-dwim-next ()
+  "Look for the next -----BEGIN header after the current.
+
+If found, call `x509-dwim', with point at the beginning of that region."
+  (interactive)
+  ;; Check if we are in a x509-mode or x509-asn1-mode buffer
+  (if-let* ((current-buffer (current-buffer))
+            (shadow-buffer (and (boundp 'x509--shadow-buffer)
+                                x509--shadow-buffer))
+            (current-args (and (boundp 'x509--x509-mode-shadow-arguments)
+                               x509--x509-mode-shadow-arguments))
+            (src-buffer (and (boundp 'x509--src-buffer)
+                             x509--src-buffer)))
+      ;; Go to src-buffer and look for next region
+      (with-current-buffer src-buffer
+        (if-let* ((current-region (x509--pem-region))
+                  (current-region-type (x509--pem-region-type))
+                  (current-end (cdr current-region)))
+            (when (< current-end (point-max))
+              ;; Move point to after region
+              (goto-char (1+ current-end))
+              ;; Look for next region
+              (when (re-search-forward "-----BEGIN" nil t)
+                (goto-char (match-beginning 0))
+                (when-let* ((new-region (x509--pem-region))
+                            (new-region-type (x509--pem-region-type))
+                            (text (buffer-substring-no-properties
+                                   (car new-region)
+                                   (cdr new-region))))
+                  ;; Replace content of shadow buffer with new region
+                  (with-current-buffer shadow-buffer
+                    (erase-buffer)
+                    (insert text))
+                  ;; Now process shadow-buffer
+                  (x509--generic-view current-args
+                                      (x509--get-x509-history current-args)
+                                      'x509-mode shadow-buffer current-buffer))))
+          (message "No next region")))
+    (message "Not in an x509 buffer")))
+
+  ;; ---------------------------------------------------------------------------
 ;;;###autoload
 (defun x509-dwim ()
   "Guess the type of object and call the corresponding view-function.

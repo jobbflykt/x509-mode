@@ -213,6 +213,19 @@ When `x509-warn-near-expire-days' is nil."
     (goto-char (point-min))
     (should-not (x509--pem-region-type))))
 
+(ert-deftest x509--pem-region-next ()
+  (with-temp-buffer
+    (insert "-----BEGIN my type-----\n-----END my type-----\n"
+            "-----BEGIN my type-----\n-----END my type-----\n")
+    (goto-char (point-min))
+    (let ((first-region (x509--pem-region)))
+      (should first-region)
+      (should (= 1 (car first-region)))
+      (let ((next-region (x509--pem-region-next (current-buffer))))
+        (should next-region)
+        (should (= 47 (car next-region))))
+        (should (= 47 (point))))))
+
 (ert-deftest x509--generate-input-buffer ()
   "Create buffer with valid data."
   ;; PEM region                llllllllllllllllllll20

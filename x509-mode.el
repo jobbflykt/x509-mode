@@ -892,6 +892,21 @@ if the buffer contains data of certain type."
                 (apply #'call-process-region proc-args)))
       (kill-buffer in-buf))))
 
+(defun x509--pem-region-next (buffer)
+  "Find BEGIN after current region and place point at beginning.
+Return (begin . end) if next region is found.
+Return nil if not in a region.
+Return nil if next is not found"
+  (with-current-buffer buffer
+      (if-let* ((current-region (x509--pem-region))
+                (current-end (cdr current-region)))
+          (when (< current-end (point-max))
+            ;; Move point to after region
+            (goto-char (1+ current-end))
+            ;; Look for next region
+            (when (re-search-forward "-----BEGIN" nil t)
+              (goto-char (match-beginning 0))
+              (x509--pem-region))))))
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
 (defun x509-dwim-next ()

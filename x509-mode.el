@@ -451,6 +451,8 @@ Skip blank lines and comment lines.  Return list."
  (keymap-set x509-mode-map "q" #'x509-mode-kill-buffer)
  (keymap-set x509-mode-map "t" #'x509-toggle-mode)
  (keymap-set x509-mode-map "e" #'x509-edit-params)
+ (keymap-set x509-mode-map "n" #'x509-dwim-next)
+ (keymap-set x509-mode-map "p" #'x509-dwim-prev)
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))
 
@@ -926,7 +928,8 @@ Return nil if prev is not found"
 ;;;###autoload
 (defun x509-dwim-next ()
   "Look for a PEM region after the current one.
-If found, kill current buffer, switch to src buffer and call x509-dwim."
+If found, kill current buffer, switch to src buffer and call x509-dwim.
+Intended to be called in a x509-mode or x509-asn1-mode buffer."
   (interactive)
   (if (not (bound-and-true-p x509--src-buffer))
       (message "Not in an x509 buffer")
@@ -946,7 +949,8 @@ If found, kill current buffer, switch to src buffer and call x509-dwim."
 ;;;###autoload
 (defun x509-dwim-prev ()
   "Look for a PEM region before the current one.
-If found, kill current buffer, switch to src buffer and call x509-dwim."
+If found, kill current buffer, switch to src buffer and call x509-dwim.
+Intended to be called in a x509-mode or x509-asn1-mode buffer."
   (interactive)
   (if (not (bound-and-true-p x509--src-buffer))
       (message "Not in an x509 buffer")
@@ -1515,6 +1519,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
   (make-local-variable 'font-lock-defaults) '(x509-asn1-font-lock-keywords t))
  (keymap-set x509-asn1-mode-map "q" #'x509-mode-kill-buffer)
  (keymap-set x509-asn1-mode-map "t" #'x509-toggle-mode)
+ (keymap-set x509-asn1-mode-map "n" #'x509-dwim-next)
+ (keymap-set x509-asn1-mode-map "p" #'x509-dwim-prev)
  (keymap-set x509-asn1-mode-map "e" #'x509-edit-params)
  (keymap-set x509-asn1-mode-map "d" #'x509-asn1-offset-down)
  (keymap-set x509-asn1-mode-map "s" #'x509-asn1-strparse)

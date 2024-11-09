@@ -433,6 +433,7 @@ Skip blank lines and comment lines.  Return list."
   "Kill current buffer."
   (interactive)
   (set-buffer-modified-p nil)
+  (message "x509-mode-kill-buffer %s" (current-buffer))
   (kill-buffer))
 
 ;;;###autoload
@@ -893,20 +894,42 @@ if the buffer contains data of certain type."
       (kill-buffer in-buf))))
 
 (defun x509--pem-region-next (buffer)
-  "Find BEGIN after current region and place point at beginning.
+  "Find -----BEGIN after current region and place point at beginning.
+BUFFER is the buffer to search in.
 Return (begin . end) if next region is found.
 Return nil if not in a region.
 Return nil if next is not found"
   (with-current-buffer buffer
-      (if-let* ((current-region (x509--pem-region))
-                (current-end (cdr current-region)))
-          (when (< current-end (point-max))
-            ;; Move point to after region
-            (goto-char (1+ current-end))
-            ;; Look for next region
-            (when (re-search-forward "-----BEGIN" nil t)
-              (goto-char (match-beginning 0))
-              (x509--pem-region))))))
+    (if-let* ((current-region (x509--pem-region))
+              (current-end (cdr current-region)))
+      (when (< current-end (point-max))
+        (message "x509--pem-region-next in region ending at %s" current-end)
+        (goto-char current-end)
+        ;; Look for next region
+        (message "x509--pem-region-next looking for next region at %s" (point))
+        (when (re-search-forward "-----BEGIN" nil t)
+          (goto-char (match-beginning 0))
+          (message "x509--pem-region-next found BEGIN at %s" (point))
+          (x509--pem-region))))))
+
+(defun x509--dwim-next()
+  "Look for a PEM region after the current one.
+If found, kill current buffer, switch to src buffer and call x509-dwim."
+  (interactive)
+  (if (not (boundp 'x509--src-buffer))
+      (message "Not in an x509 buffer")
+    ;; Find next region in original buffer
+    (let ((next-region (x509--pem-region-next x509--src-buffer)))
+      (if (not next-region)
+          (message "No next")
+        (message "x509--dwim-next next-region = %s" next-region)
+        (let ((src-buffer x509--src-buffer))
+          (x509-mode-kill-buffer)
+          (with-current-buffer src-buffer
+            (goto-char (car next-region))
+            (message "x509--dwim-next working in %s at %s" src-buffer (point))
+            (x509-dwim)))))))
+
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
 (defun x509-dwim-next ()

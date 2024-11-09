@@ -445,7 +445,8 @@ Skip blank lines and comment lines.  Return list."
 
 \\{x509-mode-map}"
  :interactive nil
- :group 'x509
+ :group
+ 'x509
  (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
  (keymap-set x509-mode-map "q" #'x509-mode-kill-buffer)
  (keymap-set x509-mode-map "t" #'x509-toggle-mode)
@@ -674,8 +675,10 @@ Switch to resulting buffer and return it."
           (x509--process-buffer in-buf (split-string-and-unquote args)
                                 output-buf)))
     (switch-to-buffer result-buffer)
-    ;; Remember the original source buffer.
-    (setq x509--src-buffer src-buffer)
+    (unless (bound-and-true-p x509--src-buffer)
+      ;; Remember the original source buffer unless already set.
+      ;; Which is can be if toggling between modes.
+      (setq x509--src-buffer src-buffer))
     ;; Remember what arguments where used.
     (if (eq mode 'x509-mode)
         (setq x509--x509-mode-shadow-arguments args)
@@ -875,6 +878,90 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (setq buffer-read-only t)
     (x509-mode)))
 
+(defun x509--pem-region-next (buffer)
+  "Find -----BEGIN after current region and place point at beginning.
+BUFFER is the buffer to search in.
+Return (begin . end) if next region is found.
+Return nil if not in a region.
+Return nil if next is not found"
+  (with-current-buffer buffer
+    (message "x509--pem-region-next in buffer %s at %s" buffer (point))
+    (if-let* ((current-region (x509--pem-region))
+              (current-end (cdr current-region)))
+      (progn
+        (message "x509--pem-region-next in region ending at %s" current-end)
+        (goto-char current-end)
+        ;; Look for next region
+        (message "x509--pem-region-next looking for next region at %s" (point))
+        (when (re-search-forward "-----BEGIN" nil t)
+          (goto-char (match-beginning 0))
+          (message "x509--pem-region-next found BEGIN at %s" (point))
+          (x509--pem-region)))
+      (message "no current region at %s" (point))
+      nil)))
+
+(defun x509--pem-region-prev (buffer)
+  "Find -----BEGIN before current region and place point at beginning.
+BUFFER is the buffer to search in.
+Return (begin . end) if prev region is found.
+Return nil if not in a region.
+Return nil if prev is not found"
+  (with-current-buffer buffer
+    (message "x509--pem-region-prev in buffer %s at %s" buffer (point))
+    (if-let* ((current-region (x509--pem-region))
+              (current-begin (car current-region)))
+      (progn
+        (message "x509--pem-region-prev in region starting at %s" current-begin)
+        (goto-char current-begin)
+        ;; Look for prev region
+        (message "x509--pem-region-prev looking for prev region at %s" (point))
+        (when (re-search-backward "-----BEGIN" nil t)
+          (goto-char (match-beginning 0))
+          (message "x509--pem-region-prev found BEGIN at %s" (point))
+          (x509--pem-region)))
+      (message "no current region at %s" (point))
+      nil)))
+
+;; ---------------------------------------------------------------------------
+;;;###autoload
+(defun x509-dwim-next ()
+  "Look for a PEM region after the current one.
+If found, kill current buffer, switch to src buffer and call x509-dwim."
+  (interactive)
+  (if (not (bound-and-true-p x509--src-buffer))
+      (message "Not in an x509 buffer")
+    ;; Find next region in original buffer
+    (let ((next-region (x509--pem-region-next x509--src-buffer)))
+      (if (not next-region)
+          (message "No next")
+        (message "x509--dwim-next next-region = %s" next-region)
+        (let ((src-buffer x509--src-buffer))
+          (x509-mode-kill-buffer)
+          (with-current-buffer src-buffer
+            (goto-char (car next-region))
+            (message "x509--dwim-next working in %s at %s" src-buffer (point))
+            (x509-dwim)))))))
+
+;; ---------------------------------------------------------------------------
+;;;###autoload
+(defun x509-dwim-prev ()
+  "Look for a PEM region before the current one.
+If found, kill current buffer, switch to src buffer and call x509-dwim."
+  (interactive)
+  (if (not (bound-and-true-p x509--src-buffer))
+      (message "Not in an x509 buffer")
+    ;; Find prev region in original buffer
+    (let ((prev-region (x509--pem-region-prev x509--src-buffer)))
+      (if (not prev-region)
+          (message "No previous")
+        (message "x509--dwim-prev prev-region = %s" prev-region)
+        (let ((src-buffer x509--src-buffer))
+          (x509-mode-kill-buffer)
+          (with-current-buffer src-buffer
+            (goto-char (car prev-region))
+            (message "x509--dwim-prev working in %s at %s" src-buffer (point))
+            (x509-dwim)))))))
+
 (defun x509--dwim-tester (openssl-commamd-args)
   "Test running OPENSSL-COMMAMD-ARGS in current buffer.
 Return t if return status is 0, otherwise nil.  Use to determine
@@ -893,98 +980,7 @@ if the buffer contains data of certain type."
                 (apply #'call-process-region proc-args)))
       (kill-buffer in-buf))))
 
-(defun x509--pem-region-next (buffer)
-  "Find -----BEGIN after current region and place point at beginning.
-BUFFER is the buffer to search in.
-Return (begin . end) if next region is found.
-Return nil if not in a region.
-Return nil if next is not found"
-  (with-current-buffer buffer
-    (if-let* ((current-region (x509--pem-region))
-              (current-end (cdr current-region)))
-      (when (< current-end (point-max))
-        (message "x509--pem-region-next in region ending at %s" current-end)
-        (goto-char current-end)
-        ;; Look for next region
-        (message "x509--pem-region-next looking for next region at %s" (point))
-        (when (re-search-forward "-----BEGIN" nil t)
-          (goto-char (match-beginning 0))
-          (message "x509--pem-region-next found BEGIN at %s" (point))
-          (x509--pem-region))))))
-
-(defun x509--dwim-next()
-  "Look for a PEM region after the current one.
-If found, kill current buffer, switch to src buffer and call x509-dwim."
-  (interactive)
-  (if (not (boundp 'x509--src-buffer))
-      (message "Not in an x509 buffer")
-    ;; Find next region in original buffer
-    (let ((next-region (x509--pem-region-next x509--src-buffer)))
-      (if (not next-region)
-          (message "No next")
-        (message "x509--dwim-next next-region = %s" next-region)
-        (let ((src-buffer x509--src-buffer))
-          (x509-mode-kill-buffer)
-          (with-current-buffer src-buffer
-            (goto-char (car next-region))
-            (message "x509--dwim-next working in %s at %s" src-buffer (point))
-            (x509-dwim)))))))
-
 ;; ---------------------------------------------------------------------------
-;;;###autoload
-(defun x509-dwim-next ()
-  "Look for the next -----BEGIN header after the current.
-
-If found, call `x509-dwim', with point at the beginning of that region.
-
-Problems:
-- shadow save region point and use that to find next/prev region.
-  Don't actually move point in src buffer.
-- Generic view should be called with the mode of the current buffer.
-- default-args to generic-view should be:
-  1) Same as the current args if the current mode x509-asn1-mode
-  2) Same as the current args if the next region is of the same type.
-  3) The default arguments for the next region type
-- history should be that matching the new args (already working)
-- Direction Next/Prev should be a parameter
-"
-  (interactive)
-  ;; Check if we are in a x509-mode or x509-asn1-mode buffer
-  (if-let* ((current-buffer (current-buffer))
-            (shadow-buffer (and (boundp 'x509--shadow-buffer)
-                                x509--shadow-buffer))
-            (current-args (and (boundp 'x509--x509-mode-shadow-arguments)
-                               x509--x509-mode-shadow-arguments))
-            (src-buffer (and (boundp 'x509--src-buffer)
-                             x509--src-buffer)))
-      ;; Go to src-buffer and look for next region
-      (with-current-buffer src-buffer
-        (if-let* ((current-region (x509--pem-region))
-                  (current-region-type (x509--pem-region-type))
-                  (current-end (cdr current-region)))
-            (when (< current-end (point-max))
-              ;; Move point to after region
-              (goto-char (1+ current-end))
-              ;; Look for next region
-              (when (re-search-forward "-----BEGIN" nil t)
-                (goto-char (match-beginning 0))
-                (when-let* ((new-region (x509--pem-region))
-                            (new-region-type (x509--pem-region-type))
-                            (text (buffer-substring-no-properties
-                                   (car new-region)
-                                   (cdr new-region))))
-                  ;; Replace content of shadow buffer with new region
-                  (with-current-buffer shadow-buffer
-                    (erase-buffer)
-                    (insert text))
-                  ;; Now process shadow-buffer
-                  (x509--generic-view current-args
-                                      (x509--get-x509-history current-args)
-                                      'x509-mode shadow-buffer current-buffer))))
-          (message "No next region")))
-    (message "Not in an x509 buffer")))
-
-  ;; ---------------------------------------------------------------------------
 ;;;###autoload
 (defun x509-dwim ()
   "Guess the type of object and call the corresponding view-function.
@@ -1513,7 +1509,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
 
 \\{x509-asn1-mode-map}"
  :interactive nil
- :group 'x509
+ :group
+ 'x509
  (set
   (make-local-variable 'font-lock-defaults) '(x509-asn1-font-lock-keywords t))
  (keymap-set x509-asn1-mode-map "q" #'x509-mode-kill-buffer)

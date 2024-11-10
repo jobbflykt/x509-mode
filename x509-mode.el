@@ -882,7 +882,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
 (defun x509--pem-region-next/prev (buffer direction)
   "Find BEGIN before or after current region and place point at beginning.
 BUFFER is the buffer to search in.
-DIRECTION is one of 'next 'prev
+DIRECTION is one of \\='next \\='prev
 Return (begin . end) if region is found.
 Return nil if not in a region or next/prev region isn't found.
 If no next/prev region, leave point unchanged."
@@ -915,7 +915,7 @@ If no next/prev region, leave point unchanged."
 
 (defun x509--dwim-next/prev (direction)
   "Look for a PEM region before of after the current one.
-DIRECTION is either 'next or 'prev
+DIRECTION is either \\='next or \\='prev
 If found, kill current buffer, switch to src buffer and call `x509-dwim'.
 Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (if (not (bound-and-true-p x509--src-buffer))

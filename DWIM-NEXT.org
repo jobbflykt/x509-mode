@@ -15,5 +15,6 @@
 - [ ] Run CI
 - [ ] Write an Github issue
 - [ ] Create a merge request
+- [ ] Kill this file.
 - [ ] Commit and close issue
 - [ ] Reply to person that made the request.

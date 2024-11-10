@@ -886,8 +886,7 @@ DIRECTION is one of 'next 'prev
 Return (begin . end) if region is found.
 Return nil if not in a region or next/prev region isn't found.
 If no next/prev region, leave point unchanged."
-  (let* ((direction-name (symbol-name direction))
-         (is-next (eq direction 'next))
+  (let* ((is-next (eq direction 'next))
          (search-fn
           (if is-next
               're-search-forward

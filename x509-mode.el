@@ -933,8 +933,8 @@ Return nil if prev is not found"
 (defun x509--dwim-next/prev (direction)
   "Look for a PEM region before of after the current one.
 DIRECTION is either 'next or 'prev
-If found, kill current buffer, switch to src buffer and call x509-dwim.
-Intended to be called in a x509-mode or x509-asn1-mode buffer."
+If found, kill current buffer, switch to src buffer and call `x509-dwim'.
+Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (if (not (bound-and-true-p x509--src-buffer))
       (message "Not in an x509 buffer")
     ;; Find prev region in original buffer
@@ -967,8 +967,8 @@ Intended to be called in a x509-mode or x509-asn1-mode buffer."
 ;;;###autoload
 (defun x509-dwim-next ()
   "Look for a PEM region after the current one.
-If found, kill current buffer, switch to src buffer and call x509-dwim.
-Intended to be called in a x509-mode or x509-asn1-mode buffer."
+If found, kill current buffer, switch to src buffer and call `x509-dwim'.
+Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (interactive)
   (x509--dwim-next/prev 'next))
 
@@ -976,8 +976,8 @@ Intended to be called in a x509-mode or x509-asn1-mode buffer."
 ;;;###autoload
 (defun x509-dwim-prev ()
   "Look for a PEM region before the current one.
-If found, kill current buffer, switch to src buffer and call x509-dwim.
-Intended to be called in a x509-mode or x509-asn1-mode buffer."
+If found, kill current buffer, switch to src buffer and call `x509-dwim'.
+Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (interactive)
   (x509--dwim-next/prev 'prev))
 

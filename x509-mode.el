@@ -889,16 +889,22 @@ Return nil if next is not found"
   (with-current-buffer buffer
     (message "x509--pem-region-next in buffer %s at %s" buffer (point))
     (if-let* ((current-region (x509--pem-region))
-              (current-end (cdr current-region)))
+              (current-end (cdr current-region))
+              (current-point (point)))
       (progn
         (message "x509--pem-region-next in region ending at %s" current-end)
         (goto-char current-end)
         ;; Look for next region
         (message "x509--pem-region-next looking for next region at %s" (point))
-        (when (re-search-forward "-----BEGIN" nil t)
-          (goto-char (match-beginning 0))
-          (message "x509--pem-region-next found BEGIN at %s" (point))
-          (x509--pem-region)))
+        (if (re-search-forward "-----BEGIN" nil t)
+            (progn
+              (goto-char (match-beginning 0))
+              (message "x509--pem-region-next found BEGIN at %s" (point))
+              (x509--pem-region))
+          ;; Restore point since we didn't fins any new region
+          (goto-char current-point)
+          ;; Return nil
+          nil))
       (message "no current region at %s" (point))
       nil)))
 
@@ -911,16 +917,23 @@ Return nil if prev is not found"
   (with-current-buffer buffer
     (message "x509--pem-region-prev in buffer %s at %s" buffer (point))
     (if-let* ((current-region (x509--pem-region))
-              (current-begin (car current-region)))
-      (progn
-        (message "x509--pem-region-prev in region starting at %s" current-begin)
-        (goto-char current-begin)
-        ;; Look for prev region
-        (message "x509--pem-region-prev looking for prev region at %s" (point))
-        (when (re-search-backward "-----BEGIN" nil t)
-          (goto-char (match-beginning 0))
-          (message "x509--pem-region-prev found BEGIN at %s" (point))
-          (x509--pem-region)))
+              (current-begin (car current-region))
+              (current-point (point)))
+        (progn
+          (message "x509--pem-region-prev in region starting at %s"
+                   current-begin)
+          (goto-char current-begin)
+          ;; Look for prev region
+          (message "x509--pem-region-prev looking for prev region at %s" (point))
+          (if (re-search-backward "-----BEGIN" nil t)
+              (progn
+                (goto-char (match-beginning 0))
+                (message "x509--pem-region-prev found BEGIN at %s" (point))
+                (x509--pem-region))
+            ;; Restore point since we didn't fins any new region
+            (goto-char current-point)
+            ;; Return nil
+            nil))
       (message "no current region at %s" (point))
       nil)))
 
@@ -938,12 +951,20 @@ Intended to be called in a x509-mode or x509-asn1-mode buffer."
       (if (not next-region)
           (message "No next")
         (message "x509--dwim-next next-region = %s" next-region)
-        (let ((src-buffer x509--src-buffer))
+        (let ((src-buffer x509--src-buffer)
+              (current-mode major-mode))
           (x509-mode-kill-buffer)
           (with-current-buffer src-buffer
             (goto-char (car next-region))
             (message "x509--dwim-next working in %s at %s" src-buffer (point))
-            (x509-dwim)))))))
+            ;; If in asn1-mode, stay in asn1-mode
+            (if (eq current-mode 'x509-asn1-mode)
+                (x509--generic-view
+                 (or x509--x509-asn1-mode-shadow-arguments
+                     x509-asn1parse-default-arg)
+                 'x509--viewasn1-history 'x509-asn1-mode)
+              ;; Else determine type and do x509-mode
+              (x509-dwim))))))))
 
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
@@ -959,12 +980,19 @@ Intended to be called in a x509-mode or x509-asn1-mode buffer."
       (if (not prev-region)
           (message "No previous")
         (message "x509--dwim-prev prev-region = %s" prev-region)
-        (let ((src-buffer x509--src-buffer))
+        (let ((src-buffer x509--src-buffer)
+              (current-mode major-mode))
           (x509-mode-kill-buffer)
           (with-current-buffer src-buffer
             (goto-char (car prev-region))
             (message "x509--dwim-prev working in %s at %s" src-buffer (point))
-            (x509-dwim)))))))
+            ;; If in asn1-mode, stay in asn1-mode
+            (if (eq current-mode 'x509-asn1-mode)
+                (x509--generic-view
+                 (or x509--x509-asn1-mode-shadow-arguments
+                     x509-asn1parse-default-arg)
+                 'x509--viewasn1-history 'x509-asn1-mode)
+              (x509-dwim))))))))
 
 (defun x509--dwim-tester (openssl-commamd-args)
   "Test running OPENSSL-COMMAMD-ARGS in current buffer.

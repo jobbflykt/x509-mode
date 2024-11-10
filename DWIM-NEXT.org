@@ -11,7 +11,7 @@
   - [X] x509--pem-region-next/prev
   - [X] x509--dwim-next/prev
 - [X] Run checkdoc
-- [ ] Clean up debug messages.
+- [X] Clean up debug messages.
 - [ ] Run CI
 - [ ] Write an Github issue
 - [ ] Create a merge request

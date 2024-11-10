@@ -433,7 +433,6 @@ Skip blank lines and comment lines.  Return list."
   "Kill current buffer."
   (interactive)
   (set-buffer-modified-p nil)
-  (message "x509-mode-kill-buffer %s" (current-buffer))
   (kill-buffer))
 
 ;;;###autoload
@@ -900,35 +899,20 @@ If no next/prev region, leave point unchanged."
               'cdr
             'car)))
     (with-current-buffer buffer
-      (message "x509--pem-region-%s in buffer %s at %s"
-               direction-name
-               buffer
-               (point))
       (if-let* ((current-region (x509--pem-region))
                 (current-begin (funcall region-point-fn current-region))
                 (current-point (point)))
         (progn
-          (message "x509--pem-region-%s in region starting at %s"
-                   direction-name
-                   current-begin)
           (goto-char current-begin)
           ;; Look for next/prev region
-          (message "x509--pem-region-%s looking for region at %s"
-                   direction-name
-                   (point))
           (if (funcall search-fn "-----BEGIN" nil t)
               (progn
                 (goto-char (match-beginning 0))
-                (message "x509--pem-region-%s found BEGIN at %s"
-                         direction-name
-                         (point))
                 (x509--pem-region))
             ;; Restore point since we didn't fins any new region
             (goto-char current-point)
             ;; Return nil
-            nil))
-        (message "no current region at %s" (point))
-        nil))))
+            nil))))))
 
 (defun x509--dwim-next/prev (direction)
   "Look for a PEM region before of after the current one.
@@ -947,15 +931,11 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
           (progn
             (message "No %s" name)
             nil)
-        (message "x509--dwim-next/prev new-region = %s" new-region)
         (let ((src-buffer x509--src-buffer)
               (current-mode major-mode))
           (x509-mode-kill-buffer)
           (with-current-buffer src-buffer
             (goto-char (car new-region))
-            (message "x509--dwim-next/prev working in %s at %s"
-                     src-buffer
-                     (point))
             ;; If in asn1-mode, stay in asn1-mode
             (if (eq current-mode 'x509-asn1-mode)
                 (x509--generic-view

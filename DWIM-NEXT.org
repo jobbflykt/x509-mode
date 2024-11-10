@@ -6,11 +6,12 @@
 - [X] Bind to n and p in x509-mode and x509-asn1-mode.
 - [X] If no next of prev region is found, just leave buffer unchanged and display a
   message in the message buffer.
-- [ ] Check function naming and autoload directives.
-- [ ] Add erf tests
-  - [ ] x509--pem-region-next/prev
-  - [ ] x509--dwim-next/prev
+- [X] Check function naming and autoload directives.
+- [X] Add erf tests
+  - [X] x509--pem-region-next/prev
+  - [X] x509--dwim-next/prev
 - [X] Run checkdoc
+- [ ] Clean up debug messages.
 - [ ] Run CI
 - [ ] Write an Github issue
 - [ ] Create a merge request

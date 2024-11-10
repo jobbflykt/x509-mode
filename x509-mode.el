@@ -881,12 +881,12 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (x509-mode)))
 
 (defun x509--pem-region-next/prev (buffer direction)
-  "Find -----BEGIN before current region and place point at beginning.
+  "Find BEGIN before or after current region and place point at beginning.
 BUFFER is the buffer to search in.
 DIRECTION is one of 'next 'prev
-Return (begin . end) if prev region is found.
-Return nil if not in a region.
-Return nil if prev is not found"
+Return (begin . end) if region is found.
+Return nil if not in a region or next/prev region isn't found.
+If no next/prev region, leave point unchanged."
   (let* ((direction-name (symbol-name direction))
          (is-next (eq direction 'next))
          (search-fn
@@ -894,7 +894,7 @@ Return nil if prev is not found"
               're-search-forward
             're-search-backward))
          ;; Get either cdr for end of current region when searching forward
-         ;; car for beginning of current region when searching backward
+         ;; or car for beginning of current region when searching backwards
          (region-point-fn
           (if is-next
               'cdr
@@ -944,7 +944,9 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
                 "next"
               "previous")))
       (if (not new-region)
-          (message "No %s" name)
+          (progn
+            (message "No %s" name)
+            nil)
         (message "x509--dwim-next/prev new-region = %s" new-region)
         (let ((src-buffer x509--src-buffer)
               (current-mode major-mode))

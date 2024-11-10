@@ -213,18 +213,31 @@ When `x509-warn-near-expire-days' is nil."
     (goto-char (point-min))
     (should-not (x509--pem-region-type))))
 
-(ert-deftest x509--pem-region-next ()
+(ert-deftest x509--pem-region-next/prev ()
   (with-temp-buffer
-    (insert "-----BEGIN my type-----\n-----END my type-----\n"
-            "-----BEGIN my type-----\n-----END my type-----\n")
+    (insert
+     "-----BEGIN my type-----\n-----END my type-----\n"
+     "-----BEGIN my type-----\n-----END my type-----\n")
+    ;;       ^ point after next
     (goto-char (point-min))
     (let ((first-region (x509--pem-region)))
       (should first-region)
       (should (= 1 (car first-region)))
-      (let ((next-region (x509--pem-region-next (current-buffer))))
+      (let ((next-region (x509--pem-region-next/prev (current-buffer) 'next)))
         (should next-region)
-        (should (= 47 (car next-region))))
-        (should (= 47 (point))))))
+        (should (= 47 (car next-region)))
+        (should (= 47 (point)))
+        ;; Next again should leave point unchanged
+        (should-not (x509--pem-region-next/prev (current-buffer) 'next))
+        (should (= 47 (point))))
+      ;; Prev 1
+      (let ((prev-region (x509--pem-region-next/prev (current-buffer) 'prev)))
+        (should prev-region)
+        (should (= 1 (car prev-region)))
+        (should (= 1 (point)))
+        ;; Prev again should leave point unchanged
+        (should-not (x509--pem-region-next/prev (current-buffer) 'prev))
+        (should (= 1 (point)))))))
 
 (ert-deftest x509--generate-input-buffer ()
   "Create buffer with valid data."
@@ -639,6 +652,88 @@ SEQUENCE             30 0C
             (x509-asn1-offset-up)
             (should (looking-at "    2:d=1  hl=2 l=  10 prim: BIT STRING")))
         (kill-buffer result-buffer)))))
+
+(defun check-content-helper (buffer expected-string)
+  "Check that BUFFER contain the regex EXPECTED-STRING."
+  (with-current-buffer buffer
+    (let ((content (buffer-substring-no-properties (point-min) (point-max))))
+      (should (string-match-p expected-string content)))))
+
+(ert-deftest x509-dwim-next/prev ()
+  "Go forward and backward."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "multi.pem"))
+    (goto-char (point-min))
+    (let ((view-buffer (x509-dwim)))
+      (should view-buffer)
+      (check-content-helper view-buffer "1d:09:fa:e5")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-next)))
+      (should view-buffer)
+      (check-content-helper view-buffer "23:cc:f0:66")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-next)))
+      (should view-buffer)
+      (check-content-helper view-buffer "DH Parameters:")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-next)))
+      (should view-buffer)
+      (check-content-helper view-buffer "Public-Key:")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-next)))
+      (should view-buffer)
+      (check-content-helper view-buffer "GROUP: ffdhe2048")
+      ;; At end, next should fail
+      (with-current-buffer view-buffer
+        (should-not (x509-dwim-next)))
+      (check-content-helper view-buffer "GROUP: ffdhe2048")
+      ;; Go backward
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-prev)))
+      (should view-buffer)
+      (check-content-helper view-buffer "Public-Key:")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-prev)))
+      (should view-buffer)
+      (check-content-helper view-buffer "DH Parameters:")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-prev)))
+      (should view-buffer)
+      (check-content-helper view-buffer "23:cc:f0:66")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-prev)))
+      (should view-buffer)
+      (check-content-helper view-buffer "1d:09:fa:e5")
+      ;; At beginning, prev should fail
+      (with-current-buffer view-buffer
+        (should-not (x509-dwim-prev)))
+      (check-content-helper view-buffer "1d:09:fa:e5")
+      ;; Kill it
+      (with-current-buffer view-buffer
+        (x509-mode-kill-buffer)))))
+
+(ert-deftest x509-dwim-next/prev-asn1 ()
+  "Go forward and backward in `x509-asn1-mode'."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "multi.pem"))
+    (goto-char (point-min))
+    (let ((view-buffer (x509-viewasn1)))
+      (should view-buffer)
+      (check-content-helper view-buffer "1D09FAE5")
+      ;; Go next and verify we are still in asn1 mode looking at the next
+      ;; section.
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-next)))
+      (should view-buffer)
+      (check-content-helper view-buffer "CCF066")
+      ;; Go back again
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-prev)))
+      (should view-buffer)
+      (check-content-helper view-buffer "1D09FAE5")
+      ;; Kill it
+      (with-current-buffer view-buffer
+        (x509-mode-kill-buffer)))))
 
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

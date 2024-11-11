@@ -37,6 +37,10 @@ Commands operate on PEM data around point by default. If point is in -----BEGIN/
 
 **t** toggle between x509-mode and x509-asn1-mode
 
+**n** go to next BEGIN/END region in source buffer and call `x509-dwim`
+
+**p** go to prev BEGIN/END region in source buffer and call `x509-dwim`
+
 **q** quit and kill view buffer.
 
 In x509-asn1-mode, additional keys can be used to parse nested ASN.1 structures. Place cursor on a line in the asn.1 buffer and press:

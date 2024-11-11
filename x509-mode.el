@@ -444,11 +444,14 @@ Skip blank lines and comment lines.  Return list."
 
 \\{x509-mode-map}"
  :interactive nil
- :group 'x509
+ :group
+ 'x509
  (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
  (keymap-set x509-mode-map "q" #'x509-mode-kill-buffer)
  (keymap-set x509-mode-map "t" #'x509-toggle-mode)
  (keymap-set x509-mode-map "e" #'x509-edit-params)
+ (keymap-set x509-mode-map "n" #'x509-dwim-next)
+ (keymap-set x509-mode-map "p" #'x509-dwim-prev)
  (x509--mark-browse-http-links)
  (x509--mark-browse-oid))
 
@@ -542,6 +545,9 @@ Make it persist during major mode change."
      (defvar-local ,var-name nil
        ,docstring)
      (put ',var-name 'permanent-local t)))
+
+(x509-defvar-local-persistent
+ x509--src-buffer "Original buffer where x509 view command was run.")
 
 (x509-defvar-local-persistent
  x509--shadow-buffer "Input buffer used for OpenSSL command.")
@@ -661,7 +667,8 @@ existing input buffer instead of creating one.  If OUTPUT-BUF is
 non-'nil', use that instead of creating a new one.
 
 Switch to resulting buffer and return it."
-  (let* ((in-buf (or input-buf (x509--generate-input-buffer)))
+  (let* ((src-buffer (current-buffer))
+         (in-buf (or input-buf (x509--generate-input-buffer)))
          (encoding (x509--buffer-encoding in-buf))
          (initial (x509--add-inform-spec default encoding))
          (args (x509--read-arguments "arguments: " initial history))
@@ -669,6 +676,10 @@ Switch to resulting buffer and return it."
           (x509--process-buffer in-buf (split-string-and-unquote args)
                                 output-buf)))
     (switch-to-buffer result-buffer)
+    (unless (bound-and-true-p x509--src-buffer)
+      ;; Remember the original source buffer unless already set.
+      ;; Which is can be if toggling between modes.
+      (setq x509--src-buffer src-buffer))
     ;; Remember what arguments where used.
     (if (eq mode 'x509-mode)
         (setq x509--x509-mode-shadow-arguments args)
@@ -867,6 +878,89 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (set-buffer-modified-p nil)
     (setq buffer-read-only t)
     (x509-mode)))
+
+(defun x509--pem-region-next/prev (buffer direction)
+  "Find BEGIN before or after current region and place point at beginning.
+BUFFER is the buffer to search in.
+DIRECTION is one of \\='next \\='prev
+Return (begin . end) if region is found.
+Return nil if not in a region or next/prev region isn't found.
+If no next/prev region, leave point unchanged."
+  (let* ((is-next (eq direction 'next))
+         (search-fn
+          (if is-next
+              're-search-forward
+            're-search-backward))
+         ;; Get either cdr for end of current region when searching forward
+         ;; or car for beginning of current region when searching backwards
+         (region-point-fn
+          (if is-next
+              'cdr
+            'car)))
+    (with-current-buffer buffer
+      (if-let* ((current-region (x509--pem-region))
+                (current-begin (funcall region-point-fn current-region))
+                (current-point (point)))
+        (progn
+          (goto-char current-begin)
+          ;; Look for next/prev region
+          (if (funcall search-fn "-----BEGIN" nil t)
+              (progn
+                (goto-char (match-beginning 0))
+                (x509--pem-region))
+            ;; Restore point since we didn't fins any new region
+            (goto-char current-point)
+            ;; Return nil
+            nil))))))
+
+(defun x509--dwim-next/prev (direction)
+  "Look for a PEM region before of after the current one.
+DIRECTION is either \\='next or \\='prev
+If found, kill current buffer, switch to src buffer and call `x509-dwim'.
+Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
+  (if (not (bound-and-true-p x509--src-buffer))
+      (message "Not in an x509 buffer")
+    ;; Find prev region in original buffer
+    (let* ((new-region (x509--pem-region-next/prev x509--src-buffer direction))
+           (name
+            (if (eq direction 'next)
+                "next"
+              "previous")))
+      (if (not new-region)
+          (progn
+            (message "No %s" name)
+            nil)
+        (let ((src-buffer x509--src-buffer)
+              (current-mode major-mode))
+          (x509-mode-kill-buffer)
+          (with-current-buffer src-buffer
+            (goto-char (car new-region))
+            ;; If in asn1-mode, stay in asn1-mode
+            (if (eq current-mode 'x509-asn1-mode)
+                (x509--generic-view
+                 (or x509--x509-asn1-mode-shadow-arguments
+                     x509-asn1parse-default-arg)
+                 'x509--viewasn1-history 'x509-asn1-mode)
+              ;; Else determine type and do x509-mode
+              (x509-dwim))))))))
+
+;; ---------------------------------------------------------------------------
+;;;###autoload
+(defun x509-dwim-next ()
+  "Look for a PEM region after the current one.
+If found, kill current buffer, switch to src buffer and call `x509-dwim'.
+Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
+  (interactive)
+  (x509--dwim-next/prev 'next))
+
+;; ---------------------------------------------------------------------------
+;;;###autoload
+(defun x509-dwim-prev ()
+  "Look for a PEM region before the current one.
+If found, kill current buffer, switch to src buffer and call `x509-dwim'.
+Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
+  (interactive)
+  (x509--dwim-next/prev 'prev))
 
 (defun x509--dwim-tester (openssl-commamd-args)
   "Test running OPENSSL-COMMAMD-ARGS in current buffer.
@@ -1415,11 +1509,14 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
 
 \\{x509-asn1-mode-map}"
  :interactive nil
- :group 'x509
+ :group
+ 'x509
  (set
   (make-local-variable 'font-lock-defaults) '(x509-asn1-font-lock-keywords t))
  (keymap-set x509-asn1-mode-map "q" #'x509-mode-kill-buffer)
  (keymap-set x509-asn1-mode-map "t" #'x509-toggle-mode)
+ (keymap-set x509-asn1-mode-map "n" #'x509-dwim-next)
+ (keymap-set x509-asn1-mode-map "p" #'x509-dwim-prev)
  (keymap-set x509-asn1-mode-map "e" #'x509-edit-params)
  (keymap-set x509-asn1-mode-map "d" #'x509-asn1-offset-down)
  (keymap-set x509-asn1-mode-map "s" #'x509-asn1-strparse)

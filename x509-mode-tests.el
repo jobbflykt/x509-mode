@@ -218,7 +218,7 @@ When `x509-warn-near-expire-days' is nil."
     (insert
      "-----BEGIN my type-----\n-----END my type-----\n"
      "-----BEGIN my type-----\n-----END my type-----\n")
-    ;;       ^ point after next
+    ;;^ point after next
     (goto-char (point-min))
     (let ((first-region (x509--pem-region)))
       (should first-region)

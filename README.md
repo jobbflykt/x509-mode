@@ -138,3 +138,7 @@ Faces mostly inherit from built-in faces. They can be customized.
 **ASN.1**
 
 ![ASN.1](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-asn1.png)
+
+**Hexl follow mode**
+
+![hexl](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-hexl.png)

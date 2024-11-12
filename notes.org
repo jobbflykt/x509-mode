@@ -359,7 +359,7 @@ Remains:
   length as being zero since we can't (easily) know.
 - [X] Add unit tests.
 - [X] Separate faces for header and value.
-* TODO Use compat
+* DONE Use compat
 How to use compat
 https://www.reddit.com/r/emacs/comments/10iep0o/compat_29130/
 
@@ -372,3 +372,6 @@ https://www.reddit.com/r/emacs/comments/10iep0o/compat_29130/
 
 (require 'compat)
 #+end_src
+* DONE EC-Parameters
+- [X] Add keywords and find out where in openssl they are defined.
+- [X] Add ert tests.

@@ -1,6 +1,6 @@
 # x509-mode [![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode)
 
-Major mode for viewing certificates, CRLs, keys, DH-parameters and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
+Major mode for viewing certificates, CRLs, keys, DH-parameters, EC-Parameters and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
 
 ## Usage
 
@@ -17,6 +17,7 @@ To view certificates, CRLs, private and public keys Diffie-Hellman parameters, c
     M-x x509-viewkey
     M-x x509-viewpublickey
     M-x x509-viewdh
+    M-x x509-viewec
     M-x x509-viewreq
     M-x x509-viewpkcs7
     M-x x509-viewasn1
@@ -108,6 +109,9 @@ x509-mode works with, for example, OpenSSL that comes with Git for Windows.
 
 ![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-dhparams.png)
 
+**EC-params**
+
+![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-ecparams.png)
 
 **ASN.1**
 

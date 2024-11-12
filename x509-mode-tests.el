@@ -364,6 +364,7 @@ When `x509-warn-near-expire-days' is nil."
   (should (equal 'x509--viewcrl-history (x509--get-x509-history "crl")))
   (should (equal 'x509--viewpkcs7-history (x509--get-x509-history "pkcs7")))
   (should (equal 'x509--viewdh-history (x509--get-x509-history "dhparam")))
+  (should (equal 'x509--viewec-history (x509--get-x509-history "ecparam")))
   (should (equal 'x509--viewkey-history (x509--get-x509-history "pkey")))
   (should
    (equal 'x509--viewpublickey-history (x509--get-x509-history "pkey -pubin")))
@@ -445,6 +446,11 @@ Repeat with `x509-dwim' which should produce the same result."
      ;;"dhparams-4096.der"
      )
    'x509-viewdh 'x509-mode "DH Parameters: (4096 bit)"))
+
+(ert-deftest x509-viewec ()
+  "View elliptic curve parameters."
+  (view-test-helper
+   '("ec-params.pem") 'x509-viewec 'x509-mode "EC-Parameters: (512 bit)"))
 
 (ert-deftest x509-viewkey ()
   "View plaintext private key."

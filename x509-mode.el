@@ -727,6 +727,7 @@ Switch to resulting buffer and return it."
     ("crl" 'x509--viewcrl-history)
     ("pkcs7" 'x509--viewpkcs7-history)
     ("dhparam" 'x509--viewdh-history)
+    ("ecparam" 'x509--viewec-history)
     ("pkey" (if (string-match-p "-pubin" args)
          'x509--viewpublickey-history
        'x509--viewkey-history))

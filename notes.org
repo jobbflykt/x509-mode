@@ -372,3 +372,6 @@ https://www.reddit.com/r/emacs/comments/10iep0o/compat_29130/
 
 (require 'compat)
 #+end_src
+* TODO EC-Parameters
+- [ ] Add keywords and find out where in openssl they are defined.
+- [ ] Add ert tests.

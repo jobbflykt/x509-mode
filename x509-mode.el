@@ -119,6 +119,11 @@ Example:
   :type 'string
   :group 'x509)
 
+(defcustom x509-ecparam-default-arg "ecparam -text -noout"
+  "Default arguments for \"openssl ecparam\" command."
+  :type 'string
+  :group 'x509)
+
 (defcustom x509-pkey-default-arg "pkey -text -noout"
   "Default arguments for \"openssl pkey\" command."
   :type 'string
@@ -819,6 +824,18 @@ With \\[universal-argument] prefix, you can edit the command arguments."
    x509-dhparam-default-arg 'x509--viewdh-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
+(defvar x509--viewec-history nil
+  "History list for `x509-viewec'.")
+;;;###autoload
+(defun x509-viewec ()
+  "Parse current buffer as a EC-parameter file.
+
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive)
+  (x509--generic-view
+   x509-ecparam-default-arg 'x509--viewec-history 'x509-mode))
+
+;; ---------------------------------------------------------------------------
 (defvar x509--viewkey-history nil
   "History list for `x509-viewkey'.")
 ;;;###autoload
@@ -994,6 +1011,7 @@ different openssl commands until one succeeds.  Call
      (call-interactively #'x509-viewcert))
     ("CERTIFICATE REQUEST" (call-interactively #'x509-viewreq))
     ("DH PARAMETERS" (call-interactively #'x509-viewdh))
+    ("DC PARAMETERS" (call-interactively #'x509-viewec))
     ("PKCS7" (call-interactively #'x509-viewpkcs7))
     ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
      (call-interactively #'x509-viewkey))
@@ -1013,6 +1031,8 @@ different openssl commands until one succeeds.  Call
        (call-interactively #'x509-viewreq))
       ((x509--dwim-tester x509-dhparam-default-arg)
        (call-interactively #'x509-viewdh))
+      ((x509--dwim-tester x509-ecparam-default-arg)
+       (call-interactively #'x509-viewec))
       ((x509--dwim-tester x509-pkcs7-default-arg)
        (call-interactively #'x509-viewpkcs7))
       (t

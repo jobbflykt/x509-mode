@@ -1,6 +1,7 @@
 # x509-mode [![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode)
 
-Major mode for viewing certificates, CRLs, keys, DH-parameters, EC-Parameters and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
+Major mode for viewing certificates, CRLs, keys, DH-parameters, EC-Parameters
+and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
 
 ## Usage
 
@@ -10,7 +11,7 @@ Open a certificate, either PEM or DER encoded, in a buffer.
 
 A new buffer should display the parsed certificate.
 
-To view certificates, CRLs, private and public keys Diffie-Hellman parameters, certificate requests,pkcs7 files and parsed ASN.1 respectively:
+To view certificates, CRLs, private and public keys Diffie-Hellman parameters, certificate requests, pkcs7 files and parsed ASN.1 respectively:
 
     M-x x509-viewcert
     M-x x509-viewcrl
@@ -22,7 +23,11 @@ To view certificates, CRLs, private and public keys Diffie-Hellman parameters, c
     M-x x509-viewpkcs7
     M-x x509-viewasn1
 
-If point is in, or at the beginning of, a PEM region, `M-x x509-dwim` tries to determine what kind of object it is and call the right x509-view-function on that region. If not in PEM region or if type is unknown, `x509-dwim` tries different commands until one works. If data is still unknown, `x509-dwim` falls back to `x509-viewasn1`.
+If point is in, or at the beginning of, a PEM region, `M-x x509-dwim` tries to
+determine what kind of object it is and call the right x509-view-function on
+that region. If not in PEM region or if type is unknown, `x509-dwim` tries
+different commands until one works. If data is still unknown, `x509-dwim` falls
+back to `x509-viewasn1`.
 
     M-x x509-dwim
 
@@ -30,52 +35,58 @@ The command line for all command can be edited with C-u prefix. Example:
 
     C-u M-x x509-viewcert
 
-Commands operate on PEM data around point by default. If point is in -----BEGIN/-----END, that region is sent to OpenSSL. Otherwise the whole buffer is considered. If no PEM region is found, either around point or in buffer, then the buffer is assumed to be DER encoded.
+Commands operate on PEM data around point by default. If point is in
+-----BEGIN/-----END, that region is sent to OpenSSL. Otherwise the whole buffer
+is considered. If no PEM region is found, either around point or in buffer,
+then the buffer is assumed to be DER encoded.
 
 ### Key bindings
 
 **e** edit the current command.
 
-**t** toggle between x509-mode and x509-asn1-mode
+**t** toggle between `x509-mode` and `x509-asn1-mode`
 
 **n** go to next BEGIN/END region in source buffer and call `x509-dwim`
 
-**p** go to prev BEGIN/END region in source buffer and call `x509-dwim`
+**p** go to previous BEGIN/END region in source buffer and call `x509-dwim`
 
 **q** quit and kill view buffer.
 
-In x509-asn1-mode, additional keys can be used to parse nested ASN.1 structures. Place cursor on a line in the asn.1 buffer and press:
+In x509-asn1-mode, additional keys can be used to parse nested ASN.1
+structures. Place cursor on a line in the asn.1 buffer and press:
 
 **d** to re-parse at that -offset, going *down*.
 
 **u** to go *up*. Can be used repeatedly.
 
-Similarly, but with slightly different semantics, is
+Similarly, but with slightly different semantics and often more useful, is
 
 **s** which calls asn1parse with the flag "-strparse N".
 
-Where *N* is the offset at the current line. -strparse is used to parse BIT STRINGs and OCTET STRINGs as. The offset *N** is calculated differently for -strparse and -offset.
+Where *N* is the offset at the current line. -strparse is used to parse BIT STRINGs and OCTET STRINGs as DER encoded asn1. The offset *N* is calculated differently for -strparse and -offset.
 
 Also in x509-asn1-mode,
 
 **x** toggles viewing the underlying binary data in a hexl buffer.
 
-Movement in the x509-asn1-mode buffer is reflected in the hexl-buffer (inspired by rmsbolt-mode).
+Movement in the x509-asn1-mode buffer is reflected in the hexl-buffer (inspired
+by rmsbolt-mode).
 
 ## Installation
 
-Install x509-mode through elpa. It's available on [melpa](https://melpa.org)
+It's available on [melpa](https://melpa.org)
 
     M-x package-install x509-mode
 
-I use the convenient [use-package](https://melpa.org/#/use-package)
+Or use the convenient [use-package](https://melpa.org/#/use-package)
 
     (use-package x509-mode
       :ensure t)
 
 ## OpenSSL
 
-x509-mode requires OpenSSL. The variable `x509-openssl-cmd` must name the openssl binary.
+x509-mode requires OpenSSL. The variable `x509-openssl-cmd` must name the
+openssl binary.
 
     M-x customize-variable x509-openssl-cmd
 
@@ -90,6 +101,17 @@ x509-mode requires OpenSSL. The variable `x509-openssl-cmd` must name the openss
 x509-mode works with, for example, OpenSSL that comes with Git for Windows.
 
     (setq x509-openssl-cmd "C:/Program Files/Git/mingw64/bin/openssl.exe")
+
+## Configuration
+
+Default parameters to openssl commands and some other variables can be
+customized.
+
+    M-x customize-group x509
+
+Faces mostly inherit from built-in faces. They can be customized.
+
+    M-x customize-group x509-faces
 
 ## Screen shots
 
@@ -116,3 +138,7 @@ x509-mode works with, for example, OpenSSL that comes with Git for Windows.
 **ASN.1**
 
 ![ASN.1](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-asn1.png)
+
+**Hexl follow mode**
+
+![hexl](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-hexl.png)

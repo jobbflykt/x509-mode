@@ -1,4 +1,4 @@
-# x509-mode [![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode)
+# x509-mode [![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode) [![CI](https://github.com/jobbflykt/x509-mode/actions/workflows/test.yml/badge.svg)](https://github.com/jobbflykt/x509-mode/actions/workflows/test.yml)
 
 Major mode for viewing certificates, CRLs, keys, DH-parameters, EC-Parameters
 and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
@@ -74,7 +74,7 @@ by rmsbolt-mode).
 
 ## Installation
 
-It's available on [melpa](https://melpa.org)
+It's available on [melpa](https://melpa.org/#/x509-mode)
 
     M-x package-install x509-mode
 

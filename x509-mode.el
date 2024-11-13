@@ -328,14 +328,23 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
   (defun x509--load-data-file (filename)
     "Split FILENAME linewise into a list.
 Skip blank lines and comment lines.  Return list."
-    (with-temp-buffer
-      (insert-file-contents
-       (if (null load-file-name)
-           filename
-         (expand-file-name filename (file-name-directory load-file-name))))
-      (cl-remove-if
-       (lambda (s) (string-match-p "^ *\\(?:#\\|$\\)" s))
-       (split-string (buffer-string) "\n")))))
+    ;; Try to guess path to filename. It may not be in the current directory
+    ;; when compiling.
+    (let ((path (cond ((bound-and-true-p byte-compile-current-file)
+                       (expand-file-name filename
+                                         (file-name-directory
+                                          byte-compile-current-file)))
+                      ((bound-and-true-p load-file-name)
+                       (expand-file-name filename
+                                         (file-name-directory
+                                          load-file-name)))
+                      (t
+                       filename))))
+      (with-temp-buffer
+        (insert-file-contents path)
+        (cl-remove-if
+         (lambda (s) (string-match-p "^ *\\(?:#\\|$\\)" s))
+         (split-string (buffer-string) "\n"))))))
 
 (eval-when-compile
   (defconst x509--keywords (regexp-opt (x509--load-data-file "keywords.txt"))))

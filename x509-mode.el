@@ -265,6 +265,11 @@ Used with `(format x509-query-oid-url-format oid)'"
   :type 'string
   :group 'x509)
 
+(defcustom x509-swoop-separator ""
+  "A string that separates items in a buffer created by `x509-swoop'"
+  :type 'string
+  :group 'x509)
+
 (defun x509--match-date-near-now (bound)
   "Return non-nil it can find a date that is \"near\" in the future.
 
@@ -1064,6 +1069,7 @@ Some functions does not work in a swooped buffer, like next/prev or
 toggling to and from `x509-asn1-mode'. The buffer is for static viewing only."
   (interactive)
   (let* ((src-buffer (current-buffer))
+         (orig-point (point))
          (swoop-buffer
           (generate-new-buffer
            (generate-new-buffer-name
@@ -1079,19 +1085,24 @@ toggling to and from `x509-asn1-mode'. The buffer is for static viewing only."
                      (buffer-substring-no-properties (point-min) (point-max))))
                 (with-current-buffer swoop-buffer
                   (insert new-content)
-                  (x509--normalize-buffer-end swoop-buffer)))))
+                  (x509--normalize-buffer-end swoop-buffer)
+                  (goto-char (point-max))
+                  (insert x509-swoop-separator "\n")))))
         (kill-buffer tmp-output-buffer))
       ;; switch back to src-buffer
       (switch-to-buffer src-buffer)
       ;; Go forward and look for next region
       (forward-char 1))
-    ;; FIXME: restore starting point of src-buffer.
+    ;; Restore point in src-buffer
+    (goto-char orig-point)
     ;; If there is data in the output buffer, switch to it.
     (if (> (buffer-size swoop-buffer) 0)
         (progn
           (switch-to-buffer swoop-buffer)
           (x509-mode)
-          ;; FIXME: unbind keys n,p,t,e and others?
+          ;; Un-bind keys that doesn't work in s swoop buffer.
+          (dolist (key '("t" "e" "n" "p"))
+            (define-key x509-mode-map (kbd key) nil))
           (goto-char (point-min))
           (set-buffer-modified-p nil)
           (setq buffer-read-only t))

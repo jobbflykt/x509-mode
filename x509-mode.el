@@ -198,6 +198,12 @@ Example:
   "Face for highlighting ASN.1 value in hexl buffer in `x509-asn1-mode'."
   :group 'x509-faces)
 
+(defun x509--normalize-buffer-end(buffer)
+  "Trim empty lines and ensure buffer ends in a newline."
+  (with-current-buffer buffer
+    (let ((delete-trailing-lines t))
+      (delete-trailing-whitespace (point-min) (point-max)))))
+
 (defun x509--match-date (cmp bound)
   "Return non-nil if it can find a date that CMP to current time.
 Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
@@ -330,16 +336,16 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
 Skip blank lines and comment lines.  Return list."
     ;; Try to guess path to filename. It may not be in the current directory
     ;; when compiling.
-    (let ((path (cond ((bound-and-true-p byte-compile-current-file)
-                       (expand-file-name filename
-                                         (file-name-directory
-                                          byte-compile-current-file)))
-                      ((bound-and-true-p load-file-name)
-                       (expand-file-name filename
-                                         (file-name-directory
-                                          load-file-name)))
-                      (t
-                       filename))))
+    (let ((path
+           (cond
+            ((bound-and-true-p byte-compile-current-file)
+             (expand-file-name filename
+                               (file-name-directory
+                                byte-compile-current-file)))
+            ((bound-and-true-p load-file-name)
+             (expand-file-name filename (file-name-directory load-file-name)))
+            (t
+             filename))))
       (with-temp-buffer
         (insert-file-contents path)
         (cl-remove-if
@@ -1014,7 +1020,8 @@ if the buffer contains data of certain type."
 
 Look at -----BEGIN header for known object types.  Then test
 different openssl commands until one succeeds.  Call
-`x509-viewasn1' as a last resort."
+`x509-viewasn1' as a last resort.
+Return the output buffer."
   (interactive)
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
@@ -1047,6 +1054,48 @@ different openssl commands until one succeeds.  Call
        (call-interactively #'x509-viewpkcs7))
       (t
        (call-interactively #'x509-viewasn1))))))
+
+;; ---------------------------------------------------------------------------
+;;;###autoload
+(defun x509-swoop ()
+  "Find all known BEGIN/END PEM regions i buffer and call `x509-dwim'.
+For each region, the result is sent to the same `x509-mode' buffer.
+Some functions does not work in a swooped buffer, like next/prev or
+toggling to and from `x509-asn1-mode'. The buffer is for static viewing only."
+  (interactive)
+  (let* ((src-buffer (current-buffer))
+         (swoop-buffer
+          (generate-new-buffer
+           (generate-new-buffer-name
+            (format "*x-%s*" (buffer-name src-buffer))))))
+    (goto-char (point-min))
+    (while (re-search-forward "-----BEGIN" nil t)
+      (goto-char (match-beginning 0))
+      (when-let* ((tmp-output-buffer (x509-dwim)))
+        (with-current-buffer tmp-output-buffer
+          ;; Only consider x509-mode output. We don't want asn1.
+          (if (eq major-mode 'x509-mode)
+              (let ((new-content
+                     (buffer-substring-no-properties (point-min) (point-max))))
+                (with-current-buffer swoop-buffer
+                  (insert new-content)
+                  (x509--normalize-buffer-end swoop-buffer)))))
+        (kill-buffer tmp-output-buffer))
+      ;; switch back to src-buffer
+      (switch-to-buffer src-buffer)
+      ;; Go forward and look for next region
+      (forward-char 1))
+    ;; FIXME: restore starting point of src-buffer.
+    ;; If there is data in the output buffer, switch to it.
+    (if (> (buffer-size swoop-buffer) 0)
+        (progn
+          (switch-to-buffer swoop-buffer)
+          (x509-mode)
+          ;; FIXME: unbind keys n,p,t,e and others?
+          (goto-char (point-min))
+          (set-buffer-modified-p nil)
+          (setq buffer-read-only t))
+      (message "No BEGIN/END regions found."))))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

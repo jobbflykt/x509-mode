@@ -154,6 +154,7 @@ DH Parameters:
 
 # encode_key2text.c
 EC-Parameters:
+GROUP:
 
 # eck_prn.c ECPKParameters_print
 A:

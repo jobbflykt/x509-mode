@@ -741,5 +741,24 @@ SEQUENCE             30 0C
       (with-current-buffer view-buffer
         (x509-mode-kill-buffer)))))
 
+(ert-deftest x509-swoop ()
+  "Multiple dwim in all regions in buffer."
+  (let ((x509-swoop-separator "7iyefiaeo7bf")))
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "multi.pem"))
+    (let ((swoop-buffer (x509-swoop)))
+      (should swoop-buffer)
+      (with-current-buffer swoop-buffer
+        (check-content-helper swoop-buffer "23:cc:f0:66")
+        (check-content-helper swoop-buffer "1d:09:fa:e5")
+        (check-content-helper swoop-buffer "DH Parameters:")
+        (check-content-helper swoop-buffer "Public-Key:")
+        (check-content-helper swoop-buffer "GROUP: ffdhe2048")
+        (check-content-helper swoop-buffer x509-swoop-separator))
+      (x509-mode-kill-buffer swoop-buffer)))
+  (with-temp-buffer
+    (insert "nothing here")
+    (should-not (x509-swoop))))
+
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

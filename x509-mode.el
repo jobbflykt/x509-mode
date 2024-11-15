@@ -945,8 +945,11 @@ If no next/prev region, leave point unchanged."
           (if (funcall search-fn "-----BEGIN" nil t)
               (progn
                 (goto-char (match-beginning 0))
-                (x509--pem-region))
-            ;; Restore point since we didn't fins any new region
+                (x509--pem-region)
+                ;; FIXME this was maybe a bogus begin we should continue
+                ;; looking for another BEGIN
+                )
+            ;; Restore point since we didn't find any new region
             (goto-char current-point)
             ;; Return nil
             nil))))))
@@ -1066,7 +1069,9 @@ Return the output buffer."
   "Find all known BEGIN/END PEM regions i buffer and call `x509-dwim'.
 For each region, the result is sent to the same `x509-mode' buffer.
 Some functions does not work in a swooped buffer, like next/prev or
-toggling to and from `x509-asn1-mode'. The buffer is for static viewing only."
+toggling to and from `x509-asn1-mode'. The buffer is for static viewing only.
+
+Return view buffer on success."
   (interactive)
   (let* ((src-buffer (current-buffer))
          (orig-point (point))
@@ -1084,10 +1089,11 @@ toggling to and from `x509-asn1-mode'. The buffer is for static viewing only."
               (let ((new-content
                      (buffer-substring-no-properties (point-min) (point-max))))
                 (with-current-buffer swoop-buffer
+                  (if (> (buffer-size (current-buffer)) 0)
+                      (insert x509-swoop-separator "\n"))
                   (insert new-content)
                   (x509--normalize-buffer-end swoop-buffer)
-                  (goto-char (point-max))
-                  (insert x509-swoop-separator "\n")))))
+                  (goto-char (point-max))))))
         (kill-buffer tmp-output-buffer))
       ;; switch back to src-buffer
       (switch-to-buffer src-buffer)
@@ -1105,8 +1111,12 @@ toggling to and from `x509-asn1-mode'. The buffer is for static viewing only."
             (define-key x509-mode-map (kbd key) nil))
           (goto-char (point-min))
           (set-buffer-modified-p nil)
-          (setq buffer-read-only t))
-      (message "No BEGIN/END regions found."))))
+          (setq buffer-read-only t)
+          ;; Return buffer
+          swoop-buffer)
+      (message "No BEGIN/END regions found.")
+      ;; Return nil
+      nil)))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

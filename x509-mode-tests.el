@@ -767,18 +767,24 @@ SEQUENCE             30 0C
   (let ((x509-swoop-separator "7iyefiaeo7bf")))
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "multi.pem"))
-    (let ((swoop-buffer (x509-swoop)))
-      (should swoop-buffer)
-      (with-current-buffer swoop-buffer
-        (check-content-helper swoop-buffer "Certificate:")
-        (check-content-helper swoop-buffer "Certificate Request:")
-        (check-content-helper swoop-buffer "DH Parameters:")
-        (check-content-helper swoop-buffer "Public-Key:")
-        (check-content-helper swoop-buffer "EC-Parameters: (512 bit)")
-        (check-content-helper swoop-buffer x509-swoop-separator)
-        (x509-mode-kill-buffer))))
+    ;; Goto some random point in src buffer and check that it's unchanged
+    ;; after swooping.
+    (let ((src-buffer (current-buffer)))
+      (goto-char 1322)
+      (let ((swoop-buffer (x509-swoop)))
+        (should swoop-buffer)
+        (with-current-buffer swoop-buffer
+          (check-content-helper swoop-buffer "Certificate:")
+          (check-content-helper swoop-buffer "Certificate Request:")
+          (check-content-helper swoop-buffer "DH Parameters:")
+          (check-content-helper swoop-buffer "Public-Key:")
+          (check-content-helper swoop-buffer "EC-Parameters: (512 bit)")
+          (check-content-helper swoop-buffer x509-swoop-separator)
+          (x509-mode-kill-buffer)))
+      (with-current-buffer src-buffer
+        (should (= (point) 1322)))))
   (with-temp-buffer
-    (insert "nothing here")
+    (insert "-----BEGIN nothing----- -----END nothing-----")
     (should-not (x509-swoop))))
 
 (provide 'x509-mode-tests)

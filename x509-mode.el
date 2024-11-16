@@ -1142,6 +1142,7 @@ Return view buffer on success."
           (setq buffer-read-only t)
           ;; Return buffer
           swoop-buffer)
+      (kill-buffer swoop-buffer)
       (message "No BEGIN/END regions found.")
       ;; Return nil
       nil)))

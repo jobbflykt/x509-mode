@@ -1,3 +1,4 @@
+# -*- eval: (ethan-wspace-mode -1); -*-
 # openssl/crypto/x509/t_x509.c
 Certificate:
 Data:
@@ -154,10 +155,12 @@ DH Parameters:
 
 # encode_key2text.c
 EC-Parameters:
+GROUP:
 
 # eck_prn.c ECPKParameters_print
-A:
-B:
+# NOTE: There is SPC after these so that they are not matched in hex strings
+A: 
+B: 
 
 # openssl/crypto/x509v3/v3_bcons.c
 # X509V3_add_value_bool

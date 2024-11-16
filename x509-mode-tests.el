@@ -176,38 +176,45 @@ When `x509-warn-near-expire-days' is nil."
 (ert-deftest x509--pem-region ()
   "Find region delimited by BEGIN/END."
   (with-temp-buffer
-    ;;                                                     54
-    ;;                                                     v
+    ;;                      22                            53
+    ;;                      v                             v
     (insert
-     "-----BEGIN TYPE----- -----END BOGUS-----END TYPE----- -----END TYPE-----")
+     "-----BEGIN PKCS7----- -----END XX-----END PKCS7----- -----END PKCS7-----")
     (goto-char (point-min))
     (let ((region (x509--pem-region)))
       (should region)
       (should (equal 1 (car region)))
-      (should (equal 54 (cdr region))))
+      (should (equal 53 (cdr region))))
     (goto-char 22)
     (let ((region (x509--pem-region)))
       (should region)
       (should (equal 1 (car region)))
-      (should (equal 54 (cdr region))))))
+      (should (equal 53 (cdr region))))))
 
 (ert-deftest x509--pem-region-negative ()
   "Behave when there is no region."
   (with-temp-buffer
-    (insert "-----BEGIN TYPE----- -----END BOGUS-----")
+    (insert "-----BEGIN PKCS7----- -----END XZY-----")
     (goto-char (point-min))
     (should-not (x509--pem-region)))
   (with-temp-buffer
-    (insert "-----END TYPE-----")
+    (insert "-----END PKCS7-----")
     (goto-char (point-min))
     (should-not (x509--pem-region))))
+
+(ert-deftest x509--pem-region-known-types ()
+  (dolist (type x509--known-pki-types)
+    (with-temp-buffer
+      (insert (format "-----BEGIN %s----- -----END %s-----" type type))
+      (goto-char (point-min))
+      (should (x509--pem-region)))))
 
 (ert-deftest x509--pem-region-type ()
   "Get type of region, e.g. \"CERTIFICATE\"."
   (with-temp-buffer
-    (insert "-----BEGIN my type----- -----END my type-----")
+    (insert "-----BEGIN PKCS7----- -----END PKCS7-----")
     (goto-char (point-min))
-    (should (equal "my type" (x509--pem-region-type))))
+    (should (equal "PKCS7" (x509--pem-region-type))))
   (with-temp-buffer
     (insert "-----END TYPE-----")
     (goto-char (point-min))
@@ -216,20 +223,25 @@ When `x509-warn-near-expire-days' is nil."
 (ert-deftest x509--pem-region-next/prev ()
   (with-temp-buffer
     (insert
-     "-----BEGIN my type-----\n-----END my type-----\n"
-     "-----BEGIN my type-----\n-----END my type-----\n")
+     ;; This is the initial valid region
+     "-----BEGIN PKCS7-----\n-----END PKCS7-----\n"
+     ;; This region with unknown type should be ignored.
+     "-----BEGIN xxxxx-----\n-----END xxxxx-----\n"
+     ;; This is the next valid region
+     "-----BEGIN PKCS7-----\n-----END PKCS7-----\n")
     ;;^ point after next
     (goto-char (point-min))
-    (let ((first-region (x509--pem-region)))
+    (let ((first-region (x509--pem-region))
+          (expected-next-point 85))
       (should first-region)
       (should (= 1 (car first-region)))
       (let ((next-region (x509--pem-region-next/prev (current-buffer) 'next)))
         (should next-region)
-        (should (= 47 (car next-region)))
-        (should (= 47 (point)))
+        (should (= expected-next-point (car next-region)))
+        (should (= expected-next-point (point)))
         ;; Next again should leave point unchanged
         (should-not (x509--pem-region-next/prev (current-buffer) 'next))
-        (should (= 47 (point))))
+        (should (= expected-next-point (point))))
       ;; Prev 1
       (let ((prev-region (x509--pem-region-next/prev (current-buffer) 'prev)))
         (should prev-region)
@@ -245,10 +257,10 @@ When `x509-warn-near-expire-days' is nil."
   (with-temp-buffer
     (let ((q-pem-data
            (concat
-            "const char* pem = \"-----BEGIN XX-----\"\n"
+            "const char* pem = \"-----BEGIN PKCS7-----\"\n"
             "                  \"data\"\n"
-            "                  \"-----END XX-----\";\n"))
-          (clean-pem-data "-----BEGIN XX-----\ndata\n-----END XX-----"))
+            "                  \"-----END PKCS7-----\";\n"))
+          (clean-pem-data "-----BEGIN PKCS7-----\ndata\n-----END PKCS7-----"))
       (insert q-pem-data)
       (goto-char 20)
       (let ((buf (x509--generate-input-buffer)))
@@ -377,14 +389,20 @@ When `x509-warn-near-expire-days' is nil."
   (expand-file-name file-name "testfiles"))
 
 (defun view-test-helper
-    (test-files view-command expected-mode expected-strings)
+    (test-files
+     view-command expected-mode expected-strings &optional anti-strings)
   "Run VIEW-COMMAND on all TEST-FILES.
 Check that buffer has EXPECTED-MODE and contains EXPECTED-STRINGS.
+Check that buffer does _not_ contain ANTI-STRINGS.
 Repeat with `x509-dwim' which should produce the same result."
   (let ((regexes
          (if (listp expected-strings)
              expected-strings
            (list expected-strings)))
+        (anti-regexes
+         (if (listp anti-strings)
+             anti-strings
+           (list anti-strings)))
         (files
          (if (listp test-files)
              test-files
@@ -401,7 +419,9 @@ Repeat with `x509-dwim' which should produce the same result."
                           (point-min) (point-max))))
                     (should (derived-mode-p expected-mode))
                     (dolist (regex regexes)
-                      (should (string-match-p regex content)))))
+                      (should (string-match-p regex content)))
+                    (dolist (regex anti-regexes)
+                      (should-not (string-match-p regex content)))))
               (kill-buffer view-buffer))))))))
 
 (ert-deftest x509-viewcert ()
@@ -410,14 +430,15 @@ Repeat with `x509-dwim' which should produce the same result."
    '("CA/pki/crt/jobbflykt.crt" "CA/pki/crt/jobbflykt.cer")
    'x509-viewcert
    'x509-mode
-   "Certificate:"))
+   "Certificate:"
+   "Warning"))
 
 (ert-deftest x509-viewreq ()
   "View cert request."
   (view-test-helper
    '("CA/ca/request/jobbflykt.pem"
      "CA/ca/request/jobbflykt_req.der")
-   'x509-viewreq 'x509-mode "Certificate Request:"))
+   'x509-viewreq 'x509-mode "Certificate Request:" "Warning"))
 
 (ert-deftest x509-viewcrl ()
   "View CRL."
@@ -672,11 +693,11 @@ SEQUENCE             30 0C
     (goto-char (point-min))
     (let ((view-buffer (x509-dwim)))
       (should view-buffer)
-      (check-content-helper view-buffer "1d:09:fa:e5")
+      (check-content-helper view-buffer "Certificate:")
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-next)))
       (should view-buffer)
-      (check-content-helper view-buffer "23:cc:f0:66")
+      (check-content-helper view-buffer "Certificate Request:")
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-next)))
       (should view-buffer)
@@ -688,11 +709,11 @@ SEQUENCE             30 0C
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-next)))
       (should view-buffer)
-      (check-content-helper view-buffer "GROUP: ffdhe2048")
+      (check-content-helper view-buffer "EC-Parameters: (512 bit)")
       ;; At end, next should fail
       (with-current-buffer view-buffer
         (should-not (x509-dwim-next)))
-      (check-content-helper view-buffer "GROUP: ffdhe2048")
+      (check-content-helper view-buffer "EC-Parameters: (512 bit)")
       ;; Go backward
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-prev)))
@@ -705,15 +726,15 @@ SEQUENCE             30 0C
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-prev)))
       (should view-buffer)
-      (check-content-helper view-buffer "23:cc:f0:66")
+      (check-content-helper view-buffer "Certificate Request:")
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-prev)))
       (should view-buffer)
-      (check-content-helper view-buffer "1d:09:fa:e5")
+      (check-content-helper view-buffer "Certificate:")
       ;; At beginning, prev should fail
       (with-current-buffer view-buffer
         (should-not (x509-dwim-prev)))
-      (check-content-helper view-buffer "1d:09:fa:e5")
+      (check-content-helper view-buffer "Certificate:")
       ;; Kill it
       (with-current-buffer view-buffer
         (x509-mode-kill-buffer)))))
@@ -725,21 +746,46 @@ SEQUENCE             30 0C
     (goto-char (point-min))
     (let ((view-buffer (x509-viewasn1)))
       (should view-buffer)
-      (check-content-helper view-buffer "1D09FAE5")
+      (check-content-helper view-buffer ":033AF1E6A711A9A0BB2864B11D09FAE5")
       ;; Go next and verify we are still in asn1 mode looking at the next
       ;; section.
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-next)))
       (should view-buffer)
-      (check-content-helper view-buffer "CCF066")
+      (check-content-helper view-buffer ":Extension Request")
       ;; Go back again
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-prev)))
       (should view-buffer)
-      (check-content-helper view-buffer "1D09FAE5")
+      (check-content-helper view-buffer ":033AF1E6A711A9A0BB2864B11D09FAE5")
       ;; Kill it
       (with-current-buffer view-buffer
         (x509-mode-kill-buffer)))))
+
+(ert-deftest x509-swoop ()
+  "Multiple dwim in all regions in buffer."
+  (let ((x509-swoop-separator "7iyefiaeo7bf")))
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "multi.pem"))
+    ;; Goto some random point in src buffer and check that it's unchanged
+    ;; after swooping.
+    (let ((src-buffer (current-buffer)))
+      (goto-char 1322)
+      (let ((swoop-buffer (x509-swoop)))
+        (should swoop-buffer)
+        (with-current-buffer swoop-buffer
+          (check-content-helper swoop-buffer "Certificate:")
+          (check-content-helper swoop-buffer "Certificate Request:")
+          (check-content-helper swoop-buffer "DH Parameters:")
+          (check-content-helper swoop-buffer "Public-Key:")
+          (check-content-helper swoop-buffer "EC-Parameters: (512 bit)")
+          (check-content-helper swoop-buffer x509-swoop-separator)
+          (x509-mode-kill-buffer)))
+      (with-current-buffer src-buffer
+        (should (= (point) 1322)))))
+  (with-temp-buffer
+    (insert "-----BEGIN nothing----- -----END nothing-----")
+    (should-not (x509-swoop))))
 
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

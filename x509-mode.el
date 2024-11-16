@@ -198,6 +198,12 @@ Example:
   "Face for highlighting ASN.1 value in hexl buffer in `x509-asn1-mode'."
   :group 'x509-faces)
 
+(defun x509--normalize-buffer-end (buffer)
+  "Trim empty lines and ensure BUFFER ends in a newline."
+  (with-current-buffer buffer
+    (let ((delete-trailing-lines t))
+      (delete-trailing-whitespace (point-min) (point-max)))))
+
 (defun x509--match-date (cmp bound)
   "Return non-nil if it can find a date that CMP to current time.
 Intended to search for dates in form \"Jun 11 00:00:01 2014 GMT\"
@@ -256,6 +262,11 @@ Set to nil to inhibit warning."
   "A format string for constructing URL for querying OIDs.
 
 Used with `(format x509-query-oid-url-format oid)'"
+  :type 'string
+  :group 'x509)
+
+(defcustom x509-swoop-separator ""
+  "A string that separates items in a buffer created by `x509-swoop'."
   :type 'string
   :group 'x509)
 
@@ -330,16 +341,16 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
 Skip blank lines and comment lines.  Return list."
     ;; Try to guess path to filename. It may not be in the current directory
     ;; when compiling.
-    (let ((path (cond ((bound-and-true-p byte-compile-current-file)
-                       (expand-file-name filename
-                                         (file-name-directory
-                                          byte-compile-current-file)))
-                      ((bound-and-true-p load-file-name)
-                       (expand-file-name filename
-                                         (file-name-directory
-                                          load-file-name)))
-                      (t
-                       filename))))
+    (let ((path
+           (cond
+            ((bound-and-true-p byte-compile-current-file)
+             (expand-file-name filename
+                               (file-name-directory
+                                byte-compile-current-file)))
+            ((bound-and-true-p load-file-name)
+             (expand-file-name filename (file-name-directory load-file-name)))
+            (t
+             filename))))
       (with-temp-buffer
         (insert-file-contents path)
         (cl-remove-if
@@ -479,8 +490,29 @@ Return string \"PEM\" or \"DER\"."
           "PEM"
         "DER"))))
 
+(defconst x509--known-pki-types
+  '("CERTIFICATE"
+    "TRUSTED CERTIFICATE"
+    "CERTIFICATE REQUEST"
+    "DH PARAMETERS"
+    "EC PARAMETERS"
+    "PKCS7"
+    "ENCRYPTED PRIVATE KEY"
+    "PRIVATE KEY"
+    "RSA PRIVATE KEY"
+    "PUBLIC KEY"
+    "RSA PUBLIC KEY"
+    "X509 CRL")
+  "All the PEM region types known by `x509-mode'.
+Other types will not be recognized as valid regions.")
+
+(defun x509--known-region-type-p (type)
+  "Return non-nil if TYPE in a supported PKI type."
+  (member type x509--known-pki-types))
+
 (defun x509--pem-region ()
   "Determine if point is in region delimited by \"-----BEGIN\" \"-----END\".
+Only consider regions whose type in known by `x509--known-region-type-p'.
 Return (begin . end) or nil"
   (save-excursion
     (save-match-data
@@ -490,6 +522,7 @@ Return (begin . end) or nil"
             (let ((begin (match-beginning 0))
                   (type (match-string-no-properties 1)))
               (if (and (search-forward (concat "-----END " type "-----") nil t)
+                       (x509--known-region-type-p type)
                        ;; Ensure point is between begin and end.
                        (< here (match-end 0)))
                   (cons begin (match-end 0)))))))))
@@ -642,9 +675,11 @@ Return output buffer."
       ;; Since OpenSSL 3, there is a warning when reading input from stdin and
       ;; not from a file specified by an -in parameter. Delete that warning
       ;; line from the output. "Warning: Reading certificate from stdin since
-      ;; no -in or -new option is given"
+      ;; no -in or -new option is given". Also seen:
+      ;; "Warning: Will read cert request from stdin since no -in option is
+      ;; given"
       (goto-char (point-min))
-      (if (looking-at-p "Warning: Reading ")
+      (if (looking-at-p "Warning: .*stdin")
           (delete-line))
       (set-buffer-modified-p nil)
       (setq buffer-read-only t))
@@ -928,17 +963,23 @@ If no next/prev region, leave point unchanged."
       (if-let* ((current-region (x509--pem-region))
                 (current-begin (funcall region-point-fn current-region))
                 (current-point (point)))
-        (progn
+        (let (new-region)
           (goto-char current-begin)
           ;; Look for next/prev region
-          (if (funcall search-fn "-----BEGIN" nil t)
-              (progn
-                (goto-char (match-beginning 0))
-                (x509--pem-region))
-            ;; Restore point since we didn't fins any new region
-            (goto-char current-point)
-            ;; Return nil
-            nil))))))
+          (while (and (not new-region) (funcall search-fn "-----BEGIN" nil t))
+            (goto-char (match-beginning 0))
+            (setq new-region (x509--pem-region))
+            ;; If this BEGIN was bogus. Move a bit and look for another
+            (if (not new-region)
+                ;; Only need to move if searching forward so as not to hit the
+                ;; same match again.
+                (if is-next
+                    (forward-char 1))))
+          (if (not new-region)
+              ;; Restore point since we didn't find any new region
+              (goto-char current-point))
+          ;; Return new region. Maybe nil
+          new-region)))))
 
 (defun x509--dwim-next/prev (direction)
   "Look for a PEM region before of after the current one.
@@ -1014,18 +1055,20 @@ if the buffer contains data of certain type."
 
 Look at -----BEGIN header for known object types.  Then test
 different openssl commands until one succeeds.  Call
-`x509-viewasn1' as a last resort."
+`x509-viewasn1' as a last resort.
+Return the output buffer."
   (interactive)
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
      (call-interactively #'x509-viewcert))
     ("CERTIFICATE REQUEST" (call-interactively #'x509-viewreq))
     ("DH PARAMETERS" (call-interactively #'x509-viewdh))
-    ("DC PARAMETERS" (call-interactively #'x509-viewec))
+    ("EC PARAMETERS" (call-interactively #'x509-viewec))
     ("PKCS7" (call-interactively #'x509-viewpkcs7))
     ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
      (call-interactively #'x509-viewkey))
-    ("PUBLIC KEY" (call-interactively #'x509-viewpublickey))
+    ((or "PUBLIC KEY" "RSA PUBLIC KEY")
+     (call-interactively #'x509-viewpublickey))
     ("X509 CRL" (call-interactively #'x509-viewcrl))
     (_
      (cond
@@ -1047,6 +1090,62 @@ different openssl commands until one succeeds.  Call
        (call-interactively #'x509-viewpkcs7))
       (t
        (call-interactively #'x509-viewasn1))))))
+
+;; ---------------------------------------------------------------------------
+;;;###autoload
+(defun x509-swoop ()
+  "Find all known BEGIN/END PEM regions i buffer and call `x509-dwim'.
+For each region, the result is sent to the same `x509-mode' buffer.
+Some functions does not work in a swooped buffer, like next/prev or
+toggling to and from `x509-asn1-mode'.  The buffer is for static viewing only.
+
+Return view buffer on success."
+  (interactive)
+  (let* ((src-buffer (current-buffer))
+         (orig-point (point))
+         (swoop-buffer
+          (generate-new-buffer
+           (generate-new-buffer-name
+            (format "*x-%s*" (buffer-name src-buffer))))))
+    (goto-char (point-min))
+    (while (re-search-forward "-----BEGIN" nil t)
+      (goto-char (match-beginning 0))
+      (when-let* ((tmp-output-buffer (x509-dwim)))
+        (with-current-buffer tmp-output-buffer
+          ;; Only consider x509-mode output. We don't want asn1.
+          (if (eq major-mode 'x509-mode)
+              (let ((new-content
+                     (buffer-substring-no-properties (point-min) (point-max))))
+                (with-current-buffer swoop-buffer
+                  (if (> (buffer-size (current-buffer)) 0)
+                      (insert x509-swoop-separator "\n"))
+                  (insert new-content)
+                  (x509--normalize-buffer-end swoop-buffer)
+                  (goto-char (point-max))))))
+        (kill-buffer tmp-output-buffer))
+      ;; switch back to src-buffer
+      (switch-to-buffer src-buffer)
+      ;; Go forward and look for next region
+      (forward-char 1))
+    ;; Restore point in src-buffer
+    (goto-char orig-point)
+    ;; If there is data in the output buffer, switch to it.
+    (if (> (buffer-size swoop-buffer) 0)
+        (progn
+          (switch-to-buffer swoop-buffer)
+          (x509-mode)
+          ;; Un-bind keys that doesn't work in s swoop buffer.
+          (dolist (key '("t" "e" "n" "p"))
+            (define-key x509-mode-map (kbd key) nil))
+          (goto-char (point-min))
+          (set-buffer-modified-p nil)
+          (setq buffer-read-only t)
+          ;; Return buffer
+          swoop-buffer)
+      (kill-buffer swoop-buffer)
+      (message "No BEGIN/END regions found.")
+      ;; Return nil
+      nil)))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode

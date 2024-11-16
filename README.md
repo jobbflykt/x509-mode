@@ -9,9 +9,9 @@ Open a certificate, either PEM or DER encoded, in a buffer.
 
     M-x x509-dwim
 
-A new buffer should display the parsed certificate.
+A new buffer displays the parsed certificate.
 
-To view certificates, CRLs, private and public keys Diffie-Hellman parameters, certificate requests, pkcs7 files and parsed ASN.1 respectively:
+To view certificates, CRLs, private and public keys Diffie-Hellman parameters, elliptic curve parameters, certificate requests, pkcs7 files and parsed ASN.1 respectively:
 
     M-x x509-viewcert
     M-x x509-viewcrl
@@ -31,7 +31,7 @@ back to `x509-viewasn1`.
 
     M-x x509-dwim
 
-The command line for all command can be edited with C-u prefix. Example:
+The command line for all of the above commands can be edited with C-u prefix. Example:
 
     C-u M-x x509-viewcert
 
@@ -39,6 +39,10 @@ Commands operate on PEM data around point by default. If point is in
 -----BEGIN/-----END, that region is sent to OpenSSL. Otherwise the whole buffer
 is considered. If no PEM region is found, either around point or in buffer,
 then the buffer is assumed to be DER encoded.
+
+There is special command, `x509-swoop`, that has different semantics than those above. It searches the whole buffer for _all_ recognized PEM regions and parses them one by one. The output of all regions are sent to the same buffer. The result buffer does not have the capabilities of a normal `x509-buffer`. There is no way to edit command line argument, toggle to `x509-asn1-mode` or move to next/previous region. `x509-swoop` intended to be used on PEM-coded certificate chain files.
+
+    M-x x509-swoop
 
 ### Key bindings
 

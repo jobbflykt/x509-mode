@@ -426,19 +426,18 @@ Repeat with `x509-dwim' which should produce the same result."
 
 (ert-deftest x509-viewcert ()
   "View cert."
-  (view-test-helper
-   '("CA/pki/crt/jobbflykt.crt" "CA/pki/crt/jobbflykt.cer")
-   'x509-viewcert
-   'x509-mode
-   "Certificate:"
-   "Warning"))
+  (view-test-helper '("CA/pki/crt/jobbflykt.crt" "CA/pki/crt/jobbflykt.cer")
+                    'x509-viewcert
+                    'x509-mode
+                    "Certificate:"
+                    "Warning"))
 
 (ert-deftest x509-viewreq ()
   "View cert request."
-  (view-test-helper
-   '("CA/ca/request/jobbflykt.pem"
-     "CA/ca/request/jobbflykt_req.der")
-   'x509-viewreq 'x509-mode "Certificate Request:" "Warning"))
+  (view-test-helper '("CA/ca/request/jobbflykt.pem"
+                      "CA/ca/request/jobbflykt_req.der")
+                    'x509-viewreq 'x509-mode "Certificate Request:"
+                    "Warning"))
 
 (ert-deftest x509-viewcrl ()
   "View CRL."

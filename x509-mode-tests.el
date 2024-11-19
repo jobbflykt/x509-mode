@@ -408,7 +408,7 @@ Repeat with `x509-dwim' which should produce the same result."
              test-files
            (list test-files))))
     (dolist (test-file files)
-      (dolist (view-func (list view-command 'x509-dwim))
+      (dolist (view-func (list view-command #'x509-dwim))
         (with-temp-buffer
           (insert-file-contents-literally (find-testfile test-file))
           (let ((view-buffer (funcall view-func)))
@@ -426,19 +426,18 @@ Repeat with `x509-dwim' which should produce the same result."
 
 (ert-deftest x509-viewcert ()
   "View cert."
-  (view-test-helper
-   '("CA/pki/crt/jobbflykt.crt" "CA/pki/crt/jobbflykt.cer")
-   'x509-viewcert
-   'x509-mode
-   "Certificate:"
-   "Warning"))
+  (view-test-helper '("CA/pki/crt/jobbflykt.crt" "CA/pki/crt/jobbflykt.cer")
+                    'x509-viewcert
+                    'x509-mode
+                    "Certificate:"
+                    "Warning"))
 
 (ert-deftest x509-viewreq ()
   "View cert request."
-  (view-test-helper
-   '("CA/ca/request/jobbflykt.pem"
-     "CA/ca/request/jobbflykt_req.der")
-   'x509-viewreq 'x509-mode "Certificate Request:" "Warning"))
+  (view-test-helper '("CA/ca/request/jobbflykt.pem"
+                      "CA/ca/request/jobbflykt_req.der")
+                    'x509-viewreq 'x509-mode "Certificate Request:"
+                    "Warning"))
 
 (ert-deftest x509-viewcrl ()
   "View CRL."
@@ -774,12 +773,20 @@ SEQUENCE             30 0C
       (let ((swoop-buffer (x509-swoop)))
         (should swoop-buffer)
         (with-current-buffer swoop-buffer
-          (check-content-helper swoop-buffer "Certificate:")
-          (check-content-helper swoop-buffer "Certificate Request:")
-          (check-content-helper swoop-buffer "DH Parameters:")
-          (check-content-helper swoop-buffer "Public-Key:")
-          (check-content-helper swoop-buffer "EC-Parameters: (512 bit)")
-          (check-content-helper swoop-buffer x509-swoop-separator)
+          (should (re-search-forward "Certificate:" nil t))
+          (should (re-search-forward x509-swoop-separator nil t))
+          ;; Should _not_ find another certificate. This used to be a bug where
+          ;; dwim would end up sending the whole buffer, producing the first
+          ;; certificate again.
+          (should-not (re-search-forward "Certificate:" nil t))
+          (should (re-search-forward "Certificate Request:" nil t))
+          (should (re-search-forward x509-swoop-separator nil t))
+          (should (re-search-forward "DH Parameters:"))
+          (should (re-search-forward x509-swoop-separator nil t))
+          (should (re-search-forward "Public-Key:"))
+          (should (re-search-forward x509-swoop-separator nil t))
+          (should (re-search-forward "EC-Parameters: (512 bit)"))
+          (should-not (re-search-forward x509-swoop-separator nil t))
           (x509-mode-kill-buffer)))
       (with-current-buffer src-buffer
         (should (= (point) 1322)))))

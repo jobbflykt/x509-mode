@@ -1009,8 +1009,9 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
                  (or x509--x509-asn1-mode-shadow-arguments
                      x509-asn1parse-default-arg)
                  'x509--viewasn1-history 'x509-asn1-mode)
-              ;; Else determine type and do x509-mode
-              (x509-dwim))))))))
+              ;; Else determine type and do x509-mode. Only consider PEM
+              ;; regions.
+              (x509--do-dwim t))))))))
 
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
@@ -1048,16 +1049,15 @@ if the buffer contains data of certain type."
                 (apply #'call-process-region proc-args)))
       (kill-buffer in-buf))))
 
-;; ---------------------------------------------------------------------------
-;;;###autoload
-(defun x509-dwim ()
+(defun x509--do-dwim (only-pem-region)
   "Guess the type of object and call the corresponding view-function.
 
 Look at -----BEGIN header for known object types.  Then test
-different openssl commands until one succeeds.  Call
-`x509-viewasn1' as a last resort.
-Return the output buffer."
-  (interactive)
+different openssl commands until one succeeds.
+If ONLY-PEM-REGION is nil, call `x509-viewasn1' as a last resort.
+If ONLY-PEM-REGION it t, only consider known PEM regions, i.e. don't send
+buffer content to `x509--dwim-tester'.
+Return the output buffer or nil"
   (pcase (x509--pem-region-type)
     ((or "CERTIFICATE" "TRUSTED CERTIFICATE")
      (call-interactively #'x509-viewcert))
@@ -1072,6 +1072,8 @@ Return the output buffer."
     ("X509 CRL" (call-interactively #'x509-viewcrl))
     (_
      (cond
+      (only-pem-region
+       nil)
       ((x509--dwim-tester x509-x509-default-arg)
        (call-interactively #'x509-viewcert))
       ((x509--dwim-tester x509-crl-default-arg)
@@ -1093,6 +1095,13 @@ Return the output buffer."
 
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
+(defun x509-dwim ()
+  "Guess the type of object and call the corresponding view-function."
+  (interactive)
+  (x509--do-dwim nil))
+
+;; ---------------------------------------------------------------------------
+;;;###autoload
 (defun x509-swoop ()
   "Find all known BEGIN/END PEM regions i buffer and call `x509-dwim'.
 For each region, the result is sent to the same `x509-mode' buffer.
@@ -1110,7 +1119,8 @@ Return view buffer on success."
     (goto-char (point-min))
     (while (re-search-forward "-----BEGIN" nil t)
       (goto-char (match-beginning 0))
-      (when-let* ((tmp-output-buffer (x509-dwim)))
+      ;; Call x509--do-dwim. Only consider valid PEM-regions.
+      (when-let* ((tmp-output-buffer (x509--do-dwim t)))
         (with-current-buffer tmp-output-buffer
           ;; Only consider x509-mode output. We don't want asn1.
           (if (eq major-mode 'x509-mode)

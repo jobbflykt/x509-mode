@@ -1,7 +1,9 @@
-# x509-mode [![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode) [![CI](https://github.com/jobbflykt/x509-mode/actions/workflows/test.yml/badge.svg)](https://github.com/jobbflykt/x509-mode/actions/workflows/test.yml)
+[![CI](https://github.com/jobbflykt/x509-mode/actions/workflows/test.yml/badge.svg)](https://github.com/jobbflykt/x509-mode/actions/workflows/test.yml)
 
-Major mode for viewing certificates, CRLs, keys, DH-parameters, EC-Parameters
-and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
+# x509-mode for Emacs
+
+Emacs major mode for viewing certificates, CRLs, keys, DH-parameters,
+EC-Parameters and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
 
 ## Usage
 
@@ -11,7 +13,9 @@ Open a certificate, either PEM or DER encoded, in a buffer.
 
 A new buffer displays the parsed certificate.
 
-To view certificates, CRLs, private and public keys Diffie-Hellman parameters, elliptic curve parameters, certificate requests, pkcs7 files and parsed ASN.1 respectively:
+To view certificates, CRLs, private and public keys Diffie-Hellman parameters,
+elliptic curve parameters, certificate requests, pkcs7 files and parsed ASN.1
+respectively:
 
     M-x x509-viewcert
     M-x x509-viewcrl
@@ -31,7 +35,8 @@ back to `x509-viewasn1`.
 
     M-x x509-dwim
 
-The command line for all of the above commands can be edited with C-u prefix. Example:
+The command line for all of the above commands can be edited with C-u
+prefix. Example:
 
     C-u M-x x509-viewcert
 
@@ -40,7 +45,13 @@ Commands operate on PEM data around point by default. If point is in
 is considered. If no PEM region is found, either around point or in buffer,
 then the buffer is assumed to be DER encoded.
 
-There is special command, `x509-swoop`, that has different semantics than those above. It searches the whole buffer for _all_ recognized PEM regions and parses them one by one. The output of all regions are sent to the same buffer. The result buffer does not have the capabilities of a normal `x509-buffer`. There is no way to edit command line argument, toggle to `x509-asn1-mode` or move to next/previous region. `x509-swoop` intended to be used on PEM-coded certificate chain files.
+There is special command, `x509-swoop`, that has different semantics than those
+above. It searches the whole buffer for _all_ recognized PEM regions and parses
+them one by one. The output of all regions are sent to the same buffer. The
+result buffer does not have the capabilities of a normal `x509-buffer`. There
+is no way to edit command line argument, toggle to `x509-asn1-mode` or move to
+next/previous region. `x509-swoop` intended to be used on PEM-coded certificate
+chain files but work in files with various PKI resources.
 
     M-x x509-swoop
 
@@ -67,7 +78,9 @@ Similarly, but with slightly different semantics and often more useful, is
 
 **s** which calls asn1parse with the flag "-strparse N".
 
-Where *N* is the offset at the current line. -strparse is used to parse BIT STRINGs and OCTET STRINGs as DER encoded asn1. The offset *N* is calculated differently for -strparse and -offset.
+Where *N* is the offset at the current line. -strparse is used to parse BIT
+STRINGs and OCTET STRINGs as DER encoded asn1. The offset *N* is calculated
+differently for -strparse and -offset.
 
 Also in x509-asn1-mode,
 
@@ -78,7 +91,9 @@ by rmsbolt-mode).
 
 ## Installation
 
-It's available on [melpa](https://melpa.org/#/x509-mode)
+It's available on MELPA
+
+[![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode)
 
     M-x package-install x509-mode
 
@@ -121,28 +136,28 @@ Faces mostly inherit from built-in faces. They can be customized.
 
 **X509 certificate**
 
-![Certificate](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-cert.png)
+![Certificate](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-cert.png "Certificate")
 
 **Certificate revocation list**
 
-![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-crl.png)
+![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-crl.png "Certificate revocation list")
 
 **Private Key**
 
-![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-pkey.png)
+![Private key](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-pkey.png "Private key")
 
 **DH-params**
 
-![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-dhparams.png)
+![DH-params](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-dhparams.png "Diffie-Hellman parameters")
 
 **EC-params**
 
-![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-ecparams.png)
+![EC-Params](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-ecparams.png "Elliptic curve parameters")
 
 **ASN.1**
 
-![ASN.1](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-asn1.png)
+![ASN.1](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-asn1.png "ASN.1")
 
 **Hexl follow mode**
 
-![hexl](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-hexl.png)
+![hexl](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-hexl.png "Hexl mode")

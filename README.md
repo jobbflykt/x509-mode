@@ -1,6 +1,6 @@
-# x509-mode for Emacs
-
 [![CI](https://github.com/jobbflykt/x509-mode/actions/workflows/test.yml/badge.svg)](https://github.com/jobbflykt/x509-mode/actions/workflows/test.yml)
+
+# x509-mode for Emacs
 
 Emacs major mode for viewing certificates, CRLs, keys, DH-parameters,
 EC-Parameters and ASN.1 using [OpenSSL](https://github.com/openssl/openssl).
@@ -91,7 +91,8 @@ by rmsbolt-mode).
 
 ## Installation
 
-It's available on
+It's available on MELPA
+
 [![MELPA](https://melpa.org/packages/x509-mode-badge.svg)](https://melpa.org/#/x509-mode)
 
     M-x package-install x509-mode

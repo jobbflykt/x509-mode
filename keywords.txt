@@ -110,6 +110,8 @@ X509v3 Private Key Usage Period:
 X509v3 Subject Alternative Name:
 X509v3 Subject Directory Attributes:
 X509v3 Subject Key Identifier:
+Microsoft certificate template:
+Microsoft Application Policies Extension:
 
 # PKIX Private Extensions
 Authority Information Access:

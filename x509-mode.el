@@ -355,7 +355,8 @@ Skip blank lines and comment lines.  Return list."
         (insert-file-contents path)
         (cl-remove-if
          (lambda (s) (string-match-p "^ *\\(?:#\\|$\\)" s))
-         (split-string (buffer-string) "\n"))))))
+         (split-string (buffer-substring-no-properties (point-min) (point-max))
+                       "\n"))))))
 
 (eval-when-compile
   (defconst x509--keywords (regexp-opt (x509--load-data-file "keywords.txt"))))

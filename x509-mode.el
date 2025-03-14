@@ -258,7 +258,7 @@ Set to nil to inhibit warning."
   :type 'integer
   :group 'x509)
 
-(defcustom x509-query-oid-url-format "https://oid-rep.orange-labs.fr/get/%s"
+(defcustom x509-query-oid-url-format "https://oid-base.com/get/%s"
   "A format string for constructing URL for querying OIDs.
 
 Used with `(format x509-query-oid-url-format oid)'"

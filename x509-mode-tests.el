@@ -506,13 +506,16 @@ Ensure point is restored when switching between modes."
     (let ((view-buffer (x509-viewdh))
           (expected-pos-in-x509-mode 25)
           (expected-pos-in-x509-asn1-mode 17))
-      (goto-char expected-pos-in-x509-mode)
-      (x509-toggle-mode)
-      (goto-char expected-pos-in-x509-asn1-mode)
-      (x509-toggle-mode)
-      (should (= (point) expected-pos-in-x509-mode))
-      (x509-toggle-mode)
-      (should (= (point) expected-pos-in-x509-asn1-mode)))))
+      (unwind-protect
+          (with-current-buffer view-buffer
+            (goto-char expected-pos-in-x509-mode)
+            (x509-toggle-mode)
+            (goto-char expected-pos-in-x509-asn1-mode)
+            (x509-toggle-mode)
+            (should (= (point) expected-pos-in-x509-mode))
+            (x509-toggle-mode)
+            (should (= (point) expected-pos-in-x509-asn1-mode)))
+        (kill-buffer view-buffer)))))
 
 (ert-deftest x509-hexl ()
   "Open hexl buffer from `x509-asn1-mode'."

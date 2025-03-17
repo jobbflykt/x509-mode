@@ -500,7 +500,8 @@ Repeat with `x509-dwim' which should produce the same result."
 
 (ert-deftest x509-toggle-mode ()
   "Toggle between x509-mode and x509-asn1-mode"
-  ;;FIXME)
+  ;;FIXME
+  )
 
 (ert-deftest x509-hexl ()
   "Open hexl buffer from `x509-asn1-mode'."

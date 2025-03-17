@@ -499,9 +499,20 @@ Repeat with `x509-dwim' which should produce the same result."
    "UTF8STRING        :Hello x509-mode"))
 
 (ert-deftest x509-toggle-mode ()
-  "Toggle between x509-mode and x509-asn1-mode"
-  ;;FIXME
-  )
+  "Toggle between x509-mode and x509-asn1-mode.
+Ensure point is restored when switching between modes."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "dhparams-2048.pem"))
+    (let ((view-buffer (x509-viewdh))
+          (expected-pos-in-x509-mode 25)
+          (expected-pos-in-x509-asn1-mode 17))
+      (goto-char expected-pos-in-x509-mode)
+      (x509-toggle-mode)
+      (goto-char expected-pos-in-x509-asn1-mode)
+      (x509-toggle-mode)
+      (should (= (point) expected-pos-in-x509-mode))
+      (x509-toggle-mode)
+      (should (= (point) expected-pos-in-x509-asn1-mode)))))
 
 (ert-deftest x509-hexl ()
   "Open hexl buffer from `x509-asn1-mode'."

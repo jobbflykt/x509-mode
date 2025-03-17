@@ -621,6 +621,14 @@ when going back up.")
 For updating overlay in hexl buffer.")
 
 (x509-defvar-local-persistent
+ x509-asn1--point-when-toggle
+ "Record point when toggling mode so it can be restored when going back.")
+
+(x509-defvar-local-persistent
+ x509--point-when-toggle
+ "Record point when toggling mode so it can be restored when going back.")
+
+(x509-defvar-local-persistent
  x509-asn1--hexl-buffer
  "Hexl buffer that follows current line in `x509-asn1-mode'.")
 
@@ -791,16 +799,22 @@ If EDIT is non-'nil', edit current command arguments and redisplay."
       (let ((default-args
              (or x509--x509-asn1-mode-shadow-arguments
                  x509-asn1parse-default-arg)))
+        (setq x509--point-when-toggle (point))
         (x509--generic-view
          default-args 'x509--viewasn1-history 'x509-asn1-mode
-         x509--shadow-buffer (current-buffer)))
+         x509--shadow-buffer (current-buffer))
+        (if (bound-and-true-p x509-asn1--point-when-toggle)
+            (goto-char x509-asn1--point-when-toggle)))
     (let* ((default-args
             (or x509--x509-mode-shadow-arguments
                 (x509--get-x509-toggle-mode-args)))
            (history (x509--get-x509-history default-args)))
+      (setq x509-asn1--point-when-toggle (point))
       (x509--generic-view default-args history 'x509-mode
                           x509--shadow-buffer
-                          (current-buffer)))))
+                          (current-buffer))
+      (if (bound-and-true-p x509--point-when-toggle)
+          (goto-char x509--point-when-toggle)))))
 
 (defun x509-edit-params ()
   "Edit command parameters in current buffer."
@@ -1326,8 +1340,7 @@ Offset is calculated from offset on current line."
 (defun x509-asn1-offset-up ()
   "Pop offset and redisplay."
   (interactive)
-  (when (and (boundp 'x509--x509-asn1-mode-offset-stack)
-             x509--x509-asn1-mode-offset-stack)
+  (when (bound-and-true-p x509--x509-asn1-mode-offset-stack)
     (let* ((current (pop x509--x509-asn1-mode-offset-stack))
            (point (nth 3 current))
            (up (car x509--x509-asn1-mode-offset-stack))

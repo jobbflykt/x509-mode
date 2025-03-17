@@ -341,8 +341,8 @@ When `x509-warn-near-expire-days' is nil."
             (with-current-buffer result-buffer
               (progn
                 (should (derived-mode-p 'x509-mode))
-                ;; Buffer encoding is added to the arguments which is added to the
-                ;; x509--test-history.
+                ;; Buffer encoding is added to the arguments which is added to
+                ;; the x509--test-history.
                 (should (equal x509--test-history (list expanded-args)))
                 (should (boundp 'x509--x509-mode-shadow-arguments))
                 (should
@@ -497,6 +497,25 @@ Repeat with `x509-dwim' which should produce the same result."
    'x509-viewasn1
    'x509-asn1-mode
    "UTF8STRING        :Hello x509-mode"))
+
+(ert-deftest x509-toggle-mode ()
+  "Toggle between x509-mode and x509-asn1-mode.
+Ensure point is restored when switching between modes."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "dhparams-2048.pem"))
+    (let ((view-buffer (x509-viewdh))
+          (expected-pos-in-x509-mode 25)
+          (expected-pos-in-x509-asn1-mode 17))
+      (unwind-protect
+          (with-current-buffer view-buffer
+            (goto-char expected-pos-in-x509-mode)
+            (x509-toggle-mode)
+            (goto-char expected-pos-in-x509-asn1-mode)
+            (x509-toggle-mode)
+            (should (= (point) expected-pos-in-x509-mode))
+            (x509-toggle-mode)
+            (should (= (point) expected-pos-in-x509-asn1-mode)))
+        (kill-buffer view-buffer)))))
 
 (ert-deftest x509-hexl ()
   "Open hexl buffer from `x509-asn1-mode'."

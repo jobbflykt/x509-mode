@@ -223,7 +223,8 @@ position that bounds the search."
                 (funcall cmp
                          (date-to-time (match-string-no-properties 0))
                          (current-time))
-              (error nil))
+              (error
+               nil))
             ;; If compare true, return t.
             t
           ;; else restore match-data and point and return nil.
@@ -381,8 +382,8 @@ Skip blank lines and comment lines.  Return list."
     (concat
      (regexp-opt (x509--load-data-file "long-name.txt") t) " *= \\(.*\\)")))
 
-(defconst x509-font-lock-keywords
-  (eval-when-compile
+(eval-when-compile
+  (defconst x509-font-lock-keywords
     (list
      ;; Subject and Issuer, long names
      `(,x509--multiline-name (1 'x509-keyword-face) (2 'x509-string-face))
@@ -449,11 +450,11 @@ Skip blank lines and comment lines.  Return list."
 
      ;; Hex dumps At least two two-digit hex-numbers separated by `:'
      ;; Can end in `:' for example in "Modulus"
-     ;; fa:09(:....)
+     ;; fa:09 (:....)
      '("[0-9a-fA-F][0-9a-fA-F]\\(?::[0-9a-fA-F][0-9a-fA-F]\\)+:?$"
        .
-       'x509-hex-string-face)))
-  "OpenSSL x509 highlighting.")
+       'x509-hex-string-face))
+    "OpenSSL x509 highlighting."))
 
 (defun x509-mode-kill-buffer ()
   "Kill current buffer."
@@ -1629,8 +1630,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
      ;; Followed by an OID (derdigger) or object name (asn1parse)
      " *:\\(.*?\\)\\(?: *:\\|$\\)")))
 
-(defconst x509-asn1-font-lock-keywords
-  (eval-when-compile
+(eval-when-compile
+  (defconst x509-asn1-font-lock-keywords
     (list
      ;; Undetermined length, i.e. when the length byte is 0x80 indicating
      ;; zero following length bytes.
@@ -1650,8 +1651,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
      ;; String type + string value
      `(,x509--asn1-strings (1 'x509-keyword-face) (2 'x509-string-face))
      ;; "OID" followed by oid
-     `(,x509--asn1-oid (1 'x509-keyword-face) (2 'x509-oid-face))))
-  "Openssl asn1parse highlighting.")
+     `(,x509--asn1-oid (1 'x509-keyword-face) (2 'x509-oid-face)))
+    "Openssl asn1parse highlighting."))
 
 ;;;###autoload
 (define-derived-mode

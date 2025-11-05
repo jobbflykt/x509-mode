@@ -220,7 +220,7 @@ When `x509-warn-near-expire-days' is nil."
     (goto-char (point-min))
     (should-not (x509--pem-region-type))))
 
-(ert-deftest x509--pem-region-next/prev ()
+(ert-deftest x509--pem-region-next-or-prev ()
   (with-temp-buffer
     (insert
      ;; This is the initial valid region
@@ -235,20 +235,22 @@ When `x509-warn-near-expire-days' is nil."
           (expected-next-point 85))
       (should first-region)
       (should (= 1 (car first-region)))
-      (let ((next-region (x509--pem-region-next/prev (current-buffer) 'next)))
+      (let ((next-region
+             (x509--pem-region-next-or-prev (current-buffer) 'next)))
         (should next-region)
         (should (= expected-next-point (car next-region)))
         (should (= expected-next-point (point)))
         ;; Next again should leave point unchanged
-        (should-not (x509--pem-region-next/prev (current-buffer) 'next))
+        (should-not (x509--pem-region-next-or-prev (current-buffer) 'next))
         (should (= expected-next-point (point))))
       ;; Prev 1
-      (let ((prev-region (x509--pem-region-next/prev (current-buffer) 'prev)))
+      (let ((prev-region
+             (x509--pem-region-next-or-prev (current-buffer) 'prev)))
         (should prev-region)
         (should (= 1 (car prev-region)))
         (should (= 1 (point)))
         ;; Prev again should leave point unchanged
-        (should-not (x509--pem-region-next/prev (current-buffer) 'prev))
+        (should-not (x509--pem-region-next-or-prev (current-buffer) 'prev))
         (should (= 1 (point)))))))
 
 (ert-deftest x509--generate-input-buffer ()
@@ -704,7 +706,7 @@ SEQUENCE             30 0C
     (let ((content (buffer-substring-no-properties (point-min) (point-max))))
       (should (string-match-p expected-string content)))))
 
-(ert-deftest x509-dwim-next/prev ()
+(ert-deftest x509-dwim-next-or-prev ()
   "Go forward and backward."
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "multi.pem"))
@@ -757,7 +759,7 @@ SEQUENCE             30 0C
       (with-current-buffer view-buffer
         (x509-mode-kill-buffer)))))
 
-(ert-deftest x509-dwim-next/prev-asn1 ()
+(ert-deftest x509-dwim-next-or-prev-asn1 ()
   "Go forward and backward in `x509-asn1-mode'."
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "multi.pem"))

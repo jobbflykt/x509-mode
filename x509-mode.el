@@ -1146,7 +1146,7 @@ Return view buffer on success."
       (when-let* ((tmp-output-buffer (x509--do-dwim t)))
         (with-current-buffer tmp-output-buffer
           ;; Only consider x509-mode output. We don't want asn1.
-          (if (eq major-mode 'x509-mode)
+          (if (derived-mode-p 'x509-mode)
               (let ((new-content
                      (buffer-substring-no-properties (point-min) (point-max))))
                 (with-current-buffer swoop-buffer

@@ -342,16 +342,22 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
 Skip blank lines and comment lines.  Return list."
     ;; Try to guess path to filename. It may not be in the current directory
     ;; when compiling.
-    (let ((path
-           (cond
-            ((bound-and-true-p byte-compile-current-file)
-             (expand-file-name filename
-                               (file-name-directory
-                                byte-compile-current-file)))
-            ((bound-and-true-p load-file-name)
-             (expand-file-name filename (file-name-directory load-file-name)))
-            (t
-             filename))))
+    (let (path)
+      (if (bound-and-true-p byte-compile-current-file)
+          (let ((test-path
+                 (expand-file-name filename
+                                   (file-name-directory
+                                    byte-compile-current-file))))
+            (if (file-exists-p test-path)
+                (setq path test-path))))
+      (if (and (not path) (bound-and-true-p load-file-name))
+          (let ((test-path
+                 (expand-file-name filename
+                                   (file-name-directory load-file-name))))
+            (if (file-exists-p test-path)
+                (setq path test-path))))
+      (if (not path)
+          (setq path filename))
       (with-temp-buffer
         (insert-file-contents path)
         (cl-remove-if
@@ -957,7 +963,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (setq buffer-read-only t)
     (x509-mode)))
 
-(defun x509--pem-region-next/prev (buffer direction)
+(defun x509--pem-region-next-or-prev (buffer direction)
   "Find BEGIN before or after current region and place point at beginning.
 BUFFER is the buffer to search in.
 DIRECTION is one of \\='next \\='prev
@@ -997,7 +1003,7 @@ If no next/prev region, leave point unchanged."
           ;; Return new region. Maybe nil
           new-region)))))
 
-(defun x509--dwim-next/prev (direction)
+(defun x509--dwim-next-or-prev (direction)
   "Look for a PEM region before of after the current one.
 DIRECTION is either \\='next or \\='prev
 If found, kill current buffer, switch to src buffer and call `x509-dwim'.
@@ -1005,7 +1011,8 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (if (not (bound-and-true-p x509--src-buffer))
       (message "Not in an x509 buffer")
     ;; Find prev region in original buffer
-    (let* ((new-region (x509--pem-region-next/prev x509--src-buffer direction))
+    (let* ((new-region
+            (x509--pem-region-next-or-prev x509--src-buffer direction))
            (name
             (if (eq direction 'next)
                 "next"
@@ -1036,7 +1043,7 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
 If found, kill current buffer, switch to src buffer and call `x509-dwim'.
 Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (interactive)
-  (x509--dwim-next/prev 'next))
+  (x509--dwim-next-or-prev 'next))
 
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
@@ -1045,7 +1052,7 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
 If found, kill current buffer, switch to src buffer and call `x509-dwim'.
 Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (interactive)
-  (x509--dwim-next/prev 'prev))
+  (x509--dwim-next-or-prev 'prev))
 
 (defun x509--dwim-tester (openssl-commamd-args)
   "Test running OPENSSL-COMMAMD-ARGS in current buffer.
@@ -1121,7 +1128,7 @@ Return the output buffer or nil"
 (defun x509-swoop ()
   "Find all known BEGIN/END PEM regions i buffer and call `x509-dwim'.
 For each region, the result is sent to the same `x509-mode' buffer.
-Some functions does not work in a swooped buffer, like next/prev or
+Some functions does not work in a swooped buffer, like next-or-prev or
 toggling to and from `x509-asn1-mode'.  The buffer is for static viewing only.
 
 Return view buffer on success."

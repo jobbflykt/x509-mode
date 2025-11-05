@@ -344,22 +344,16 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
 Skip blank lines and comment lines.  Return list."
     ;; Try to guess path to filename. It may not be in the current directory
     ;; when compiling.
-    (let (path)
-      (if (bound-and-true-p byte-compile-current-file)
-          (let ((test-path
-                 (expand-file-name filename
-                                   (file-name-directory
-                                    byte-compile-current-file))))
-            (if (file-exists-p test-path)
-                (setq path test-path))))
-      (if (and (not path) (bound-and-true-p load-file-name))
-          (let ((test-path
-                 (expand-file-name filename
-                                   (file-name-directory load-file-name))))
-            (if (file-exists-p test-path)
-                (setq path test-path))))
-      (if (not path)
-          (setq path filename))
+    (let ((path
+           (cond
+            ((bound-and-true-p byte-compile-current-file)
+             (expand-file-name filename
+                               (file-name-directory
+                                byte-compile-current-file)))
+            ((bound-and-true-p load-file-name)
+             (expand-file-name filename (file-name-directory load-file-name)))
+            (t
+             filename))))
       (with-temp-buffer
         (insert-file-contents path)
         (cl-remove-if

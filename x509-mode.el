@@ -1,16 +1,18 @@
 ;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL  -*- lexical-binding:t; coding:utf-8 -*-
 
-;; Copyright (C) 2017-2023 Fredrik Axelsson <f.axelsson@gmail.com>
+;; Copyright (C) 2017-2025 Fredrik Axelsson <f.axelsson@gmail.com>
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmail.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
-;; Package-Requires: ((emacs "25.1") (compat "29.1.4.2"))
+
+;; Package-Version: 2.0.0
+;; Package-Requires: ((emacs "25.1") (compat "29.1"))
 
 ;; This file is not part of GNU Emacs.
 
 ;; MIT License
 ;;
-;; Copyright (C) 2017-2023 Fredrik Axelsson <f.axelsson@gmail.com>
+;; Copyright (C) 2017-2025 Fredrik Axelsson <f.axelsson@gmail.com>
 ;;
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to

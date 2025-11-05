@@ -1,16 +1,18 @@
 ;;; x509-mode.el --- View certificates, CRLs and keys using OpenSSL  -*- lexical-binding:t; coding:utf-8 -*-
 
-;; Copyright (C) 2017-2023 Fredrik Axelsson <f.axelsson@gmail.com>
+;; Copyright (C) 2017-2025 Fredrik Axelsson <f.axelsson@gmail.com>
 
 ;; Author: Fredrik Axelsson <f.axelsson@gmail.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
-;; Package-Requires: ((emacs "25.1") (compat "29.1.4.2"))
+
+;; Package-Version: 2.0.0
+;; Package-Requires: ((emacs "25.1") (compat "29.1"))
 
 ;; This file is not part of GNU Emacs.
 
 ;; MIT License
 ;;
-;; Copyright (C) 2017-2023 Fredrik Axelsson <f.axelsson@gmail.com>
+;; Copyright (C) 2017-2025 Fredrik Axelsson <f.axelsson@gmail.com>
 ;;
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to
@@ -957,7 +959,7 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (setq buffer-read-only t)
     (x509-mode)))
 
-(defun x509--pem-region-next/prev (buffer direction)
+(defun x509--pem-region-next-or-prev (buffer direction)
   "Find BEGIN before or after current region and place point at beginning.
 BUFFER is the buffer to search in.
 DIRECTION is one of \\='next \\='prev
@@ -997,7 +999,7 @@ If no next/prev region, leave point unchanged."
           ;; Return new region. Maybe nil
           new-region)))))
 
-(defun x509--dwim-next/prev (direction)
+(defun x509--dwim-next-or-prev (direction)
   "Look for a PEM region before of after the current one.
 DIRECTION is either \\='next or \\='prev
 If found, kill current buffer, switch to src buffer and call `x509-dwim'.
@@ -1005,7 +1007,8 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (if (not (bound-and-true-p x509--src-buffer))
       (message "Not in an x509 buffer")
     ;; Find prev region in original buffer
-    (let* ((new-region (x509--pem-region-next/prev x509--src-buffer direction))
+    (let* ((new-region
+            (x509--pem-region-next-or-prev x509--src-buffer direction))
            (name
             (if (eq direction 'next)
                 "next"
@@ -1036,7 +1039,7 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
 If found, kill current buffer, switch to src buffer and call `x509-dwim'.
 Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (interactive)
-  (x509--dwim-next/prev 'next))
+  (x509--dwim-next-or-prev 'next))
 
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
@@ -1045,7 +1048,7 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
 If found, kill current buffer, switch to src buffer and call `x509-dwim'.
 Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   (interactive)
-  (x509--dwim-next/prev 'prev))
+  (x509--dwim-next-or-prev 'prev))
 
 (defun x509--dwim-tester (openssl-commamd-args)
   "Test running OPENSSL-COMMAMD-ARGS in current buffer.
@@ -1121,7 +1124,7 @@ Return the output buffer or nil"
 (defun x509-swoop ()
   "Find all known BEGIN/END PEM regions i buffer and call `x509-dwim'.
 For each region, the result is sent to the same `x509-mode' buffer.
-Some functions does not work in a swooped buffer, like next/prev or
+Some functions does not work in a swooped buffer, like next-or-prev or
 toggling to and from `x509-asn1-mode'.  The buffer is for static viewing only.
 
 Return view buffer on success."
@@ -1139,7 +1142,7 @@ Return view buffer on success."
       (when-let* ((tmp-output-buffer (x509--do-dwim t)))
         (with-current-buffer tmp-output-buffer
           ;; Only consider x509-mode output. We don't want asn1.
-          (if (eq major-mode 'x509-mode)
+          (if (derived-mode-p 'x509-mode)
               (let ((new-content
                      (buffer-substring-no-properties (point-min) (point-max))))
                 (with-current-buffer swoop-buffer

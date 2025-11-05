@@ -25,7 +25,7 @@ jobs:
       env:
         LOCAL_REPO: ${{ github.workspace }}
         # RECIPE is your recipe as written for MELPA:
-        RECIPE: (x509-mode :repo "jobbflykt/x509-mode" :fetcher github)
+        RECIPE: (x509-mode :fetcher github :repo "jobbflykt/x509-mode" :files (:defaults "*.txt"))
         # set this to false (or remove it) if the package isn't on MELPA:
         EXIST_OK: true
       run: echo $GITHUB_REF && make -C ~/melpazoid

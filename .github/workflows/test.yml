@@ -17,7 +17,7 @@ jobs:
       with:
         version: ${{ matrix.emacs_version }}
     - name: Checkout x509-mode
-      uses: actions/checkout@v3
+      uses: actions/checkout@v5
       with:
         repository: jobbflykt/x509-mode
         path: x509-mode

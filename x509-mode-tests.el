@@ -44,6 +44,17 @@ Offset current time with OFFSET-SECONDS is not nil."
                         (time-add (current-time) (seconds-to-time offset))
                         "GMT")))
 
+(defun check-face-helper (regex expected-face &optional match)
+  "Check that face at `match-beginning' MATCH matches EXPECTED-FACE.
+Search for REGEX.  If MATCH is nil, look at beginning of whole regexp."
+  (goto-char (point-min))
+  (should (re-search-forward regex nil t))
+  (let ((point
+         (match-beginning
+          (if match
+              match
+            0))))
+    (should (eq (get-char-property point 'face) expected-face))))
 
 (ert-deftest x509--date-in-the-past ()
   "Find date in buffer that is in the past."
@@ -492,6 +503,25 @@ Repeat with `x509-dwim' which should produce the same result."
      )
    'x509-viewpublickey 'x509-mode "Public-Key: (2048 bit)"))
 
+(ert-deftest x509-viewlegacykey-args ()
+  "Test x509-viewlegacykey using explicit arguments."
+  (let ((x509--viewlegacykey-history nil)
+        (key-file (find-testfile "CA/pki/key/jobbflykt.key")))
+    (with-temp-buffer
+      (insert-file-contents-literally key-file)
+      (let ((expected-args
+             (format "%s -inform PEM -in \"%s\""
+                     x509-pkey-default-arg
+                     key-file)))
+        (save-window-excursion
+          (x509-viewlegacykey expected-args)
+          (let ((result-buffer (current-buffer)))
+            (unwind-protect
+                (with-current-buffer result-buffer
+                  (should (derived-mode-p 'x509-mode))
+                  (should (string-match-p "Private-Key:" (buffer-string))))
+              (kill-buffer result-buffer))))))))
+
 (ert-deftest x509-viewasn1 ()
   "View ASN.1."
   (view-test-helper
@@ -499,6 +529,36 @@ Repeat with `x509-dwim' which should produce the same result."
    'x509-viewasn1
    'x509-asn1-mode
    "UTF8STRING        :Hello x509-mode"))
+
+(ert-deftest x509-mode-faces ()
+  "Check font lock faces in x509-mode."
+  (with-temp-buffer
+    (insert "Certificate:\n")
+    (insert "    Signature Algorithm: sha1WithRSAEncryption\n")
+    (insert "        Issuer: C=US, O=Company, CN=Root CA\n")
+    (insert "        Validity\n")
+    (insert "            Not Before: Jan  1 00:00:00 2000 GMT\n")
+    (insert "            Not After : Dec 31 23:59:59 2010 GMT\n")
+    (insert "        X509v3 Key Usage: critical\n")
+    (insert "            Certificate Sign, CRL Sign\n")
+    (insert "    Signature Value:\n")
+    (insert "        1a:2b:3c:4d:5e:6f\n")
+    (let* ((x509-mode-hook nil)
+           (x509-warn-near-expire-days nil))
+      (x509-mode)
+      (if (fboundp 'font-lock-ensure)
+          (font-lock-ensure)
+        (with-no-warnings (font-lock-fontify-buffer)))
+
+      (check-face-helper "Signature Algorithm:" 'x509-keyword-face)
+      (check-face-helper "sha1WithRSAEncryption" 'x509-constant-face)
+      (check-face-helper "CN=" 'x509-short-name-face)
+      (check-face-helper "Root CA" 'x509-string-face)
+      (check-face-helper "Validity" 'x509-keyword-face)
+      (check-face-helper "Not Before:" 'x509-keyword-face)
+      (check-face-helper "Not After :" 'x509-keyword-face)
+      (check-face-helper "Dec 31 23:59:59 2010 GMT" 'x509-warning-face)
+      (check-face-helper "1a:2b:3c:4d:5e:6f" 'x509-hex-string-face))))
 
 (ert-deftest x509-toggle-mode ()
   "Toggle between x509-mode and x509-asn1-mode.
@@ -518,6 +578,85 @@ Ensure point is restored when switching between modes."
             (x509-toggle-mode)
             (should (= (point) expected-pos-in-x509-asn1-mode)))
         (kill-buffer view-buffer)))))
+
+(ert-deftest x509-asn1-get-offset ()
+  "Test offset parsing from asn1 line."
+  (with-temp-buffer
+    (insert "    0:d=0  hl=2 l=   5 cons: SEQUENCE\n")
+    (insert "  503:d=1  hl=2 l=  34\n")
+    (insert "malformed line\n")
+    (goto-char (point-min))
+    (should (= 0 (x509--asn1-get-offset)))
+    (forward-line 1)
+    (should (= 503 (x509--asn1-get-offset)))
+    (forward-line 1)
+    (should (= 0 (x509--asn1-get-offset)))))
+
+(ert-deftest x509-asn1-get-total-length ()
+  "Test total length parsing from asn1 line."
+  (with-temp-buffer
+    (insert "    0:d=0  hl=2 l=   5 cons: SEQUENCE\n")
+    (insert "  503:d=1  hl=4 l=inf  cons: SEQUENCE\n")
+    (goto-char (point-min))
+    (should (= 7 (x509--asn1-get-total-length)))
+    (forward-line 1)
+    (should (= 4 (x509--asn1-get-total-length)))))
+
+(ert-deftest x509-asn1-get-header-len ()
+  "Test header length parsing, especially BIT STRING logic."
+  (with-temp-buffer
+    (insert "    0:d=0  hl=2 l=   5 cons: SEQUENCE\n")
+    (insert "   12:d=2  hl=3 l=  15 prim: BIT STRING\n")
+    (goto-char (point-min))
+    (should (= 2 (x509--asn1-get-header-len)))
+    (forward-line 1)
+    ;; BIT STRING adds 1 to hl
+    (should (= 4 (x509--asn1-get-header-len)))))
+
+(ert-deftest x509-asn1-get-absolute-offset ()
+  "Test absolute offset calculation with stack."
+  (with-temp-buffer
+    (insert "  10:d=1 hl=2 l=5\n")
+    (goto-char (point-min))
+    (let ((x509--x509-asn1-mode-offset-stack nil))
+      (should (= 10 (x509--asn1-get-absolute-offset)))
+      (setq x509--x509-asn1-mode-offset-stack '(("-offset" 100 2 12)))
+      (should (= 110 (x509--asn1-get-absolute-offset)))
+      (setq x509--x509-asn1-mode-offset-stack '(("-strparse" 50 2 12)))
+      (should (= 62 (x509--asn1-get-absolute-offset))))))
+
+(ert-deftest x509-hexl-offset-start-end ()
+  "Test calculating hexl-mode buffer points from byte offsets."
+  (should (= 11 (x509-asn1--hexl-offset-start 0)))
+  (should (= 11 (x509-asn1--hexl-offset-end 0)))
+  (should (= 13 (x509-asn1--hexl-offset-start 1)))
+  (should (= 13 (x509-asn1--hexl-offset-end 1)))
+  (should (= 16 (x509-asn1--hexl-offset-start 2)))
+  (should (= 15 (x509-asn1--hexl-offset-end 2)))
+  (should (= 48 (x509-asn1--hexl-offset-start 15)))
+  (should (= 48 (x509-asn1--hexl-offset-end 15)))
+  (should (= 79 (x509-asn1--hexl-offset-start 16)))
+  (should (= 50 (x509-asn1--hexl-offset-end 16))))
+
+(ert-deftest x509-hexl-char-offset-start-end ()
+  "Test calculating hexl-mode char points."
+  (should (= 52 (x509-asn1--hexl-char-offset-start 0)))
+  (should (= 52 (x509-asn1--hexl-char-offset-end 0)))
+  (should (= 53 (x509-asn1--hexl-char-offset-start 1)))
+  (should (= 53 (x509-asn1--hexl-char-offset-end 1)))
+  (should (= 120 (x509-asn1--hexl-char-offset-start 16)))
+  (should (= 68 (x509-asn1--hexl-char-offset-end 16))))
+
+(ert-deftest x509-asn1-byte-offset-stripes ()
+  "Test chunking byte offsets into 16-byte stripes."
+  (should (equal '((0 . 16)) (reverse (x509-asn1--byte-offet-stripes 0 16))))
+  (should
+   (equal
+    '((2 . 16) (16 . 21)) (reverse (x509-asn1--byte-offet-stripes 2 21))))
+  (should
+   (equal
+    '((16 . 32) (32 . 48) (48 . 50))
+    (reverse (x509-asn1--byte-offet-stripes 16 50)))))
 
 (ert-deftest x509-hexl ()
   "Open hexl buffer from `x509-asn1-mode'."
@@ -568,18 +707,6 @@ Hexl buffer content should be identical."
           (kill-buffer pem-ans1-buff))))
     (should (string= der-hexl-content pem-hexl-content))))
 
-(defun check-face-helper (regex expected-face &optional match)
-  "Check that face at `match-beginning' MATCH matches EXPECTED-FACE.
-Search for REGEX.  If MATCH is nil, look at beginning of whole regexp."
-  (goto-char (point-min))
-  (should (re-search-forward regex nil t))
-  (let ((point
-         (match-beginning
-          (if match
-              match
-            0))))
-    (should (eq (get-char-property point 'face) expected-face))))
-
 (ert-deftest x509-viewasn1-faces ()
   "Check a few font lock faces in asn1mode buffer."
   (with-temp-buffer
@@ -599,6 +726,23 @@ Search for REGEX.  If MATCH is nil, look at beginning of whole regexp."
             (check-face-helper "INTEGER" 'x509-keyword-face)
             (check-face-helper "EOC" 'x509-keyword-face))
         (kill-buffer result-buffer)))))
+
+(ert-deftest x509-asn1-update-mode-line ()
+  "Test asn1 mode line formatting."
+  (with-temp-buffer
+    (let ((x509--x509-asn1-mode-offset-stack nil)
+          (x509--asn1-mode-name "asn1"))
+      (setq mode-name "Initial")
+      (x509--asn1-update-mode-line)
+      (should (string= mode-name "asn1"))
+
+      (setq x509--x509-asn1-mode-offset-stack '(("-offset" 14 2 100)))
+      (x509--asn1-update-mode-line)
+      (should (string= mode-name "asn1[o14]"))
+
+      (setq x509--x509-asn1-mode-offset-stack '(("-strparse" 200 4 150)))
+      (x509--asn1-update-mode-line)
+      (should (string= mode-name "asn1[s200]")))))
 
 (ert-deftest x509--asn1-update-command-line-start-arg ()
   "Test add, update and remove -offset N argument."

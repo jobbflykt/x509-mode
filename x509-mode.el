@@ -465,24 +465,21 @@ Skip blank lines and comment lines.  Return list."
   (kill-buffer))
 
 ;;;###autoload
-(define-derived-mode
- x509-mode
- fundamental-mode
- "x509"
- "Major mode for displaying OpenSSL output.
+(define-derived-mode x509-mode fundamental-mode "x509"
+  "Major mode for displaying OpenSSL output.
 
 \\{x509-mode-map}"
- :interactive nil
- :group
- 'x509
- (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
- (keymap-set x509-mode-map "q" #'x509-mode-kill-buffer)
- (keymap-set x509-mode-map "t" #'x509-toggle-mode)
- (keymap-set x509-mode-map "e" #'x509-edit-params)
- (keymap-set x509-mode-map "n" #'x509-dwim-next)
- (keymap-set x509-mode-map "p" #'x509-dwim-prev)
- (x509--mark-browse-http-links)
- (x509--mark-browse-oid))
+  :interactive nil
+  :group
+  'x509
+  (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
+  (keymap-set x509-mode-map "q" #'x509-mode-kill-buffer)
+  (keymap-set x509-mode-map "t" #'x509-toggle-mode)
+  (keymap-set x509-mode-map "e" #'x509-edit-params)
+  (keymap-set x509-mode-map "n" #'x509-dwim-next)
+  (keymap-set x509-mode-map "p" #'x509-dwim-prev)
+  (x509--mark-browse-http-links)
+  (x509--mark-browse-oid))
 
 (defun x509--buffer-encoding (buffer)
   "Heuristic for identifying PEM or DER encoding in BUFFER.
@@ -784,7 +781,8 @@ Switch to resulting buffer and return it."
     ("pkcs7" 'x509--viewpkcs7-history)
     ("dhparam" 'x509--viewdh-history)
     ("ecparam" 'x509--viewec-history)
-    ("pkey" (if (string-match-p "-pubin" args)
+    ("pkey"
+     (if (string-match-p "-pubin" args)
          'x509--viewpublickey-history
        'x509--viewkey-history))
     ("asn1parse" 'x509--viewasn1-history)
@@ -981,23 +979,24 @@ If no next/prev region, leave point unchanged."
       (if-let* ((current-region (x509--pem-region))
                 (current-begin (funcall region-point-fn current-region))
                 (current-point (point)))
-        (let (new-region)
-          (goto-char current-begin)
-          ;; Look for next/prev region
-          (while (and (not new-region) (funcall search-fn "-----BEGIN" nil t))
-            (goto-char (match-beginning 0))
-            (setq new-region (x509--pem-region))
-            ;; If this BEGIN was bogus. Move a bit and look for another
+          (let (new-region)
+            (goto-char current-begin)
+            ;; Look for next/prev region
+            (while (and (not new-region)
+                        (funcall search-fn "-----BEGIN" nil t))
+              (goto-char (match-beginning 0))
+              (setq new-region (x509--pem-region))
+              ;; If this BEGIN was bogus. Move a bit and look for another
+              (if (not new-region)
+                  ;; Only need to move if searching forward so as not to hit the
+                  ;; same match again.
+                  (if is-next
+                      (forward-char 1))))
             (if (not new-region)
-                ;; Only need to move if searching forward so as not to hit the
-                ;; same match again.
-                (if is-next
-                    (forward-char 1))))
-          (if (not new-region)
-              ;; Restore point since we didn't find any new region
-              (goto-char current-point))
-          ;; Return new region. Maybe nil
-          new-region)))))
+                ;; Restore point since we didn't find any new region
+                (goto-char current-point))
+            ;; Return new region. Maybe nil
+            new-region)))))
 
 (defun x509--dwim-next-or-prev (direction)
   "Look for a PEM region before of after the current one.
@@ -1658,29 +1657,26 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
   "Openssl asn1parse highlighting.")
 
 ;;;###autoload
-(define-derived-mode
- x509-asn1-mode
- fundamental-mode
- x509--asn1-mode-name
- "Major mode for displaying openssl asn1parse output.
+(define-derived-mode x509-asn1-mode fundamental-mode x509--asn1-mode-name
+  "Major mode for displaying openssl asn1parse output.
 
 \\{x509-asn1-mode-map}"
- :interactive nil
- :group
- 'x509
- (set
-  (make-local-variable 'font-lock-defaults) '(x509-asn1-font-lock-keywords t))
- (keymap-set x509-asn1-mode-map "q" #'x509-mode-kill-buffer)
- (keymap-set x509-asn1-mode-map "t" #'x509-toggle-mode)
- (keymap-set x509-asn1-mode-map "n" #'x509-dwim-next)
- (keymap-set x509-asn1-mode-map "p" #'x509-dwim-prev)
- (keymap-set x509-asn1-mode-map "e" #'x509-edit-params)
- (keymap-set x509-asn1-mode-map "d" #'x509-asn1-offset-down)
- (keymap-set x509-asn1-mode-map "s" #'x509-asn1-strparse)
- (keymap-set x509-asn1-mode-map "u" #'x509-asn1-offset-up)
- (keymap-set x509-asn1-mode-map "x" #'x509-asn1-toggle-hexl)
- (x509--mark-browse-http-links)
- (x509--mark-browse-oid))
+  :interactive nil
+  :group
+  'x509
+  (set
+   (make-local-variable 'font-lock-defaults) '(x509-asn1-font-lock-keywords t))
+  (keymap-set x509-asn1-mode-map "q" #'x509-mode-kill-buffer)
+  (keymap-set x509-asn1-mode-map "t" #'x509-toggle-mode)
+  (keymap-set x509-asn1-mode-map "n" #'x509-dwim-next)
+  (keymap-set x509-asn1-mode-map "p" #'x509-dwim-prev)
+  (keymap-set x509-asn1-mode-map "e" #'x509-edit-params)
+  (keymap-set x509-asn1-mode-map "d" #'x509-asn1-offset-down)
+  (keymap-set x509-asn1-mode-map "s" #'x509-asn1-strparse)
+  (keymap-set x509-asn1-mode-map "u" #'x509-asn1-offset-up)
+  (keymap-set x509-asn1-mode-map "x" #'x509-asn1-toggle-hexl)
+  (x509--mark-browse-http-links)
+  (x509--mark-browse-oid))
 
 (defvar x509--viewasn1-history nil
   "History list for `x509-viewasn1'.")

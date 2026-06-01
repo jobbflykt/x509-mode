@@ -53,7 +53,8 @@ test:
 lint: package-lint checkdoc relint
 
 package-lint:
-	$(BATCH) --eval $(LINT_PACKAGES) -f package-lint-batch-and-exit x509-mode.el
+	$(BATCH) --eval $(LINT_PACKAGES) -f package-lint-batch-and-exit \
+	  x509-mode.el
 
 checkdoc:
 	$(BATCH) --eval $(PACKAGES) --eval "\

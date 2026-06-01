@@ -1,7 +1,24 @@
 name: test
 on: [ push, pull_request ]
+
+permissions:
+  contents: read
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout x509-mode
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - name: Install emacs
+      uses: purcell/setup-emacs@1e197d195393d2568f9a239967e89104b2b63897 # v8.0
+      with:
+        version: 29.4
+    - name: Run linting
+      run: make lint
+
   test:
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -13,15 +30,12 @@ jobs:
         - snapshot
     steps:
     - name: Install emacs
-      uses: purcell/setup-emacs@master
+      uses: purcell/setup-emacs@1e197d195393d2568f9a239967e89104b2b63897 # v8.0
       with:
         version: ${{ matrix.emacs_version }}
     - name: Checkout x509-mode
-      uses: actions/checkout@v5
-      with:
-        repository: jobbflykt/x509-mode
-        path: x509-mode
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Build x509-mode
-      run: make -C x509-mode lisp
+      run: make lisp
     - name: Test x509-mode
-      run: make -C x509-mode test
+      run: make test

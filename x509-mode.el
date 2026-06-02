@@ -776,7 +776,7 @@ Switch to resulting buffer and return it."
     (symbol-value (cdr (assoc choice collection)))))
 
 (defun x509--get-x509-history (args)
-  "Return history variable that matches command ARGS."
+  "Return history variable that match command ARGS."
   (pcase (car (split-string-and-unquote args))
     ("x509" 'x509--viewcert-history)
     ("req" 'x509--viewreq-history)

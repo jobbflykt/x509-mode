@@ -62,14 +62,13 @@ checkdoc:
 	  (find-file \"x509-mode.el\") \
 	  (checkdoc-current-buffer t) \
 	  (with-current-buffer checkdoc-diagnostic-buffer \
+	    (goto-char (point-min)) \
 	    (when (search-forward-regexp \".*:[0-9]+:\" nil t) \
 	      (princ (buffer-substring-no-properties \
-	        (point-min) (point-max))) \
+	               (point-min) (point-max))) \
 	      (kill-emacs 1))) \
 	    (kill-emacs 0))"
 
 relint:
-	$(BATCH) --eval $(LINT_PACKAGES) --eval "\
-	(progn \
-	  (require 'relint) \
-	  (relint-batch \"x509-mode.el\"))"
+	$(BATCH) --eval $(LINT_PACKAGES) \
+	--eval "(progn (require 'relint) (relint-batch))" x509-mode.el

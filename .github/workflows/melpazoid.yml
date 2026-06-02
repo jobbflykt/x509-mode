@@ -1,24 +1,24 @@
 # melpazoid <https://github.com/riscy/melpazoid> build checks.
 
-# If your package is on GitHub, enable melpazoid's checks by copying this file
-# to .github/workflows/melpazoid.yml and modifying RECIPE and EXIST_OK below.
-
 name: melpazoid
 on: [push, pull_request]
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     - name: Set up Python 3.10
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
       with:
         python-version: '3.10'
     - name: Install
       run: |
         python -m pip install --upgrade pip
-        sudo apt-get install emacs && emacs --version
+        sudo apt-get update && sudo apt-get install -y emacs && emacs --version
         git clone https://github.com/riscy/melpazoid.git ~/melpazoid
         pip install ~/melpazoid
     - name: Run

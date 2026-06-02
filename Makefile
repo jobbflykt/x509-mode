@@ -18,7 +18,6 @@ PACKAGES="(progn \
 
 # Add package-lint and relint for linting
 LINT_REQUIRES = package-lint relint
-
 LINT_PACKAGES = "(progn \
   (require 'package) \
   (push '(\"melpa\" . \"https://melpa.org/packages/\") package-archives) \
@@ -36,9 +35,9 @@ lisp: $(ELCS)
 
 %.elc: %.el
 	$(BATCH) --eval $(PACKAGES) --eval \
-          "(progn \
-             (when (file-exists-p \"$@\") (delete-file \"$@\")) \
-             (setq byte-compile-error-on-warn t))" \
+	"(progn \
+	  (when (file-exists-p \"$@\") (delete-file \"$@\")) \
+	  (setq byte-compile-error-on-warn t))" \
 	-f batch-byte-compile $<
 
 test:
@@ -61,13 +60,13 @@ checkdoc:
 	(progn \
 	  (require 'checkdoc) \
 	  (find-file \"x509-mode.el\") \
-	  (if (checkdoc-current-buffer t) \
-	      (progn \
-	        (with-current-buffer checkdoc-diagnostic-buffer \
-	          (princ (buffer-string))) \
-	        (kill-emacs 1)) \
-	    (message \"checkdoc passed\") \
-	    (kill-emacs 0)))"
+	  (checkdoc-current-buffer t) \
+	  (with-current-buffer checkdoc-diagnostic-buffer \
+	    (when (search-forward-regexp \".*:[0-9]+:\" nil t) \
+	      (princ (buffer-substring-no-properties \
+	        (point-min) (point-max))) \
+	      (kill-emacs 1))) \
+	    (kill-emacs 0)"
 
 relint:
 	$(BATCH) --eval $(LINT_PACKAGES) --eval "\

@@ -66,7 +66,7 @@ checkdoc:
 	      (princ (buffer-substring-no-properties \
 	        (point-min) (point-max))) \
 	      (kill-emacs 1))) \
-	    (kill-emacs 0)"
+	    (kill-emacs 0))"
 
 relint:
 	$(BATCH) --eval $(LINT_PACKAGES) --eval "\

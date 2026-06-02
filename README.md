@@ -136,28 +136,28 @@ Faces mostly inherit from built-in faces. They can be customized.
 
 **X509 certificate**
 
-![Certificate](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-cert.png "Certificate")
+![Certificate](https://github.com/jobbflykt/x509-mode/raw/main/screenshots/screenshot-cert.png "Certificate")
 
 **Certificate revocation list**
 
-![CRL](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-crl.png "Certificate revocation list")
+![CRL](https://github.com/jobbflykt/x509-mode/raw/main/screenshots/screenshot-crl.png "Certificate revocation list")
 
 **Private Key**
 
-![Private key](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-pkey.png "Private key")
+![Private key](https://github.com/jobbflykt/x509-mode/raw/main/screenshots/screenshot-pkey.png "Private key")
 
 **DH-params**
 
-![DH-params](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-dhparams.png "Diffie-Hellman parameters")
+![DH-params](https://github.com/jobbflykt/x509-mode/raw/main/screenshots/screenshot-dhparams.png "Diffie-Hellman parameters")
 
 **EC-params**
 
-![EC-Params](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-ecparams.png "Elliptic curve parameters")
+![EC-Params](https://github.com/jobbflykt/x509-mode/raw/main/screenshots/screenshot-ecparams.png "Elliptic curve parameters")
 
 **ASN.1**
 
-![ASN.1](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-asn1.png "ASN.1")
+![ASN.1](https://github.com/jobbflykt/x509-mode/raw/main/screenshots/screenshot-asn1.png "ASN.1")
 
 **Hexl follow mode**
 
-![hexl](https://github.com/jobbflykt/x509-mode/raw/master/screenshots/screenshot-hexl.png "Hexl mode")
+![hexl](https://github.com/jobbflykt/x509-mode/raw/main/screenshots/screenshot-hexl.png "Hexl mode")

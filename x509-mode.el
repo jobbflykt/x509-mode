@@ -325,7 +325,7 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
 (defun x509--mark-browse-http-links ()
   "Make http URLs clickable by making them buttons."
   (x509--mark-browse-url-links
-   "\\(file\\|https?\\)://[%-_.:/A-Za-z0-9]+"
+   "\\(file\\|https?\\)://[-%_.:/A-Za-z0-9]+"
    'x509-browse-url-face
    (lambda (url) url)))
 
@@ -773,7 +773,7 @@ Switch to resulting buffer and return it."
     (symbol-value (cdr (assoc choice collection)))))
 
 (defun x509--get-x509-history (args)
-  "Return history variable that matches command ARGS."
+  "Return history variable that match command ARGS."
   (pcase (car (split-string-and-unquote args))
     ("x509" 'x509--viewcert-history)
     ("req" 'x509--viewreq-history)

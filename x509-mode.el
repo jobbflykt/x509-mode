@@ -5,7 +5,7 @@
 ;; Author: Fredrik Axelsson <f.axelsson@gmail.com>
 ;; Homepage: https://github.com/jobbflykt/x509-mode
 
-;; Package-Version: 2.0.0
+;; Package-Version: 2.0.1
 ;; Package-Requires: ((emacs "25.1") (compat "29.1"))
 
 ;; This file is not part of GNU Emacs.

@@ -361,17 +361,18 @@ Skip blank lines and comment lines.  Return list."
          (split-string (buffer-substring-no-properties (point-min) (point-max))
                        "\n"))))))
 
-(eval-when-compile
-  (defconst x509--keywords (regexp-opt (x509--load-data-file "keywords.txt"))))
+(defconst x509--keywords
+  (eval-when-compile
+    (regexp-opt (x509--load-data-file "keywords.txt"))))
 
-(eval-when-compile
-  (defconst x509--constants
+(defconst x509--constants
+  (eval-when-compile
     (regexp-opt (x509--load-data-file "constants.txt") 'words)))
 
 ;; Keyword: constant
 ;; E.g. "Signature Algorithm: sha1WithRSAEncryption"
-(eval-when-compile
-  (defconst x509--keyword-w-constant
+(defconst x509--keyword-w-constant
+  (eval-when-compile
     (concat
      (regexp-opt (x509--load-data-file "keyword+constant.txt") t)
      ;; Followed by ": constant"
@@ -379,8 +380,8 @@ Skip blank lines and comment lines.  Return list."
 
 ;; Multiline Issuer and Subject, "-nameopt multiline"
 ;; E.g. "commonName                = GlobalSign Root CA"
-(eval-when-compile
-  (defconst x509--multiline-name
+(defconst x509--multiline-name
+  (eval-when-compile
     (concat
      (regexp-opt (x509--load-data-file "long-name.txt") t) " *= \\(.*\\)")))
 
@@ -781,8 +782,7 @@ Switch to resulting buffer and return it."
     ("pkcs7" 'x509--viewpkcs7-history)
     ("dhparam" 'x509--viewdh-history)
     ("ecparam" 'x509--viewec-history)
-    ("pkey"
-     (if (string-match-p "-pubin" args)
+    ("pkey" (if (string-match-p "-pubin" args)
          'x509--viewpublickey-history
        'x509--viewkey-history))
     ("asn1parse" 'x509--viewasn1-history)
@@ -1592,8 +1592,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
       (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
       (setq x509-asn1--hexl-buffer hexl-buffer))))
 
-(eval-when-compile
-  (defconst x509--asn1-primitives-keywords
+(defconst x509--asn1-primitives-keywords
+  (eval-when-compile
     (regexp-opt
      '("prim"
        "EOC"
@@ -1609,11 +1609,12 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
        "GENERALIZEDTIME"
        "ENUMERATED"))))
 
-(eval-when-compile
-  (defconst x509--asn1-cons-keywords (regexp-opt '("SEQUENCE" "SET"))))
+(defconst x509--asn1-cons-keywords
+  (eval-when-compile
+    (regexp-opt '("SEQUENCE" "SET"))))
 
-(eval-when-compile
-  (defconst x509--asn1-strings
+(defconst x509--asn1-strings
+  (eval-when-compile
     (concat
      (regexp-opt
       ;; Keyword:
@@ -1622,8 +1623,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
      ;; Followed by a string
      " *:\\(.*?\\)\\(?: *:\\|$\\)")))
 
-(eval-when-compile
-  (defconst x509--asn1-oid
+(defconst x509--asn1-oid
+  (eval-when-compile
     (concat
      (regexp-opt
       ;; Keyword:

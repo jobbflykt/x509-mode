@@ -649,14 +649,14 @@ Ensure point is restored when switching between modes."
 
 (ert-deftest x509-asn1-byte-offset-stripes ()
   "Test chunking byte offsets into 16-byte stripes."
-  (should (equal '((0 . 16)) (reverse (x509-asn1--byte-offet-stripes 0 16))))
+  (should (equal '((0 . 16)) (reverse (x509-asn1--byte-offset-stripes 0 16))))
   (should
    (equal
-    '((2 . 16) (16 . 21)) (reverse (x509-asn1--byte-offet-stripes 2 21))))
+    '((2 . 16) (16 . 21)) (reverse (x509-asn1--byte-offset-stripes 2 21))))
   (should
    (equal
     '((16 . 32) (32 . 48) (48 . 50))
-    (reverse (x509-asn1--byte-offet-stripes 16 50)))))
+    (reverse (x509-asn1--byte-offset-stripes 16 50)))))
 
 (ert-deftest x509-hexl ()
   "Open hexl buffer from `x509-asn1-mode'."

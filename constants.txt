@@ -67,7 +67,7 @@ Privilege Withdrawn
 AA Compromise
 
 # openssl/include/openssl/obj_mac.h
-# Eliptic curve names
+# Elliptic curve names
 c2pnb163v1
 c2pnb163v2
 c2pnb163v3

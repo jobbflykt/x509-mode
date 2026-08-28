@@ -1,0 +1,13 @@
+repos:
+  - repo: local
+    hooks:
+      - id: typos
+        name: typos
+        description: Find spelling errors with typos
+        entry: typos --config _typos.toml --
+        language: python
+        types_or: [text]
+        exclude: |
+          (?x)^(
+          testfiles/
+          )

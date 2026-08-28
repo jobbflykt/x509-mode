@@ -266,7 +266,7 @@ SEQUENCE             30 0C
         INTEGER FA   02 01 FA
 
 when strparse at offset 2, we need to record the header length and add 1 for
-the initial unused-bits byte. If we then go furter down, the new start is the current start + it's header length + 1.
+the initial unused-bits byte. If we then go further down, the new start is the current start + it's header length + 1.
 
 When x509--strparse-down:
   record (offset delta) where strstart is hl + 1
@@ -281,7 +281,7 @@ on a line:
 
 command         : 'strparse or 'offset
 start           : integer argument to command
-hl              : header lenght. 0 for offset, hl at start for strparse.
+hl              : header length. 0 for offset, hl at start for strparse.
 point           : (point) in buffer when command is issued.
 
 

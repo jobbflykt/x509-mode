@@ -1,0 +1,11 @@
+[default]
+extend-ignore-re = [
+  # Hex
+  "([0-9a-fA-F]:)+",
+  # Base64
+  "[A-Za-z0-9+/=]{30}"
+]
+
+[default.extend-identifiers]
+passin = "passin"
+STRINGs = "STRINGs"

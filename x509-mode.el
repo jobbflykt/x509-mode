@@ -781,8 +781,7 @@ Switch to resulting buffer and return it."
     ("pkcs7" 'x509--viewpkcs7-history)
     ("dhparam" 'x509--viewdh-history)
     ("ecparam" 'x509--viewec-history)
-    ("pkey"
-     (if (string-match-p "-pubin" args)
+    ("pkey" (if (string-match-p "-pubin" args)
          'x509--viewpublickey-history
        'x509--viewkey-history))
     ("asn1parse" 'x509--viewasn1-history)

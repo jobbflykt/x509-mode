@@ -119,7 +119,7 @@ openssl binary.
 
 x509-mode works with, for example, OpenSSL that comes with Git for Windows.
 
-    (setq x509-openssl-cmd "C:/Program Files/Git/mingw64/bin/openssl.exe")
+    (setq x509-openssl-cmd "C:/Program Files/Git/ucrt64/bin/openssl.exe")
 
 ## Configuration
 

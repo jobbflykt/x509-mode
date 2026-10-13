@@ -1534,9 +1534,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
       ;; Scroll buffer if region isn't visible.  `header-stripes' may not
       ;; contain anything of we are out of bounds, e.g.  when point is below
       ;; last line in asn1 buffer.
-      (let ((start-region (caar header-stripes)))
-        (if start-region
-            (x509--scroll-window x509-asn1--hexl-buffer start-region))))))
+      (if-let* ((start-region (caar header-stripes)))
+          (x509--scroll-window x509-asn1--hexl-buffer start-region)))))
 
 (defun x509-asn1--post-command-hook ()
   "Update hexl buffer overlay if point has moved."

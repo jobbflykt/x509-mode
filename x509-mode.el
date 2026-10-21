@@ -83,7 +83,7 @@
 
 (defcustom x509-openssl-cmd
   (if (eq system-type 'windows-nt)
-      "C:/Program Files/Git/ucrt64/bin/openssl.exe"
+      "C:/Program Files/Git/usr/bin/openssl.exe"
     "openssl")
   "Path to OpenSSL binary.
 

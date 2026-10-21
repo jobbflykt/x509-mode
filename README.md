@@ -26,6 +26,7 @@ respectively:
     M-x x509-viewreq
     M-x x509-viewpkcs7
     M-x x509-viewasn1
+    M-x x509-viewp12
 
 If point is in, or at the beginning of, a PEM region, `M-x x509-dwim` tries to
 determine what kind of object it is and call the right x509-view-function on
@@ -54,6 +55,10 @@ next/previous region. `x509-swoop` intended to be used on PEM-coded certificate
 chain files but work in files with various PKI resources.
 
     M-x x509-swoop
+
+Another special command is `x509-viewp12`. It requires a password and displays
+PEM coded certifictates and key. In the resulting buffer, `x509-dwim` (bound to **v**) and
+`x509-swoop` (bound to **s**) can be used to se the individual entities.
 
 ### Key bindings
 

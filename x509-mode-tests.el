@@ -527,13 +527,15 @@ Repeat with `x509-dwim' which should produce the same result."
   (let ((p12-file (find-testfile "CA/pki/p12/jobbflykt.p12")))
     (with-temp-buffer
       (insert-file-contents-literally p12-file)
-      (x509-viewp12 "11111111")
-      ;; check that point is moved to an interesting place.
-      (should (looking-at "-----BEGIN CERTIFICATE-----"))
-      (should (string-match-p "BEGIN PRIVATE KEY" (buffer-string)))
-      ;; Check local key bindings
-      (should (eq (local-key-binding (kbd "v")) #'x509-dwim))
-      (should (eq (local-key-binding (kbd "s")) #'x509-swoop)))))
+      (let ((pembuffer (x509-viewp12 "11111111")))
+        (should pembuffer)
+        ;; check that point is moved to an interesting place.
+        (should (looking-at "-----BEGIN CERTIFICATE-----"))
+        (should (string-match-p "BEGIN PRIVATE KEY" (buffer-string)))
+        ;; Check local key bindings
+        (should (eq (local-key-binding (kbd "v")) #'x509-dwim))
+        (should (eq (local-key-binding (kbd "s")) #'x509-swoop))
+        (kill-buffer pembuffer)))))
 
 (ert-deftest x509-viewasn1 ()
   "View ASN.1."

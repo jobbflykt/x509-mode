@@ -492,17 +492,21 @@ Return string \"PEM\" or \"DER\"."
         "DER"))))
 
 (defconst x509--known-pki-types
-  '("CERTIFICATE"
-    "TRUSTED CERTIFICATE"
-    "CERTIFICATE REQUEST"
+  '("CERTIFICATE REQUEST"
+    "CERTIFICATE"
     "DH PARAMETERS"
+    "DSA PRIVATE KEY"
+    "DSA PUBLIC KEY"
     "EC PARAMETERS"
-    "PKCS7"
+    "EC PRIVATE KEY"
+    "EC PUBLIC KEY"
     "ENCRYPTED PRIVATE KEY"
+    "PKCS7"
     "PRIVATE KEY"
-    "RSA PRIVATE KEY"
     "PUBLIC KEY"
+    "RSA PRIVATE KEY"
     "RSA PUBLIC KEY"
+    "TRUSTED CERTIFICATE"
     "X509 CRL")
   "All the PEM region types known by `x509-mode'.
 Other types will not be recognized as valid regions.")
@@ -1125,9 +1129,13 @@ Return the output buffer or nil"
     ("DH PARAMETERS" (call-interactively #'x509-viewdh))
     ("EC PARAMETERS" (call-interactively #'x509-viewec))
     ("PKCS7" (call-interactively #'x509-viewpkcs7))
-    ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
+    ((or "ENCRYPTED PRIVATE KEY"
+         "PRIVATE KEY"
+         "RSA PRIVATE KEY"
+         "DSA PRIVATE KEY"
+         "EC PRIVATE KEY")
      (call-interactively #'x509-viewkey))
-    ((or "PUBLIC KEY" "RSA PUBLIC KEY")
+    ((or "PUBLIC KEY" "RSA PUBLIC KEY" "DSA PUBLIC KEY" "EC PUBLIC KEY")
      (call-interactively #'x509-viewpublickey))
     ("X509 CRL" (call-interactively #'x509-viewcrl))
     (_

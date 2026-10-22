@@ -1,0 +1,13 @@
+- Add tests for certs and keys with DSA keys.
+  - Private key
+  - Public key
+  - Cert
+  - View P12 with DSA stuff in it.
+- Add mode for viewing DSA parameter files.
+- Generate cert and keys using EC
+- Ensure cert and keys with EC can be viwed
+  - private key
+  - public keys
+  - cert
+  - View P12 with EC stuff in it.
+- Add mode for viewing EC parameter files.

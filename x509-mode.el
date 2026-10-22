@@ -961,10 +961,11 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     "View current buffer as a pkcs12 file.
 
 PASSWORD: pkcs12 file password.
+
 In the resulting buffer, use `x509-swoop' or `x509-dwim' to see the
 individual parts.  `x509-viewp12' does not follow the same semantics as
 other x509-view commands where command parameters can be edited,
-switching between asn1 and object view, next, previous and so on. The
+switching between asn1 and object view, next, previous and so on.  The
 problem is that it the pkcs12 command requires a password and that is
 produces intermediate output, not the certificates and key themselves."
     (interactive (list (read-passwd "p12 password: ")))

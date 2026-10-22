@@ -956,6 +956,49 @@ For example to enter pass-phrase, add -passin pass:PASSPHRASE."
     (setq buffer-read-only t)
     (x509-mode)))
 
+;;;###autoload
+(defun x509-viewp12 (password)
+  "View current buffer as a pkcs12 file.
+
+PASSWORD: pkcs12 file password.
+Return the new view buffer.
+
+In the resulting buffer, use `x509-swoop' or `x509-dwim' to see the
+individual parts.  `x509-viewp12' does not follow the same semantics as
+other x509-view commands where command parameters can be edited,
+switching between asn1 and object view, next, previous and so on.  The
+problem is that it the pkcs12 command requires a password and that is
+produces intermediate output, not the certificates and key themselves."
+  (interactive (list (read-passwd "p12 password: ")))
+  (let ((pem-buffer
+         (generate-new-buffer
+          (generate-new-buffer-name (format "*x-%s*" (buffer-name))))))
+    (call-process-region nil nil x509-openssl-cmd
+                         nil
+                         pem-buffer
+                         nil
+                         "pkcs12"
+                         "-noenc"
+                         "-passin"
+                         (format "pass:%s" password))
+    (clear-string password)
+    (switch-to-buffer pem-buffer)
+    (setq buffer-read-only t)
+    ;; Set some local keys for convenience.
+    (local-set-key
+     (kbd "q")
+     (lambda ()
+       (interactive)
+       (set-buffer-modified-p nil)
+       (kill-buffer)))
+    (local-set-key (kbd "v") 'x509-dwim)
+    (local-set-key (kbd "s") 'x509-swoop)
+    (goto-char (point-min))
+    ;; Try to set point to an interesting position where `x509-dwim' works.
+    (if (re-search-forward "-----BEGIN" nil t)
+        (goto-char (match-beginning 0)))
+    pem-buffer))
+
 (defun x509--pem-region-next-or-prev (buffer direction)
   "Find BEGIN before or after current region and place point at beginning.
 BUFFER is the buffer to search in.

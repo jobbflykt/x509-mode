@@ -21,6 +21,7 @@ respectively:
     M-x x509-viewcrl
     M-x x509-viewkey
     M-x x509-viewpublickey
+    M-x x509-viewpkeyparam
     M-x x509-viewdh
     M-x x509-viewec
     M-x x509-viewreq

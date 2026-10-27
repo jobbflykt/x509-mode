@@ -392,6 +392,8 @@ When `x509-warn-near-expire-days' is nil."
   (should (equal 'x509--viewec-history (x509--get-x509-history "ecparam")))
   (should (equal 'x509--viewkey-history (x509--get-x509-history "pkey")))
   (should
+   (equal 'x509--viewpkeyparam-history (x509--get-x509-history "pkeyparam")))
+  (should
    (equal 'x509--viewpublickey-history (x509--get-x509-history "pkey -pubin")))
   (should (equal 'x509--viewasn1-history (x509--get-x509-history "asn1parse")))
   (should (equal nil (x509--get-x509-history "UNKNOWN"))))
@@ -488,10 +490,11 @@ Repeat with `x509-dwim' which should produce the same result."
 (ert-deftest x509-viewkey ()
   "View plaintext private key."
   (view-test-helper
-   '("CA/pki/key/jobbflykt.key" "CA/pki/key/jobbflykt.key.der")
-   'x509-viewkey
-   'x509-mode
-   "publicExponent: 65537 (0x10001)"))
+   '("CA/pki/key/jobbflykt.key"
+     "CA/pki/key/jobbflykt.key.der"
+     "DSA/client_key.pem"
+     "EC/client_key.pem")
+   'x509-viewkey 'x509-mode "Private-Key:"))
 
 (ert-deftest x509-viewpublickey ()
   "View public key."
@@ -502,6 +505,14 @@ Repeat with `x509-dwim' which should produce the same result."
      ;;"CA/pki/key/jobbflykt-public.key.der"
      )
    'x509-viewpublickey 'x509-mode "Public-Key: (2048 bit)"))
+
+(ert-deftest x509-viewpkeyparam ()
+  "View DSA key parameters"
+  (view-test-helper
+   '("DSA/ca_dsa_params.pem")
+   'x509-viewpkeyparam
+   'x509-mode
+   "DSA-Parameters: (2048 bit)"))
 
 (ert-deftest x509-viewlegacykey-args ()
   "Test x509-viewlegacykey using explicit arguments."

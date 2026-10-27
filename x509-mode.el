@@ -136,6 +136,11 @@ Example:
   :type 'string
   :group 'x509)
 
+(defcustom x509-pkeyparam-default-arg "pkeyparam -text -noout"
+  "Default arguments for \"openssl pkeyparam\" command."
+  :type 'string
+  :group 'x509)
+
 (defcustom x509-asn1parse-default-arg "asn1parse"
   "Default arguments for \"openssl asn1parse\" command."
   :type 'string
@@ -492,17 +497,22 @@ Return string \"PEM\" or \"DER\"."
         "DER"))))
 
 (defconst x509--known-pki-types
-  '("CERTIFICATE"
-    "TRUSTED CERTIFICATE"
-    "CERTIFICATE REQUEST"
+  '("CERTIFICATE REQUEST"
+    "CERTIFICATE"
     "DH PARAMETERS"
+    "DSA PARAMETERS"
+    "DSA PRIVATE KEY"
+    "DSA PUBLIC KEY"
     "EC PARAMETERS"
-    "PKCS7"
+    "EC PRIVATE KEY"
+    "EC PUBLIC KEY"
     "ENCRYPTED PRIVATE KEY"
+    "PKCS7"
     "PRIVATE KEY"
-    "RSA PRIVATE KEY"
     "PUBLIC KEY"
+    "RSA PRIVATE KEY"
     "RSA PUBLIC KEY"
+    "TRUSTED CERTIFICATE"
     "X509 CRL")
   "All the PEM region types known by `x509-mode'.
 Other types will not be recognized as valid regions.")
@@ -708,9 +718,13 @@ Return argument string."
 
 (defun x509--add-inform-spec (arguments encoding)
   "Add or modify \"-inform ENCODING\" in ARGUMENTS."
-  (if (string-match "-inform \\(PEM\\|DER\\)" arguments)
-      (replace-match encoding nil nil arguments 1)
-    (format "%s -inform %s" arguments encoding)))
+  ;; pkeyparam is an exception. It only accepts PEM coding and doesn't support
+  ;; an -inform parameter.
+  (if (string-match-p "pkeyparam" arguments)
+      arguments
+    (if (string-match "-inform \\(PEM\\|DER\\)" arguments)
+        (replace-match encoding nil nil arguments 1)
+      (format "%s -inform %s" arguments encoding))))
 
 (defun x509--generic-view (default history mode &optional input-buf output-buf)
   "Prepare an input buffer for data to be processed.
@@ -761,6 +775,7 @@ Switch to resulting buffer and return it."
             ("pkcs7" . x509-pkcs7-default-arg)
             ("dhparam" . x509-dhparam-default-arg)
             ("key" . x509-pkey-default-arg)
+            ("pkeyparam" . x509-pkeyparam-default-arg)
             ("publickey" . x509-pkey-pubin-default-arg)
             ("asn1parse" . x509-asn1parse-default-arg)))
          (choice
@@ -784,6 +799,7 @@ Switch to resulting buffer and return it."
     ("pkey" (if (string-match-p "-pubin" args)
          'x509--viewpublickey-history
        'x509--viewkey-history))
+    ("pkeyparam" 'x509--viewpkeyparam-history)
     ("asn1parse" 'x509--viewasn1-history)
     (_ nil)))
 
@@ -905,6 +921,18 @@ With \\[universal-argument] prefix, you can edit the command arguments."
 With \\[universal-argument] prefix, you can edit the command arguments."
   (interactive)
   (x509--generic-view x509-pkey-default-arg 'x509--viewkey-history 'x509-mode))
+
+;; ---------------------------------------------------------------------------
+(defvar x509--viewpkeyparam-history nil
+  "History list for `x509-viewpkeyparam'.")
+;;;###autoload
+(defun x509-viewpkeyparam ()
+  "Display key parameters using the OpenSSL pkeyparam command.
+
+With \\[universal-argument] prefix, you can edit the command arguments."
+  (interactive)
+  (x509--generic-view
+   x509-pkeyparam-default-arg 'x509--viewpkeyparam-history 'x509-mode))
 
 ;; ---------------------------------------------------------------------------
 (defvar x509--viewpublickey-history nil
@@ -1125,11 +1153,16 @@ Return the output buffer or nil"
     ("DH PARAMETERS" (call-interactively #'x509-viewdh))
     ("EC PARAMETERS" (call-interactively #'x509-viewec))
     ("PKCS7" (call-interactively #'x509-viewpkcs7))
-    ((or "ENCRYPTED PRIVATE KEY" "PRIVATE KEY" "RSA PRIVATE KEY")
+    ((or "ENCRYPTED PRIVATE KEY"
+         "PRIVATE KEY"
+         "RSA PRIVATE KEY"
+         "DSA PRIVATE KEY"
+         "EC PRIVATE KEY")
      (call-interactively #'x509-viewkey))
-    ((or "PUBLIC KEY" "RSA PUBLIC KEY")
+    ((or "PUBLIC KEY" "RSA PUBLIC KEY" "DSA PUBLIC KEY" "EC PUBLIC KEY")
      (call-interactively #'x509-viewpublickey))
     ("X509 CRL" (call-interactively #'x509-viewcrl))
+    ("DSA PARAMETERS" (call-interactively #'x509-viewpkeyparam))
     (_
      (cond
       (only-pem-region
@@ -1150,6 +1183,8 @@ Return the output buffer or nil"
        (call-interactively #'x509-viewec))
       ((x509--dwim-tester x509-pkcs7-default-arg)
        (call-interactively #'x509-viewpkcs7))
+      ((x509--dwim-tester x509-pkeyparam-default-arg)
+       (call-interactively #'x509-viewpkeyparam))
       (t
        (call-interactively #'x509-viewasn1))))))
 

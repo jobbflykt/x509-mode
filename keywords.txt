@@ -76,10 +76,14 @@ coefficient:
 # openssl/crypto/ec/ecx_meth.c
 priv:
 pub:
-# openssl/crypto/dsa/dsa_ameth.c
+# openssl/crypto/encode_decode/encoder_lib.c
 P:
 Q:
 G:
+# openssl/crypto/dsa/dsa_ameth.c
+DSA-Parameters:
+r:
+s:
 
 # keyword + constant
 #Hash Algorithm:

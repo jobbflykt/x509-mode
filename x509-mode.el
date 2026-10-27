@@ -718,8 +718,8 @@ Return argument string."
 
 (defun x509--add-inform-spec (arguments encoding)
   "Add or modify \"-inform ENCODING\" in ARGUMENTS."
-  ;; pkeyparam is en exception. It only accepts PEM coding and doesn't
-  ;; accept an -inform parameter.
+  ;; pkeyparam is an exception. It only accepts PEM coding and doesn't support
+  ;; an -inform parameter.
   (if (string-match-p "pkeyparam" arguments)
       arguments
     (if (string-match "-inform \\(PEM\\|DER\\)" arguments)

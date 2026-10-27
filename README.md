@@ -63,7 +63,6 @@ PEM coded certifictates and key. In the resulting buffer, `x509-dwim` (bound to 
 
 ### Key bindings
 
-
 **e** edit the current command.
 
 **t** toggle between `x509-mode` and `x509-asn1-mode`

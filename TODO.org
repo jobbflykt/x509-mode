@@ -1,8 +1,0 @@
-- [2/2] Add tests for certs and keys with DSA keys.
-  - [X] Private key
-  - [X] Cert
-- [X] Add mode for viewing DSA parameter files.
-- [X] Generate cert and keys using EC
-- [2/2] Ensure cert and keys with EC can be viewed
-  - [X] private key
-  - [X] cert

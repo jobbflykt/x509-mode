@@ -490,10 +490,11 @@ Repeat with `x509-dwim' which should produce the same result."
 (ert-deftest x509-viewkey ()
   "View plaintext private key."
   (view-test-helper
-   '("CA/pki/key/jobbflykt.key" "CA/pki/key/jobbflykt.key.der")
-   'x509-viewkey
-   'x509-mode
-   "publicExponent: 65537 (0x10001)"))
+   '("CA/pki/key/jobbflykt.key"
+     "CA/pki/key/jobbflykt.key.der"
+     "DSA/client_key.pem"
+     "EC/client_key.pem")
+   'x509-viewkey 'x509-mode "Private-Key:"))
 
 (ert-deftest x509-viewpublickey ()
   "View public key."
@@ -509,7 +510,9 @@ Repeat with `x509-dwim' which should produce the same result."
   "View DSA key parameters"
   (view-test-helper
    '("DSA/ca_dsa_params.pem")
-   'x509-viewpkeyparam 'x509-mode "DSA-Parameters: (2048 bit)"))
+   'x509-viewpkeyparam
+   'x509-mode
+   "DSA-Parameters: (2048 bit)"))
 
 (ert-deftest x509-viewlegacykey-args ()
   "Test x509-viewlegacykey using explicit arguments."

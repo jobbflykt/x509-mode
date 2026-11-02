@@ -1309,6 +1309,57 @@ account for the unused-bits byte."
           (+ hl add-one))
       0)))
 
+(defun x509--asn1-read-bin (buffer offset length)
+  "Read LENGTH bytes from buffer at OFFSET.
+
+Return as list of numbers."
+  (with-current-buffer buffer
+    (string-to-list
+     (buffer-substring-no-properties offset (+ offset length)))))
+
+(defun x509--ansn1-bin-oid-to-string (bytes)
+  "Return dot representation of BIN OID."
+  (let* ((first (pop bytes))
+         (arcs (list (- first (* 40 (/ first 40))) (/ first 40)))
+         (value 0))
+    (when (> (car arcs) 2)
+      (setcar arcs 2)
+      (setcar (cdr arcs) (- first 80)))
+    (dolist (byte bytes)
+      (setq value (+ (* value 128) (logand byte #x7f)))
+      (unless (/= 0 (logand byte #x80))
+        (push value arcs)
+        (setq value 0)))
+    (mapconcat #'number-to-string (nreverse arcs) ".")))
+
+(defun x509--asn1-insert-dot-oid ()
+  "Add dot OID to all prim: OBJECT in current buffer.
+
+   41:d=2  hl=2 l=   8 prim: OBJECT :prime256v1 1.2.840.10045.3.1.7"
+  (let* ((buffer-read-only nil)
+         (src-buffer x509--shadow-buffer)
+         (bin-buffer
+          (get-buffer-create (format " tmp-bin-%s" (buffer-name src-buffer)))))
+    (x509--asn1-create-binary-src-buffer src-buffer bin-buffer)
+    (save-excursion
+      (save-match-data
+        (while (re-search-forward "prim: OBJECT" nil t)
+          (when-let* ((header-length (x509--asn1-get-header-len))
+                      (total-length (x509--asn1-get-total-length))
+                      (value-length (- total-length header-length))
+                      (header-start (x509--asn1-get-absolute-offset))
+                      (header-end (+ header-start header-length))
+                      (value-start (+ header-start header-length))
+                      (value-end (+ value-start value-length))
+                      (bytes
+                       (x509--asn1-read-bin bin-buffer value-start value-length))
+                      (dot-string (x509--ansn1-bin-oid-to-string bytes)))
+            (message "%S" bytes)
+            (end-of-line)
+            (insert (format " (%s)" dot-string))))))
+    (kill-buffer bin-buffer)
+    (setq buffer-read-only t)))
+
 (defun x509--asn1-update-command-line-start-arg (arguments command start)
   "Add, modify or remove -offset N or -strparse N argument in ARGUMENTS.
 COMMAND is either \"-offset\" or \"strparse\".
@@ -1627,6 +1678,24 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
     ;; No hexl buffer killed. Remove hook.
     (remove-hook 'post-command-hook #'x509-asn1--post-command-hook t)))
 
+(defun x509--asn1-create-binary-src-buffer (src-buffer bin-buffer)
+  "Add binary content of src-buffer to bin-buffer.
+
+If SRC-BUFFER is PEM coded, convert it to binary first.
+BIN-BUFFER content, if any, is replaced with the binary content of SRC-BUFFER."
+  (with-current-buffer bin-buffer
+    (setq buffer-file-coding-system 'no-conversion)
+    (setq buffer-read-only nil)
+    (erase-buffer))
+  (if (string= "PEM" (x509--buffer-encoding src-buffer))
+      ;; If PEM: Decode base64
+      (x509--process-buffer
+       src-buffer (split-string-and-unquote "enc -d -base64")
+       bin-buffer 'no-hooks)
+    ;; Else use src-buffer as is.
+    (with-current-buffer bin-buffer
+      (insert-buffer-substring-no-properties src-buffer))))
+
 (defun x509-asn1-toggle-hexl ()
   "Display hex buffer matching current input puffer."
   (interactive)
@@ -1641,21 +1710,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
             (replace-regexp-in-string
              "^ \\*in-x-" "*hexl-" (buffer-name src-buffer)))
            (hexl-buffer (get-buffer-create hexl-buffer-name)))
-
-      (with-current-buffer hexl-buffer
-        (setq buffer-file-coding-system 'no-conversion)
-        (setq buffer-read-only nil)
-        (erase-buffer))
-
-      (if (string= "PEM" (x509--buffer-encoding src-buffer))
-          ;; If PEM: Decode base64
-          (x509--process-buffer
-           src-buffer (split-string-and-unquote "enc -d -base64")
-           hexl-buffer 'no-hooks)
-        ;; Else use src-buffer as is.
-        (with-current-buffer hexl-buffer
-          (insert-buffer-substring-no-properties src-buffer)))
-
+      ;; Fill hexl-buffer with binary content of src-buffer
+      (x509--asn1-create-binary-src-buffer src-buffer hexl-buffer)
       ;; Convert to hexl and display
       (with-current-buffer hexl-buffer
         (setq buffer-read-only nil)
@@ -1667,6 +1723,13 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
       ;; that updates overlay in hexl buffer.
       (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
       (setq x509-asn1--hexl-buffer hexl-buffer))))
+
+(defun x509-asn1--add-dot-oid ()
+  "Add dot representation of OBJECTs in current buffer.
+
+41:d=2  hl=2 l=   8 prim: OBJECT  :prime256v1 (1.2.840.10045.3.1.7)"
+  (while (re-search-forward "prim: OBJECT" nil t)))
+
 
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords
@@ -1753,7 +1816,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
   (keymap-set x509-asn1-mode-map "u" #'x509-asn1-offset-up)
   (keymap-set x509-asn1-mode-map "x" #'x509-asn1-toggle-hexl)
   (x509--mark-browse-http-links)
-  (x509--mark-browse-oid))
+  (x509--mark-browse-oid)
+  (x509--asn1-insert-dot-oid))
 
 (defvar x509--viewasn1-history nil
   "History list for `x509-viewasn1'.")

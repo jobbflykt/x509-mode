@@ -1,0 +1,9 @@
+- [ ] Reorder functions in x509.el
+- [ ] Write tests
+  - [ ] For inserting dot strings in buffer
+  - [ ] For verifying they are buttons
+  - [ ] For testing the bin to oid string function.
+  - [ ] For testing the read binary from buffer function
+  - [ ] For testing the insert binary into buffer function
+- [ ] Add a defcustom that enables the feature
+- [ ] Document it.

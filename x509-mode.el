@@ -1314,13 +1314,20 @@ account for the unused-bits byte."
 
 Return as list of numbers."
   (with-current-buffer buffer
-    (string-to-list
-     (buffer-substring-no-properties offset (+ offset length)))))
+    (cl-loop
+     for
+     index
+     from
+     offset
+     below
+     (+ length offset)
+     collect
+     (char-after (+ (point-min) index)))))
 
 (defun x509--ansn1-bin-oid-to-string (bytes)
   "Return dot representation of BIN OID."
   (let* ((first (pop bytes))
-         (arcs (list (- first (* 40 (/ first 40))) (/ first 40)))
+         (arcs (list (/ first 40) (- first (* 40 (/ first 40)))))
          (value 0))
     (when (> (car arcs) 2)
       (setcar arcs 2)
@@ -1328,9 +1335,9 @@ Return as list of numbers."
     (dolist (byte bytes)
       (setq value (+ (* value 128) (logand byte #x7f)))
       (unless (/= 0 (logand byte #x80))
-        (push value arcs)
+        (setq arcs (append arcs (list value)))
         (setq value 0)))
-    (mapconcat #'number-to-string (nreverse arcs) ".")))
+    (mapconcat #'number-to-string arcs ".")))
 
 (defun x509--asn1-insert-dot-oid ()
   "Add dot OID to all prim: OBJECT in current buffer.
@@ -1352,11 +1359,11 @@ Return as list of numbers."
                       (value-start (+ header-start header-length))
                       (value-end (+ value-start value-length))
                       (bytes
-                       (x509--asn1-read-bin bin-buffer value-start value-length))
+                       (x509--asn1-read-bin
+                        bin-buffer value-start value-length))
                       (dot-string (x509--ansn1-bin-oid-to-string bytes)))
-            (message "%S" bytes)
             (end-of-line)
-            (insert (format " (%s)" dot-string))))))
+            (insert " " dot-string)))))
     (kill-buffer bin-buffer)
     (setq buffer-read-only t)))
 
@@ -1686,6 +1693,7 @@ BIN-BUFFER content, if any, is replaced with the binary content of SRC-BUFFER."
   (with-current-buffer bin-buffer
     (setq buffer-file-coding-system 'no-conversion)
     (setq buffer-read-only nil)
+    (set-buffer-multibyte nil)
     (erase-buffer))
   (if (string= "PEM" (x509--buffer-encoding src-buffer))
       ;; If PEM: Decode base64
@@ -1815,9 +1823,9 @@ BIN-BUFFER content, if any, is replaced with the binary content of SRC-BUFFER."
   (keymap-set x509-asn1-mode-map "s" #'x509-asn1-strparse)
   (keymap-set x509-asn1-mode-map "u" #'x509-asn1-offset-up)
   (keymap-set x509-asn1-mode-map "x" #'x509-asn1-toggle-hexl)
+  (x509--asn1-insert-dot-oid)
   (x509--mark-browse-http-links)
-  (x509--mark-browse-oid)
-  (x509--asn1-insert-dot-oid))
+  (x509--mark-browse-oid))
 
 (defvar x509--viewasn1-history nil
   "History list for `x509-viewasn1'.")

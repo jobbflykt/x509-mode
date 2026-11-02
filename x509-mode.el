@@ -1671,19 +1671,18 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords
     (regexp-opt
-     '("prim"
-       "EOC"
-       "BOOLEAN"
-       "INTEGER"
+     '("BIT STRING"
        "BIT_STRING"
-       "BIT STRING"
-       "OCTET_STRING"
-       "OCTET STRING"
-       "NULL"
-       "OID"
-       "UTCTIME"
+       "BOOLEAN"
+       "ENUMERATED"
+       "EOC"
        "GENERALIZEDTIME"
-       "ENUMERATED"))))
+       "INTEGER"
+       "NULL"
+       "OCTET STRING"
+       "OCTET_STRING"
+       "OID"
+       "UTCTIME"))))
 
 (eval-when-compile
   (defconst x509--asn1-cons-keywords (regexp-opt '("SEQUENCE" "SET"))))
@@ -1718,8 +1717,10 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
      `(,x509--asn1-primitives-keywords . 'x509-keyword-face)
      ;; SET, SEQUENCE
      `(,x509--asn1-cons-keywords . 'x509-asn1-sequence-face)
-     ;; cons: as in constructed. Same font as SET and SEQUENCE
+     ;; cons: as in constructed.
      '("\\(cons\\):" (1 'x509-asn1-sequence-face))
+     ;; prim:
+     '("\\(prim\\):" (1 'x509-keyword-face))
      ;; Like SET and SEQUENCE
      '("\\(cont\\|appl\\|priv\\) \\[\\(.*?\\)\\]"
        (1 'x509-asn1-sequence-face)

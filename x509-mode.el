@@ -1732,13 +1732,6 @@ BIN-BUFFER content, if any, is replaced with the binary content of SRC-BUFFER."
       (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
       (setq x509-asn1--hexl-buffer hexl-buffer))))
 
-(defun x509-asn1--add-dot-oid ()
-  "Add dot representation of OBJECTs in current buffer.
-
-41:d=2  hl=2 l=   8 prim: OBJECT  :prime256v1 (1.2.840.10045.3.1.7)"
-  (while (re-search-forward "prim: OBJECT" nil t)))
-
-
 (eval-when-compile
   (defconst x509--asn1-primitives-keywords
     (regexp-opt

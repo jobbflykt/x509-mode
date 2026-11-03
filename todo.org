@@ -1,8 +1,8 @@
 - [ ] Reorder functions in x509.el
 - [ ] Rewrite reading current asn1 line using alists.
-- [-] Write tests
-  - [ ] For inserting dot strings in buffer
-  - [ ] For verifying they are buttons
+- [X] Write tests
+  - [X] For inserting dot strings in buffer
+  - [X] For verifying they are buttons
   - [X] For testing the bin to oid string function.
   - [X] For testing the read binary from buffer function
   - [X] For testing the insert binary into buffer function

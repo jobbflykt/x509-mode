@@ -551,10 +551,10 @@ Repeat with `x509-dwim' which should produce the same result."
 (ert-deftest x509-viewasn1 ()
   "View ASN.1."
   (view-test-helper
-   "oid_guy.cer"
+   "not-pki.der"
    'x509-viewasn1
    'x509-asn1-mode
-   '("OBJECT            :commonName 2.5.4.3" "UTF8STRING        :CA 02")))
+   "UTF8STRING        :Hello x509-mode"))
 
 (ert-deftest x509-mode-faces ()
   "Check font lock faces in x509-mode."
@@ -1040,7 +1040,28 @@ SEQUENCE             30 0C
      (equal
       (x509--asn1-bin-oid-to-string (copy-sequence (car test))) (cdr test)))))
 
-(ert-deftest x509--asn1-insert-dot-oid ())
+(ert-deftest x509--asn1-insert-dot-oid ()
+  "Verify that OBJECT gets a dot string representation."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "one-oid.der"))
+    (goto-char (point-min))
+    (let* ((oid-str "2.16.840.1.101.3.4.2.1")
+           (https (format "https://oid-base.com/get/%s" oid-str))
+           (view-buffer (x509-viewasn1)))
+      (should view-buffer)
+      (check-content-helper view-buffer (format "OBJECT *:sha256 %s" oid-str))
+      (check-face-helper oid-str 'x509-oid-link-face)
+      ;; Check that oid is a button.
+      (goto-char (point-min))
+      (let ((oid-button (next-button (point-min))))
+        (should oid-button)
+        (when oid-button
+          (should
+           (string-match-p https (button-get oid-button 'url)))
+          (should
+           (string=
+            (format "Click to browse-url %s" https)
+            (button-get oid-button 'help-echo))))))))
 
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

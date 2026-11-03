@@ -551,10 +551,10 @@ Repeat with `x509-dwim' which should produce the same result."
 (ert-deftest x509-viewasn1 ()
   "View ASN.1."
   (view-test-helper
-   "not-pki.der"
+   "oid_guy.cer"
    'x509-viewasn1
    'x509-asn1-mode
-   "UTF8STRING        :Hello x509-mode"))
+   '("OBJECT            :commonName 2.5.4.3" "UTF8STRING        :CA 02")))
 
 (ert-deftest x509-mode-faces ()
   "Check font lock faces in x509-mode."
@@ -984,6 +984,63 @@ SEQUENCE             30 0C
   (with-temp-buffer
     (insert "-----BEGIN nothing----- -----END nothing-----")
     (should-not (x509-swoop))))
+
+(ert-deftest x509--asn1-read-bin-from-pem ()
+  "Populate a buffer with binary data and read it as bytes"
+  (let ((bin-buffer (get-buffer-create " bin-buf")))
+    (with-temp-buffer
+      (insert-file-contents-literally (find-testfile "public-key.pem"))
+      ;; Create a binary buffer with the content of the testfile
+      (should
+       (eq
+        (x509--asn1-create-binary-src-buffer
+         (current-buffer) bin-buffer)
+        bin-buffer)))
+    (should
+     (equal '(#x30 #x48 #x02 #x41) (x509--asn1-read-bin bin-buffer 0 4)))
+    (should (equal '(#x00 #x01) (x509--asn1-read-bin bin-buffer #x48 2)))))
+
+(ert-deftest x509--asn1-read-bin-from-der ()
+  "Populate a buffer with binary data and read it as bytes"
+  (let ((bin-buffer (get-buffer-create " bin-buf")))
+    (with-temp-buffer
+      (insert-file-contents-literally (find-testfile "not-pki.der"))
+      ;; Create a binary buffer with the content of the testfile
+      (should
+       (eq
+        (x509--asn1-create-binary-src-buffer
+         (current-buffer) bin-buffer)
+        bin-buffer)))
+    (should
+     (equal '(#x30 #x11 #x0c #x0f) (x509--asn1-read-bin bin-buffer 0 4)))
+    (should (equal '(#x64 #x65) (x509--asn1-read-bin bin-buffer #x11 2)))))
+
+(defconst x509-oid-test-vectors
+  (append
+   '(((#x55 #x04 #x03) . "2.5.4.3")
+     ((#x55 #x04 #x06) . "2.5.4.6")
+     ((#x55 #x04 #x0a) . "2.5.4.10")
+     ((#x55 #x1d #x0f) . "2.5.29.15")
+     ((#x55 #x1d #x11) . "2.5.29.17")
+     ((#x55 #x1d #x13) . "2.5.29.19")
+     ((#x2a #x86 #x48 #x86 #xf7 #x0d #x01 #x01 #x01) . "1.2.840.113549.1.1.1")
+     ((#x2a #x86 #x48 #xce #x3d #x03 #x01 #x07) . "1.2.840.10045.3.1.7")
+     ((#x60 #x86 #x48 #x01 #x65 #x03 #x04 #x02 #x01)
+      .
+      "2.16.840.1.101.3.4.2.1")
+     ((#x2b #x81 #x04 #x00 #x22) . "1.3.132.0.34")
+     ((#x88 #x37 #x03) . "2.999.3")
+     ((#x2a #x81 #x00) . "1.2.128")
+     ((#x2a #x81 #x80 #x00) . "1.2.16384"))))
+
+(ert-deftest x509--asn1-bin-oid-to-string ()
+  "Verify that ASN.1 encoded OIDs are correctly represented as dot strings."
+  (dolist (test x509-oid-test-vectors)
+    (should
+     (equal
+      (x509--asn1-bin-oid-to-string (copy-sequence (car test))) (cdr test)))))
+
+(ert-deftest x509--asn1-insert-dot-oid ())
 
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

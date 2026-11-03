@@ -1255,6 +1255,35 @@ Return view buffer on success."
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode
 
+(defun x509--asn1-create-binary-src-buffer (src-buffer bin-buffer)
+  "Add binary content of src-buffer to bin-buffer.
+
+If SRC-BUFFER is PEM coded, convert it to binary first.
+BIN-BUFFER content, if any, is replaced with the binary content of SRC-BUFFER."
+  (with-current-buffer bin-buffer
+    (setq buffer-file-coding-system 'no-conversion)
+    (setq buffer-read-only nil)
+    (set-buffer-multibyte nil)
+    (erase-buffer))
+  (if (string= "PEM" (x509--buffer-encoding src-buffer))
+      ;; If PEM: Decode base64
+      (x509--process-buffer
+       src-buffer (split-string-and-unquote "enc -d -base64")
+       bin-buffer 'no-hooks)
+    ;; Else use src-buffer as is.
+    (with-current-buffer bin-buffer
+      (insert-buffer-substring-no-properties src-buffer)))
+  bin-buffer)
+
+(defun x509--asn1-read-bin (buffer offset length)
+  "Read LENGTH bytes from buffer at OFFSET as list of numbers (bytes)."
+  (with-current-buffer buffer
+    ;; format:off
+    (cl-loop for index from offset below (+ length offset)
+             collect (char-after (+ (point-min) index)))
+    ;; format:on
+    ))
+
 (defun x509--asn1-get-offset ()
   "Return offset at current ASN.1 line.
 
@@ -1309,35 +1338,30 @@ account for the unused-bits byte."
           (+ hl add-one))
       0)))
 
-(defun x509--asn1-read-bin (buffer offset length)
-  "Read LENGTH bytes from buffer at OFFSET.
-
-Return as list of numbers."
-  (with-current-buffer buffer
-    (cl-loop
-     for
-     index
-     from
-     offset
-     below
-     (+ length offset)
-     collect
-     (char-after (+ (point-min) index)))))
-
-(defun x509--ansn1-bin-oid-to-string (bytes)
-  "Return dot representation of BIN OID."
-  (let* ((first (pop bytes))
-         (arcs (list (/ first 40) (- first (* 40 (/ first 40)))))
-         (value 0))
-    (when (> (car arcs) 2)
-      (setcar arcs 2)
-      (setcar (cdr arcs) (- first 80)))
+(defun x509--asn1-bin-oid-to-string (bytes)
+  "Return dot representation of binary ASN.1 OBJECT IDENTIFIER BYTES."
+  (let ((value 0)
+        (subids nil))
+    ;; Decode all base-128 encoded subidentifiers.
     (dolist (byte bytes)
       (setq value (+ (* value 128) (logand byte #x7f)))
       (unless (/= 0 (logand byte #x80))
-        (setq arcs (append arcs (list value)))
+        (push value subids)
         (setq value 0)))
-    (mapconcat #'number-to-string arcs ".")))
+    (setq subids (nreverse subids))
+    ;; Split the first combined subidentifier into the first two arcs.
+    (let (arcs
+          (first (pop subids)))
+      (cond
+       ((< first 40)
+        (setq arcs (list 0 first)))
+       ((< first 80)
+        (setq arcs (list 1 (- first 40))))
+       (t
+        (setq arcs (list 2 (- first 80)))))
+      ;; Append remaining subidentifiers.
+      (setq arcs (append arcs subids))
+      (mapconcat #'number-to-string arcs "."))))
 
 (defun x509--asn1-insert-dot-oid ()
   "Add dot OID to all prim: OBJECT in current buffer.
@@ -1361,7 +1385,7 @@ Return as list of numbers."
                       (bytes
                        (x509--asn1-read-bin
                         bin-buffer value-start value-length))
-                      (dot-string (x509--ansn1-bin-oid-to-string bytes)))
+                      (dot-string (x509--asn1-bin-oid-to-string bytes)))
             (end-of-line)
             (insert " " dot-string)))))
     (kill-buffer bin-buffer)
@@ -1684,25 +1708,6 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
         (x509--display-buffer x509-asn1--hexl-buffer))
     ;; No hexl buffer killed. Remove hook.
     (remove-hook 'post-command-hook #'x509-asn1--post-command-hook t)))
-
-(defun x509--asn1-create-binary-src-buffer (src-buffer bin-buffer)
-  "Add binary content of src-buffer to bin-buffer.
-
-If SRC-BUFFER is PEM coded, convert it to binary first.
-BIN-BUFFER content, if any, is replaced with the binary content of SRC-BUFFER."
-  (with-current-buffer bin-buffer
-    (setq buffer-file-coding-system 'no-conversion)
-    (setq buffer-read-only nil)
-    (set-buffer-multibyte nil)
-    (erase-buffer))
-  (if (string= "PEM" (x509--buffer-encoding src-buffer))
-      ;; If PEM: Decode base64
-      (x509--process-buffer
-       src-buffer (split-string-and-unquote "enc -d -base64")
-       bin-buffer 'no-hooks)
-    ;; Else use src-buffer as is.
-    (with-current-buffer bin-buffer
-      (insert-buffer-substring-no-properties src-buffer))))
 
 (defun x509-asn1-toggle-hexl ()
   "Display hex buffer matching current input puffer."

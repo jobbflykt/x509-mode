@@ -1276,7 +1276,7 @@ BIN-BUFFER content, if any, is replaced with the binary content of SRC-BUFFER."
   bin-buffer)
 
 (defun x509--asn1-read-bin (buffer offset length)
-  "Read LENGTH bytes from buffer at OFFSET as list of numbers (bytes)."
+  "Read LENGTH bytes from BUFFER at OFFSET as list of numbers (bytes)."
   (with-current-buffer buffer
     ;; format:off
     (cl-loop for index from offset below (+ length offset)

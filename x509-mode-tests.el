@@ -1056,7 +1056,8 @@ SEQUENCE             30 0C
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "one-oid.der"))
     (goto-char (point-min))
-    (let* ((oid-str "2.16.840.1.101.3.4.2.1")
+    (let* ((x509-show-oid-values t)
+           (oid-str "2.16.840.1.101.3.4.2.1")
            (https (format "https://oid-base.com/get/%s" oid-str))
            (view-buffer (x509-viewasn1)))
       (should view-buffer)

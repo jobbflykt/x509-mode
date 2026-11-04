@@ -1840,7 +1840,8 @@ The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
   (keymap-set x509-asn1-mode-map "s" #'x509-asn1-strparse)
   (keymap-set x509-asn1-mode-map "u" #'x509-asn1-offset-up)
   (keymap-set x509-asn1-mode-map "x" #'x509-asn1-toggle-hexl)
-  (x509--asn1-insert-dot-oid)
+  (if x509-show-oid-values
+      (x509--asn1-insert-dot-oid))
   (x509--mark-browse-http-links)
   (x509--mark-browse-oid))
 

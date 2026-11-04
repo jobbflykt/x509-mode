@@ -1,4 +1,4 @@
-- [ ] Reorder functions in x509.el
+- [X] Reorder functions in x509.el
 - [X] Simplify header info functions
 - [X] Write tests
   - [X] For inserting dot strings in buffer
@@ -7,4 +7,3 @@
   - [X] For testing the read binary from buffer function
   - [X] For testing the insert binary into buffer function
 - [X] Add a defcustom that enables the feature
-- [ ] Document it.

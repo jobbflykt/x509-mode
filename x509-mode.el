@@ -376,7 +376,9 @@ Skip blank lines and comment lines.  Return list."
                        "\n"))))))
 
 (eval-when-compile
-  (defconst x509--keywords (regexp-opt (x509--load-data-file "keywords.txt"))))
+  (defconst x509--keywords
+    ;; Ensure keywords are only matched at beginning of a line.
+    (concat "^ *" (regexp-opt (x509--load-data-file "keywords.txt")))))
 
 (eval-when-compile
   (defconst x509--constants

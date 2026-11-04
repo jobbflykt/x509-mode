@@ -613,10 +613,21 @@ Ensure point is restored when switching between modes."
     (insert "malformed line\n")
     (goto-char (point-min))
     (should (= 0 (x509--asn1-get-offset)))
+    (should (= 0 (x509--asn1-get-header-start)))
+    (should (= 2 (x509--asn1-get-header-end)))
+    (should (= 5 (x509--asn1-get-value-length)))
+    (should (= 2 (x509--asn1-get-value-start)))
+    (should (= 7 (x509--asn1-get-value-end)))
     (forward-line 1)
     (should (= 503 (x509--asn1-get-offset)))
+    (should (= 503 (x509--asn1-get-header-start)))
+    (should (= 505 (x509--asn1-get-header-end)))
+    (should (= 34 (x509--asn1-get-value-length)))
+    (should (= 505 (x509--asn1-get-value-start)))
+    (should (= 539 (x509--asn1-get-value-end)))
     (forward-line 1)
-    (should (= 0 (x509--asn1-get-offset)))))
+    (should (= 0 (x509--asn1-get-offset)))
+    (should (= 0 (x509--asn1-get-header-start)))))
 
 (ert-deftest x509-asn1-get-total-length ()
   "Test total length parsing from asn1 line."
@@ -1049,19 +1060,22 @@ SEQUENCE             30 0C
            (https (format "https://oid-base.com/get/%s" oid-str))
            (view-buffer (x509-viewasn1)))
       (should view-buffer)
-      (check-content-helper view-buffer (format "OBJECT *:sha256 %s" oid-str))
-      (check-face-helper oid-str 'x509-oid-link-face)
-      ;; Check that oid is a button.
-      (goto-char (point-min))
-      (let ((oid-button (next-button (point-min))))
-        (should oid-button)
-        (when oid-button
-          (should
-           (string-match-p https (button-get oid-button 'url)))
-          (should
-           (string=
-            (format "Click to browse-url %s" https)
-            (button-get oid-button 'help-echo))))))))
+      (unwind-protect
+          (with-current-buffer view-buffer
+            (check-content-helper
+             view-buffer (format "OBJECT *:sha256 %s" oid-str))
+            (check-face-helper oid-str 'x509-oid-link-face)
+            ;; Check that oid is a button.
+            (goto-char (point-min))
+            (let ((oid-button (next-button (point-min))))
+              (should oid-button)
+              (when oid-button
+                (should (string-match-p https (button-get oid-button 'url)))
+                (should
+                 (string=
+                  (format "Click to browse-url %s" https)
+                  (button-get oid-button 'help-echo))))))
+        (kill-buffer view-buffer)))))
 
 (provide 'x509-mode-tests)
 ;;; x509-mode-tests.el ends here

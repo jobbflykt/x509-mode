@@ -1338,6 +1338,26 @@ account for the unused-bits byte."
           (+ hl add-one))
       0)))
 
+(defun x509--asn1-get-header-start ()
+  "Return current item's header start offset."
+  (x509--asn1-get-absolute-offset))
+
+(defun x509--asn1-get-header-end ()
+  "Return current item's header end offset."
+  (+ (x509--asn1-get-header-start) (x509--asn1-get-header-len)))
+
+(defun x509--asn1-get-value-length ()
+  "Return current item's value length"
+  (- (x509--asn1-get-total-length) (x509--asn1-get-header-len)))
+
+(defun x509--asn1-get-value-start ()
+  "Return current item's value start offset."
+  (x509--asn1-get-header-end))
+
+(defun x509--asn1-get-value-end ()
+  "Return current item's value end offset."
+  (+ (x509--asn1-get-value-start) (x509--asn1-get-value-length)))
+
 (defun x509--asn1-bin-oid-to-string (bytes)
   "Return dot representation of binary ASN.1 OBJECT IDENTIFIER BYTES."
   (let ((value 0)
@@ -1375,16 +1395,11 @@ account for the unused-bits byte."
     (save-excursion
       (save-match-data
         (while (re-search-forward "prim: OBJECT" nil t)
-          (when-let* ((header-length (x509--asn1-get-header-len))
-                      (total-length (x509--asn1-get-total-length))
-                      (value-length (- total-length header-length))
-                      (header-start (x509--asn1-get-absolute-offset))
-                      (header-end (+ header-start header-length))
-                      (value-start (+ header-start header-length))
-                      (value-end (+ value-start value-length))
-                      (bytes
+          (when-let* ((bytes
                        (x509--asn1-read-bin
-                        bin-buffer value-start value-length))
+                        bin-buffer
+                        (x509--asn1-get-value-start)
+                        (x509--asn1-get-value-length)))
                       (dot-string (x509--asn1-bin-oid-to-string bytes)))
             (end-of-line)
             (insert " " dot-string)))))
@@ -1676,17 +1691,12 @@ Store created overlays in `x509-asn1--hexl-overlays'."
   "Add overlay that spans currently active bytes in `x509-asn1-mode' buffer.
 The ASN.1 header uses `x509-asn1-hexl-header' face and the value uses the
 `x509-asn1-hexl-value' face."
-  (let* ((header-length (x509--asn1-get-header-len))
-         (total-length (x509--asn1-get-total-length))
-         (value-length (- total-length header-length))
-         (header-start (x509--asn1-get-absolute-offset))
-         (header-end (+ header-start header-length))
-         (value-start (+ header-start header-length))
-         (value-end (+ value-start value-length))
-         (header-stripes
-          (x509-asn1--hexl-buffer-offset-stripes header-start header-end))
-         (value-stripes
-          (x509-asn1--hexl-buffer-offset-stripes value-start value-end)))
+  (let ((header-stripes
+         (x509-asn1--hexl-buffer-offset-stripes
+          (x509--asn1-get-header-start) (x509--asn1-get-header-end)))
+        (value-stripes
+         (x509-asn1--hexl-buffer-offset-stripes
+          (x509--asn1-get-value-start) (x509--asn1-get-value-end))))
     (with-current-buffer x509-asn1--hexl-buffer
       (x509-asn1--remove-overlays)
       (x509-asn1--apply-overlay-stripes header-stripes 'x509-asn1-hexl-header)

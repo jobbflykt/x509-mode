@@ -273,6 +273,15 @@ Used with `(format x509-query-oid-url-format oid)'"
   :type 'string
   :group 'x509)
 
+(defcustom x509-show-oid-values nil
+  "Show object ids as dotted decimal strings is `x509-asn1-mode'
+
+Normally when OpenSSL knows an OID, it prints its name. It can be useful to
+also see its decimal value. This setting appends the decimal value to the
+symbolic name."
+  :type 'boolean
+  :group 'x509)
+
 (defcustom x509-swoop-separator ""
   "A string that separates items in a buffer created by `x509-swoop'."
   :type 'string

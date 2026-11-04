@@ -274,11 +274,11 @@ Used with `(format x509-query-oid-url-format oid)'"
   :group 'x509)
 
 (defcustom x509-show-oid-values nil
-  "Show object ids as dotted decimal strings is `x509-asn1-mode'
+  "Show object ids as dotted decimal strings in `x509-asn1-mode'.
 
-Normally when OpenSSL knows an OID, it prints its name. It can be useful to
-also see its decimal value. This setting appends the decimal value to the
-symbolic name."
+Normally when OpenSSL knows an OID, it prints its name.  It can be
+useful to also see its decimal value.  This setting appends the decimal
+value to the symbolic name."
   :type 'boolean
   :group 'x509)
 
@@ -1356,7 +1356,7 @@ account for the unused-bits byte."
   (+ (x509--asn1-get-header-start) (x509--asn1-get-header-len)))
 
 (defun x509--asn1-get-value-length ()
-  "Return current item's value length"
+  "Return current item's value length."
   (- (x509--asn1-get-total-length) (x509--asn1-get-header-len)))
 
 (defun x509--asn1-get-value-start ()

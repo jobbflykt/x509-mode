@@ -343,7 +343,8 @@ When `x509-warn-near-expire-days' is nil."
 
 (ert-deftest x509--generic-view ()
   "Test creating a view buffer."
-  (let ((expanded-args (concat x509-crl-default-arg " -inform PEM")))
+  (let ((expanded-args
+         "crl -inform PEM -text -noout -nameopt utf8 -nameopt multiline"))
     (setq x509--test-history nil)
     (with-temp-buffer
       (insert x509--test-pem-crl)
@@ -507,7 +508,7 @@ Repeat with `x509-dwim' which should produce the same result."
    'x509-viewpublickey 'x509-mode "Public-Key: (2048 bit)"))
 
 (ert-deftest x509-viewpkeyparam ()
-  "View DSA key parameters"
+  "View DSA key parameters."
   (view-test-helper
    '("DSA/ca_dsa_params.pem")
    'x509-viewpkeyparam
@@ -515,7 +516,7 @@ Repeat with `x509-dwim' which should produce the same result."
    "DSA-Parameters: (2048 bit)"))
 
 (ert-deftest x509-viewlegacykey-args ()
-  "Test x509-viewlegacykey using explicit arguments."
+  "Test `x509-viewlegacykey' using explicit arguments."
   (let ((x509--viewlegacykey-history nil)
         (key-file (find-testfile "CA/pki/key/jobbflykt.key")))
     (with-temp-buffer
@@ -557,7 +558,7 @@ Repeat with `x509-dwim' which should produce the same result."
    "UTF8STRING        :Hello x509-mode"))
 
 (ert-deftest x509-mode-faces ()
-  "Check font lock faces in x509-mode."
+  "Check font lock faces in `x509-mode'."
   (with-temp-buffer
     (insert "Certificate:\n")
     (insert "    Signature Algorithm: sha1WithRSAEncryption\n")
@@ -587,7 +588,7 @@ Repeat with `x509-dwim' which should produce the same result."
       (check-face-helper "1a:2b:3c:4d:5e:6f" 'x509-hex-string-face))))
 
 (ert-deftest x509-toggle-mode ()
-  "Toggle between x509-mode and x509-asn1-mode.
+  "Toggle between `x509-mode' and `x509-asn1-mode'.
 Ensure point is restored when switching between modes."
   (with-temp-buffer
     (insert-file-contents-literally (find-testfile "dhparams-2048.pem"))
@@ -663,7 +664,7 @@ Ensure point is restored when switching between modes."
       (should (= 62 (x509--asn1-get-absolute-offset))))))
 
 (ert-deftest x509-hexl-offset-start-end ()
-  "Test calculating hexl-mode buffer points from byte offsets."
+  "Test calculating `hexl-mode' buffer points from byte offsets."
   (should (= 11 (x509-asn1--hexl-offset-start 0)))
   (should (= 11 (x509-asn1--hexl-offset-end 0)))
   (should (= 13 (x509-asn1--hexl-offset-start 1)))
@@ -676,7 +677,7 @@ Ensure point is restored when switching between modes."
   (should (= 50 (x509-asn1--hexl-offset-end 16))))
 
 (ert-deftest x509-hexl-char-offset-start-end ()
-  "Test calculating hexl-mode char points."
+  "Test calculating `hexl-mode' char points."
   (should (= 52 (x509-asn1--hexl-char-offset-start 0)))
   (should (= 52 (x509-asn1--hexl-char-offset-end 0)))
   (should (= 53 (x509-asn1--hexl-char-offset-start 1)))
@@ -997,7 +998,7 @@ SEQUENCE             30 0C
     (should-not (x509-swoop))))
 
 (ert-deftest x509--asn1-read-bin-from-pem ()
-  "Populate a buffer with binary data and read it as bytes"
+  "Populate a buffer with binary data and read it as bytes."
   (let ((bin-buffer (get-buffer-create " bin-buf")))
     (with-temp-buffer
       (insert-file-contents-literally (find-testfile "public-key.pem"))
@@ -1012,7 +1013,7 @@ SEQUENCE             30 0C
     (should (equal '(#x00 #x01) (x509--asn1-read-bin bin-buffer #x48 2)))))
 
 (ert-deftest x509--asn1-read-bin-from-der ()
-  "Populate a buffer with binary data and read it as bytes"
+  "Populate a buffer with binary data and read it as bytes."
   (let ((bin-buffer (get-buffer-create " bin-buf")))
     (with-temp-buffer
       (insert-file-contents-literally (find-testfile "not-pki.der"))

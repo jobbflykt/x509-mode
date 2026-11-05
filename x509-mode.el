@@ -735,7 +735,14 @@ Return argument string."
       arguments
     (if (string-match "-inform \\(PEM\\|DER\\)" arguments)
         (replace-match encoding nil nil arguments 1)
-      (format "%s -inform %s" arguments encoding))))
+      ;; Put the -inform PEM after the first argument (the command). It's
+      ;; usually not meaningful to change it when editing the argument.
+      (let ((args (split-string arguments)))
+        (string-trim
+         (format "%s -inform %s %s"
+                 (or (car args) "")
+                 encoding
+                 (mapconcat #'identity (cdr args) " ")))))))
 
 (defun x509--generic-view (default history mode &optional input-buf output-buf)
   "Prepare an input buffer for data to be processed.

@@ -264,6 +264,35 @@ When `x509-warn-near-expire-days' is nil."
         (should-not (x509--pem-region-next-or-prev (current-buffer) 'prev))
         (should (= 1 (point)))))))
 
+(ert-deftest x509--pem-clean-diff ()
+  "Remove leading '+' or '-' from buffer.
+Assuming starting at a pem region."
+  (with-temp-buffer
+    (insert "-----BEGIN PKCS7-----\n" "-APA\n" "------END PKCS7-----\n")
+    (x509--pem-clean-diff)
+    (should
+     (string=
+      (buffer-string) "-----BEGIN PKCS7-----\nAPA\n-----END PKCS7-----\n")))
+  (with-temp-buffer
+    (insert "-----BEGIN PKCS7-----\n" "+APA\n" "+-----END PKCS7-----\n")
+    (x509--pem-clean-diff)
+    (should
+     (string=
+      (buffer-string) "-----BEGIN PKCS7-----\nAPA\n-----END PKCS7-----\n"))))
+
+(ert-deftest x509--pem-clean-base64 ()
+  "Remove leading and trailing non base64 chars from buffer.
+Assuming starting at a pem region."
+  (with-temp-buffer
+    (insert
+     "-----BEGIN PKCS7-----  \"'*\\\n"
+     "\"'*\\APA \"'*\\\n"
+     " \"'*\\-----END PKCS7----- \"'*\\\n")
+    (x509--pem-clean-base64)
+    (should
+     (string=
+      (buffer-string) "-----BEGIN PKCS7-----\nAPA\n-----END PKCS7-----"))))
+
 (ert-deftest x509--generate-input-buffer ()
   "Create buffer with valid data."
   ;; PEM region                llllllllllllllllllll20
@@ -912,11 +941,19 @@ SEQUENCE             30 0C
         (setq view-buffer (x509-dwim-next)))
       (should view-buffer)
       (check-content-helper view-buffer "EC-Parameters: (512 bit)")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-next)))
+      (should view-buffer)
+      (check-content-helper view-buffer "Private-Key: (256 bit)")
       ;; At end, next should fail
       (with-current-buffer view-buffer
         (should-not (x509-dwim-next)))
-      (check-content-helper view-buffer "EC-Parameters: (512 bit)")
+      (check-content-helper view-buffer "Private-Key: (256 bit)")
       ;; Go backward
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-prev)))
+      (should view-buffer)
+      (check-content-helper view-buffer "EC-Parameters: (512 bit)")
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-prev)))
       (should view-buffer)
@@ -989,6 +1026,8 @@ SEQUENCE             30 0C
           (should (re-search-forward "Public-Key:"))
           (should (re-search-forward x509-swoop-separator nil t))
           (should (re-search-forward "EC-Parameters: (512 bit)"))
+          (should (re-search-forward x509-swoop-separator nil t))
+          (should (re-search-forward "Private-Key: (256 bit)"))
           (should-not (re-search-forward x509-swoop-separator nil t))
           (x509-mode-kill-buffer)))
       (with-current-buffer src-buffer

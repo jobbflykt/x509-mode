@@ -1,0 +1,10 @@
+* Clean PEM regions
+- [ ] Break out function that strip non-base64 charters from the beginning
+  and end of lines in region. x509--strip-non-base64 (buffer begin end)
+- [ ] Write test function for x509--strip-non-base64
+- [ ] New function for stripping '\+' and '-' from bol in region if all lines in
+  region start with the one of '\+' and '-'. Useful when swooping diff buffers
+  that have new or erased PKI files. x509--strip-diff (buffer begin end)
+- [ ] Write test function for x509--strip-diff
+- [ ] Add test file with diff and add test that x509--strip-diff works as
+  intended.

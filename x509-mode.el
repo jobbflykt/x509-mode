@@ -572,6 +572,9 @@ Used to clean diffs that contain added or removed BEGIN/END stuff."
     (let* ((prefix
             (if (not (eobp))
                 (char-after)))
+           (char-at-bol-re
+            (if prefix
+                (concat "^" (regexp-quote (char-to-string prefix)))))
            (all-prefix prefix))
       (when (or (eq prefix ?+) (eq prefix ?-))
         ;; Check that all lines star with prefix
@@ -582,10 +585,7 @@ Used to clean diffs that contain added or removed BEGIN/END stuff."
         (when all-prefix
           (goto-char (point-min))
           (forward-line 1)
-          (while (re-search-forward (concat
-                                     "^"
-                                     (regexp-quote (char-to-string prefix)))
-                                    nil t)
+          (while (re-search-forward char-at-bol-re nil t)
             (replace-match "")
             ;; Next line so that ----- BEGIN is not found next iteration.
             (forward-line 1)))))))

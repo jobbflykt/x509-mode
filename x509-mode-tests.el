@@ -264,6 +264,35 @@ When `x509-warn-near-expire-days' is nil."
         (should-not (x509--pem-region-next-or-prev (current-buffer) 'prev))
         (should (= 1 (point)))))))
 
+(ert-deftest x509--pem-clean-diff ()
+  "Remove leading '+' or '-' from buffer.
+Assuming starting at a pem region."
+  (with-temp-buffer
+    (insert "-----BEGIN PKCS7-----\n" "-APA\n" "------END PKCS7-----\n")
+    (x509--pem-clean-diff)
+    (should
+     (string=
+      (buffer-string) "-----BEGIN PKCS7-----\nAPA\n-----END PKCS7-----\n")))
+  (with-temp-buffer
+    (insert "-----BEGIN PKCS7-----\n" "+APA\n" "+-----END PKCS7-----\n")
+    (x509--pem-clean-diff)
+    (should
+     (string=
+      (buffer-string) "-----BEGIN PKCS7-----\nAPA\n-----END PKCS7-----\n"))))
+
+(ert-deftest x509--pem-clean-base64 ()
+  "Remove leading and trailing non base64 chars from buffer.
+Assuming starting at a pem region."
+  (with-temp-buffer
+    (insert
+     "-----BEGIN PKCS7-----  \"'*\\\n"
+     "\"'*\\APA \"'*\\\n"
+     " \"'*\\-----END PKCS7----- \"'*\\\n")
+    (x509--pem-clean-base64)
+    (should
+     (string=
+      (buffer-string) "-----BEGIN PKCS7-----\nAPA\n-----END PKCS7-----"))))
+
 (ert-deftest x509--generate-input-buffer ()
   "Create buffer with valid data."
   ;; PEM region                llllllllllllllllllll20

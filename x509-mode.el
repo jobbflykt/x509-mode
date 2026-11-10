@@ -582,8 +582,13 @@ Used to clean diffs that contain added or removed BEGIN/END stuff."
         (when all-prefix
           (goto-char (point-min))
           (forward-line 1)
-          (replace-regexp
-           (concat "^" (regexp-quote (char-to-string prefix))) ""))))))
+          (while (re-search-forward (concat
+                                     "^"
+                                     (regexp-quote (char-to-string prefix)))
+                                    nil t)
+            (replace-match "")
+            ;; Next line so that ----- BEGIN is not found next iteration.
+            (forward-line 1)))))))
 
 (defun x509--pem-clean-base64 ()
   "Remove non base64 chars from beginning and end of lines.
@@ -592,10 +597,12 @@ Used to clean PEM regions defined in, for example, C-code."
   (save-excursion
     (goto-char (point-min))
     ;; Strip all non-base64 chars at beginning and end of lines.
-    (replace-regexp "^[^-A-Za-z0-9+=/]+\\|[^-A-Za-z0-9+=/]+$" "")
+    (while (re-search-forward "^[^-A-Za-z0-9+=/]+\\|[^-A-Za-z0-9+=/]+$" nil t)
+      (replace-match ""))
     ;; Strip \n from eol. Can be seen in C code.
     (goto-char (point-min))
-    (replace-regexp "\\\\n$" "")))
+    (while (re-search-forward "\\\\n$" nil t)
+      (replace-match ""))))
 
 (defun x509--generate-input-buffer ()
   "Return a buffer containing data to be processed by OpenSSL.

@@ -6,7 +6,7 @@
   in region start with the one of '\+' and '-'. Useful when swooping diff
   buffers that have new or erased PKI files. x509--pem-clean-diff
 - [ ] Write test function for x509--pem-clean-diff
-- [ ] Add a diff section to testfiles/multi.pem. For example EC/ca_key.pem in
+- [X] Add a diff section to testfiles/multi.pem. For example EC/ca_key.pem in
   diff format.
-- [ ] Update test x509-dwim-next-or-prev to check for the added diff section.
-- [ ] Update test x509-swoop to check for the added diff section.
+- [X] Update test x509-dwim-next-or-prev to check for the added diff section.
+- [X] Update test x509-swoop to check for the added diff section.

@@ -912,11 +912,19 @@ SEQUENCE             30 0C
         (setq view-buffer (x509-dwim-next)))
       (should view-buffer)
       (check-content-helper view-buffer "EC-Parameters: (512 bit)")
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-next)))
+      (should view-buffer)
+      (check-content-helper view-buffer "Private-Key: (256 bit)")
       ;; At end, next should fail
       (with-current-buffer view-buffer
         (should-not (x509-dwim-next)))
-      (check-content-helper view-buffer "EC-Parameters: (512 bit)")
+      (check-content-helper view-buffer "Private-Key: (256 bit)")
       ;; Go backward
+      (with-current-buffer view-buffer
+        (setq view-buffer (x509-dwim-prev)))
+      (should view-buffer)
+      (check-content-helper view-buffer "EC-Parameters: (512 bit)")
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-prev)))
       (should view-buffer)
@@ -989,6 +997,8 @@ SEQUENCE             30 0C
           (should (re-search-forward "Public-Key:"))
           (should (re-search-forward x509-swoop-separator nil t))
           (should (re-search-forward "EC-Parameters: (512 bit)"))
+          (should (re-search-forward x509-swoop-separator nil t))
+          (should (re-search-forward "Private-Key: (256 bit)"))
           (should-not (re-search-forward x509-swoop-separator nil t))
           (x509-mode-kill-buffer)))
       (with-current-buffer src-buffer

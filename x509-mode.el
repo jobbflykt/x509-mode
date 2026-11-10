@@ -577,7 +577,7 @@ Used to clean diffs that contain added or removed BEGIN/END stuff."
                 (concat "^" (regexp-quote (char-to-string prefix)))))
            (all-prefix prefix))
       (when (or (eq prefix ?+) (eq prefix ?-))
-        ;; Check that all lines star with prefix
+        ;; Check that all lines start with prefix
         (while (and all-prefix (not (eobp)))
           (setq all-prefix (eq prefix (char-after)))
           (forward-line 1))

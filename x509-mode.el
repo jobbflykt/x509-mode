@@ -559,6 +559,50 @@ Ex \"CERTIFICATE\" or \"DH PARAMETERS\""
             (if (re-search-forward "-----BEGIN \\(.*?\\)-----" (cdr region) t)
                 (match-string-no-properties 1)))))))
 
+(defun x509--pem-clean-diff ()
+  "Remove '+' and '-' from beginning of lines.
+
+Used to clean diffs that contain added or removed BEGIN/END stuff."
+  (save-excursion
+    ;; Skip the first line, it's assumed to begin with "----- BEGIN".
+    (goto-char (point-min))
+    (forward-line 1)
+    ;; Check if the rest of the lines begin with the same prefix char.
+    (let* ((prefix
+            (if (not (eobp))
+                (char-after)))
+           (char-at-bol-re
+            (if prefix
+                (concat "^" (regexp-quote (char-to-string prefix)))))
+           (all-prefix prefix))
+      (when (or (eq prefix ?+) (eq prefix ?-))
+        ;; Check that all lines start with prefix
+        (while (and all-prefix (not (eobp)))
+          (setq all-prefix (eq prefix (char-after)))
+          (forward-line 1))
+        ;; If all lines star with prefix. Remove it.
+        (when all-prefix
+          (goto-char (point-min))
+          (forward-line 1)
+          (while (re-search-forward char-at-bol-re nil t)
+            (replace-match "")
+            ;; Next line so that ----- BEGIN is not found next iteration.
+            (forward-line 1)))))))
+
+(defun x509--pem-clean-base64 ()
+  "Remove non base64 chars from beginning and end of lines.
+
+Used to clean PEM regions defined in, for example, C-code."
+  (save-excursion
+    (goto-char (point-min))
+    ;; Strip all non-base64 chars at beginning and end of lines.
+    (while (re-search-forward "^[^-A-Za-z0-9+=/]+\\|[^-A-Za-z0-9+=/]+$" nil t)
+      (replace-match ""))
+    ;; Strip \n from eol. Can be seen in C code.
+    (goto-char (point-min))
+    (while (re-search-forward "\\\\n$" nil t)
+      (replace-match ""))))
+
 (defun x509--generate-input-buffer ()
   "Return a buffer containing data to be processed by OpenSSL.
 
@@ -593,17 +637,10 @@ If point is not in a PEM region, the whole buffer is used."
       (if data
           (insert data)
         (insert-buffer-substring-no-properties src-buffer))
-      ;; If in PEM region, try to strip non base-64 characters
+      ;; If in PEM region, try to clean up base64 encoding.
       (when region
-        (goto-char (point-min))
-        (while (re-search-forward "^[^-A-Za-z0-9+=/]+\\|[^-A-Za-z0-9+=/]+$"
-                                  nil
-                                  t)
-          (replace-match "" nil nil))
-        ;; Strip \n from eol. Can be seen in C code.
-        (goto-char (point-min))
-        (while (re-search-forward "\\\\n$" nil t)
-          (replace-match "" nil nil)))
+        (x509--pem-clean-diff)
+        (x509--pem-clean-base64))
       new-buf)))
 
 (defmacro x509-defvar-local-persistent (var-name docstring)

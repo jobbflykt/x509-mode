@@ -1443,7 +1443,10 @@ account for the unused-bits byte."
 (defun x509--asn1-insert-dot-oid ()
   "Add dot OID to all prim: OBJECT in current buffer.
 
-   41:d=2  hl=2 l=   8 prim: OBJECT :prime256v1 1.2.840.10045.3.1.7"
+   41:d=2  hl=2 l=   8 prim: OBJECT :prime256v1 1.2.840.10045.3.1.7
+
+But only of the object is known.  If OBJECT :<OID> then don't add OID
+again."
   (let* ((buffer-read-only nil)
          (src-buffer x509--shadow-buffer)
          (bin-buffer
@@ -1451,15 +1454,18 @@ account for the unused-bits byte."
     (x509--asn1-create-binary-src-buffer src-buffer bin-buffer)
     (save-excursion
       (save-match-data
-        (while (re-search-forward "prim: OBJECT" nil t)
-          (when-let* ((bytes
-                       (x509--asn1-read-bin
-                        bin-buffer
-                        (x509--asn1-get-value-start)
-                        (x509--asn1-get-value-length)))
-                      (dot-string (x509--asn1-bin-oid-to-string bytes)))
-            (end-of-line)
-            (insert " " dot-string)))))
+        (while (re-search-forward "prim: OBJECT *?:" nil t)
+          ;; Don't add OID if already there, i.e. when openssl doesn't know
+          ;; the OID and prints its dotted decimal representation.
+          (unless (looking-at "[0-2]\\(?:\\.\\(?:0\\|[1-9][0-9]*\\)\\)+ *$")
+            (when-let* ((bytes
+                         (x509--asn1-read-bin
+                          bin-buffer
+                          (x509--asn1-get-value-start)
+                          (x509--asn1-get-value-length)))
+                        (dot-string (x509--asn1-bin-oid-to-string bytes)))
+              (end-of-line)
+              (insert " " dot-string))))))
     (kill-buffer bin-buffer)
     (setq buffer-read-only t)))
 

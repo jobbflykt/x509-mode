@@ -1,4 +1,3 @@
-# -*- eval: (ethan-wspace-mode -1); -*-
 # openssl/crypto/x509/t_x509.c
 Certificate:
 Data:

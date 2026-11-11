@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/jobbflykt/x509-mode
 
 ;; Package-Version: 2.1.0
-;; Package-Requires: ((emacs "25.1") (compat "29.1"))
+;; Package-Requires: ((emacs "29.4"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -73,7 +73,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'compat)
 
 (defgroup x509 nil
   "View certificates, CRLs, keys and other related files using OpenSSL."

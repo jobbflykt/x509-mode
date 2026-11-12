@@ -345,10 +345,15 @@ For simple cases, COMPOSE-URL-FN returns its argument unchanged."
    'x509-browse-url-face
    (lambda (url) url)))
 
+(defvar x509--oid-regexp "[0-2]\\(?:\\.\\(?:0\\|[1-9][0-9]*\\)\\)\\{2,\\}"
+  "OID regexp.  Starts with 0, 1, or 2 followed by at least two .N.
+Does match invalid OIDs where N>=40 if first digit is 0 or 1.
+A two-number OID is also valid but that risks matching to much.")
+
 (defun x509--mark-browse-oid ()
   "Make OIDs clickable by making them buttons."
   (x509--mark-browse-url-links
-   "\\(?:[0-9]+\\.\\)\\{3,\\}[0-9]+" 'x509-oid-link-face
+   x509--oid-regexp 'x509-oid-link-face
    (lambda (oid)
      ;; Require OID at least 4 nodes deep to avoid
      ;; false positives.
@@ -1445,7 +1450,7 @@ account for the unused-bits byte."
 
    41:d=2  hl=2 l=   8 prim: OBJECT :prime256v1 1.2.840.10045.3.1.7
 
-But only of the object is known.  If OBJECT :<OID> then don't add OID
+But only if the object is known.  If OBJECT :<OID> then don't add OID
 again."
   (let* ((buffer-read-only nil)
          (src-buffer x509--shadow-buffer)
@@ -1457,7 +1462,7 @@ again."
         (while (re-search-forward "prim: OBJECT *?:" nil t)
           ;; Don't add OID if already there, i.e. when openssl doesn't know
           ;; the OID and prints its dotted decimal representation.
-          (unless (looking-at "[0-2]\\(?:\\.\\(?:0\\|[1-9][0-9]*\\)\\)+ *$")
+          (unless (looking-at x509--oid-regexp)
             (when-let* ((bytes
                          (x509--asn1-read-bin
                           bin-buffer

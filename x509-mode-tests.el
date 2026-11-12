@@ -146,11 +146,12 @@ When `x509-warn-near-expire-days' is nil."
 (ert-deftest x509--mark-browse-oid ()
   "Verify that an OID is buttonized and has the expected properties."
   (with-temp-buffer
-    (let* ((oid "1.2.898.22")
+    (let* ((oid "1.2.898")
            (expected-url (format x509-query-oid-url-format oid))
-           (too-short "1.2.3")
+           (invalid "4.5.6")            ; Starts with 4 which is illegal.
+           (too-short  "1.0")
            button)
-      (insert "xxx " too-short "  " oid " yyy")
+      (insert "xxx " invalid "  " too-short "  " oid " yyy")
       (x509--mark-browse-oid)
       (should (setq button (next-button (point-min))))
       (when button

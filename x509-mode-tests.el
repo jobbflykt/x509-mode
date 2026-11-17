@@ -516,7 +516,7 @@ Repeat with `x509-dwim' which should produce the same result."
 (ert-deftest x509-viewec ()
   "View elliptic curve parameters."
   (view-test-helper
-   '("ec-params.pem") 'x509-viewec 'x509-mode "EC-Parameters: (512 bit)"))
+   '("ec-params.pem") 'x509-viewec 'x509-mode "EC-Parameters: (256 bit"))
 
 (ert-deftest x509-viewkey ()
   "View plaintext private key."
@@ -941,20 +941,20 @@ SEQUENCE             30 0C
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-next)))
       (should view-buffer)
-      (check-content-helper view-buffer "EC-Parameters: (512 bit)")
+      (check-content-helper view-buffer "EC-Parameters: (256 bit")
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-next)))
       (should view-buffer)
-      (check-content-helper view-buffer "Private-Key: (256 bit)")
+      (check-content-helper view-buffer "Private-Key: (256 bit")
       ;; At end, next should fail
       (with-current-buffer view-buffer
         (should-not (x509-dwim-next)))
-      (check-content-helper view-buffer "Private-Key: (256 bit)")
+      (check-content-helper view-buffer "Private-Key: (256 bit")
       ;; Go backward
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-prev)))
       (should view-buffer)
-      (check-content-helper view-buffer "EC-Parameters: (512 bit)")
+      (check-content-helper view-buffer "EC-Parameters: (256 bit")
       (with-current-buffer view-buffer
         (setq view-buffer (x509-dwim-prev)))
       (should view-buffer)
@@ -1026,9 +1026,9 @@ SEQUENCE             30 0C
           (should (re-search-forward x509-swoop-separator nil t))
           (should (re-search-forward "Public-Key:"))
           (should (re-search-forward x509-swoop-separator nil t))
-          (should (re-search-forward "EC-Parameters: (512 bit)"))
+          (should (re-search-forward "EC-Parameters: (256 bit"))
           (should (re-search-forward x509-swoop-separator nil t))
-          (should (re-search-forward "Private-Key: (256 bit)"))
+          (should (re-search-forward "Private-Key: (256 bit"))
           (should-not (re-search-forward x509-swoop-separator nil t))
           (x509-mode-kill-buffer)))
       (with-current-buffer src-buffer

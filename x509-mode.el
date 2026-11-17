@@ -1695,7 +1695,7 @@ Used to display hexl buffer in `x509-asn1-mode'."
   "Check if POINT is visible in a window in BUFFER."
   (cl-find-if
    (lambda (w)
-     (and (>= point (window-start w)) (<= point (window-end w))))
+     (and (>= point (window-start w)) (<= point (window-end w t))))
    (get-buffer-window-list buffer)))
 
 (defun x509--scroll-window (buffer point)

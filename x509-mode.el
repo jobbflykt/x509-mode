@@ -1459,7 +1459,7 @@ again."
     (x509--asn1-create-binary-src-buffer src-buffer bin-buffer)
     (save-excursion
       (save-match-data
-        (while (re-search-forward "prim: +OBJECT *?:" nil t)
+        (while (re-search-forward "prim: +OBJECT *:" nil t)
           ;; Don't add OID if already there, i.e. when openssl doesn't know
           ;; the OID and prints its dotted decimal representation.
           (unless (looking-at x509--oid-regexp)

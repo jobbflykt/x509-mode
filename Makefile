@@ -6,15 +6,6 @@ TOP := .
 LOAD_PATH += -L $(TOP)
 EMACS ?= emacs
 BATCH = $(EMACS) -Q --batch $(LOAD_PATH)
-REQUIRES = compat
-PACKAGES="(progn \
-  (require 'package) \
-  (package-initialize) \
-  (dolist (pkg '(${REQUIRES})) \
-    (unless (package-installed-p pkg) \
-      (unless (assoc pkg package-archive-contents) \
-        (package-refresh-contents)) \
-      (package-install pkg))))"
 
 # Add package-lint and relint for linting
 LINT_REQUIRES = package-lint relint
@@ -34,7 +25,7 @@ ELCS = $(ELS:.el=.elc)
 lisp: $(ELCS)
 
 %.elc: %.el
-	$(BATCH) --eval $(PACKAGES) --eval \
+	$(BATCH) --eval \
 	"(progn \
 	  (when (file-exists-p \"$@\") (delete-file \"$@\")) \
 	  (setq byte-compile-error-on-warn t))" \
@@ -42,7 +33,7 @@ lisp: $(ELCS)
 
 test:
 	openssl version
-	$(BATCH) --eval $(PACKAGES) --eval "\
+	$(BATCH) --eval "\
 	(progn \
 	  (message \"%s\" (emacs-version)) \
 	  (load-file \"$(TOP)/x509-mode.el\") \
@@ -56,7 +47,7 @@ package-lint:
 	  x509-mode.el
 
 checkdoc:
-	$(BATCH) --eval $(PACKAGES) --eval "\
+	$(BATCH) --eval "\
 	(progn \
 	  (require 'checkdoc) \
 	  (find-file \"x509-mode.el\") \

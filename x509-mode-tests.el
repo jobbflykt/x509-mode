@@ -1098,6 +1098,9 @@ SEQUENCE             30 0C
     (insert-file-contents-literally (find-testfile "one-oid.der"))
     (goto-char (point-min))
     (let* ((x509-show-oid-values t)
+           ;; Add -i for indentation just to mix the formatting up a bit.
+           ;; Both should work.
+           (x509-asn1parse-default-arg "asn1parse -i")
            (oid-str "2.16.840.1.101.3.4.2.1")
            (https (format "https://oid-base.com/get/%s" oid-str))
            (view-buffer (x509-viewasn1)))

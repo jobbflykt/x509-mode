@@ -1086,6 +1086,37 @@ SEQUENCE             30 0C
     (insert "-----BEGIN nothing----- -----END nothing-----")
     (should-not (x509-swoop))))
 
+(ert-deftest x509-swoop-keeps-view-bindings ()
+  "Disable view commands only in the swoop buffers."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "multi.pem"))
+    (goto-char (point-min))
+    (let ((source (current-buffer))
+          view-buffer
+          swoop-buffer)
+      (unwind-protect
+          (progn
+            (setq view-buffer (x509-viewcert))
+            (with-current-buffer source
+              (setq swoop-buffer (x509-swoop)))
+            (dolist (binding
+                     '(("t" . x509-toggle-mode)
+                       ("e" . x509-edit-params)
+                       ("n" . x509-dwim-next)
+                       ("p" . x509-dwim-prev)))
+              (with-current-buffer view-buffer
+                (should
+                 (eq (local-key-binding (kbd (car binding))) (cdr binding))))
+              (with-current-buffer swoop-buffer
+                (should-not (local-key-binding (kbd (car binding))))))
+            (with-current-buffer swoop-buffer
+              (should
+               (eq (local-key-binding (kbd "q")) 'x509-mode-kill-buffer))))
+        (when (buffer-live-p swoop-buffer)
+          (kill-buffer swoop-buffer))
+        (when (buffer-live-p view-buffer)
+          (kill-buffer view-buffer))))))
+
 (ert-deftest x509--asn1-read-bin-from-pem ()
   "Populate a buffer with binary data and read it as bytes."
   (let ((bin-buffer (get-buffer-create " bin-buf")))

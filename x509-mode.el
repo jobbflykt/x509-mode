@@ -1536,27 +1536,14 @@ Return updated argument string."
 (defun x509--asn1-offset-strparse (command)
   "Add -offset N or -strparse N to command line and redisplay.
 COMMAND must be either \"-offset\" or \"-strparse\".
-When \"-offset\", N i set to current offset + offset on line + header length.
-When \"-strparse\", N i set to current offset + offset on line.
-
-Mileage may vary if mixing calls to strparse and offset. We try
-to get it right but it can get confusing."
-  (let* ((line-offset (x509--asn1-get-offset))
-         (header-len (x509--asn1-get-header-len))
-         (strparsep (string= command "-strparse"))
-         (add-header
-          (if strparsep
-              0
-            header-len))
-         (top (car x509--x509-asn1-mode-offset-stack))
-         (current-offset
-          (if top
-              (+ (nth 1 top)
-                 (if strparsep
-                     (nth 2 top)
-                   0))
-            0))
-         (new-offset (+ current-offset line-offset add-header))
+For \"-offset\", use the absolute offset of the selected item's value.
+For \"-strparse\", use the absolute offset of the selected item's header."
+  (let* ((header-len (x509--asn1-get-header-len))
+         (item-offset (x509--asn1-get-absolute-offset))
+         (new-offset
+          (if (string= command "-strparse")
+              item-offset
+            (+ item-offset header-len)))
          (new-args
           (x509--asn1-update-command-line-start-arg
            (or x509--x509-asn1-mode-shadow-arguments

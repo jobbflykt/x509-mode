@@ -148,8 +148,8 @@ When `x509-warn-near-expire-days' is nil."
   (with-temp-buffer
     (let* ((oid "1.2.898")
            (expected-url (format x509-query-oid-url-format oid))
-           (invalid "4.5.6")            ; Starts with 4 which is illegal.
-           (too-short  "1.0")
+           (invalid "4.5.6") ; Starts with 4 which is illegal.
+           (too-short "1.0")
            button)
       (insert "xxx " invalid "  " too-short "  " oid " yyy")
       (x509--mark-browse-oid)
@@ -911,6 +911,26 @@ SEQUENCE             30 0C
             (x509-asn1-offset-up)
             (should (looking-at "    2:d=1  hl=2 l=  10 prim: BIT STRING")))
         (kill-buffer result-buffer)))))
+
+(ert-deftest x509-asn1-mixed-navigation ()
+  "Mix -offset and -strparse on nested BIT STRING."
+  (dolist (commands
+           '((x509-asn1-strparse x509-asn1-offset-down)
+             (x509-asn1-offset-down x509-asn1-strparse)))
+    (with-temp-buffer
+      (insert-file-contents-literally (find-testfile "nested_bitstrings.bin"))
+      (let ((result-buffer (x509-viewasn1)))
+        (unwind-protect
+            (with-current-buffer result-buffer
+              (forward-line 1)
+              (funcall (car commands))
+              (should (= 5 (x509--asn1-get-absolute-offset)))
+              (funcall (cadr commands))
+              (should (= 8 (x509--asn1-get-absolute-offset)))
+              (should (looking-at " *0:d=0 +hl=2 l= *4 prim: BIT STRING"))
+              (x509-asn1-offset-up)
+              (should (= 5 (x509--asn1-get-absolute-offset))))
+          (kill-buffer result-buffer))))))
 
 (defun check-content-helper (buffer expected-string)
   "Check that BUFFER contain the regex EXPECTED-STRING."

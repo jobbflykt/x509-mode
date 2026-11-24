@@ -413,6 +413,28 @@ Assuming starting at a pem region."
      (equal args (x509--read-arguments "PROMPT" args 'x509--test-history)))
     (should (equal x509--test-history (list args)))))
 
+(ert-deftest x509--add-inform-spec ()
+  "Rewrite only the input format option and preserve other argument values."
+  (dolist (test
+           '(("x509 -in \"My  Certificate.pem\" -passin \"\"" ("x509"
+               "-inform"
+               "DER"
+               "-in"
+               "My  Certificate.pem"
+               "-passin"
+               ""))
+             ("x509 -in \"pkeyparam -inform PEM.pem\""
+              ("x509" "-inform" "DER" "-in" "pkeyparam -inform PEM.pem"))
+             ("x509 -in \"a	b\" -inform \"PEM\" -noout"
+              ("x509" "-in" "a\tb" "-inform" "DER" "-noout"))
+             ("pkeyparam -in \"My  Parameters.pem\""
+              ("pkeyparam" "-in" "My  Parameters.pem"))))
+    (should
+     (equal
+      (split-string-and-unquote
+       (x509--add-inform-spec (car test) "DER"))
+      (cadr test)))))
+
 (ert-deftest x509--generic-view ()
   "Test creating a view buffer."
   (let ((expanded-args
@@ -1040,6 +1062,35 @@ SEQUENCE             30 0C
       ;; Kill it
       (with-current-buffer view-buffer
         (x509-mode-kill-buffer)))))
+
+(ert-deftest x509-dwim-navigation-tracks-viewed-pem ()
+  "Navigate from the viewed block after source edits and cursor movement."
+  (let ((source (generate-new-buffer " *x509-navigation-source*"))
+        view)
+    (unwind-protect
+        (progn
+          (with-current-buffer source
+            (insert-file-contents-literally (find-testfile "multi.pem"))
+            (goto-char (point-min))
+            (setq view (x509-viewcert)))
+          (check-content-helper view "Certificate:")
+          (with-current-buffer source
+            (goto-char (point-min))
+            (insert "Text inserted before the certificate\n")
+            (goto-char (point-max)))
+          (with-current-buffer view
+            (let ((next-view (x509-dwim-next)))
+              (should (buffer-live-p next-view))
+              (setq view next-view)))
+          (check-content-helper view "Certificate Request:")
+          (kill-buffer source)
+          (with-current-buffer view
+            (should-not (x509-dwim-prev)))
+          (should (buffer-live-p view)))
+      (when (buffer-live-p view)
+        (kill-buffer view))
+      (when (buffer-live-p source)
+        (kill-buffer source)))))
 
 (ert-deftest x509-dwim-next-or-prev-asn1 ()
   "Go forward and backward in `x509-asn1-mode'."

@@ -999,6 +999,35 @@ SEQUENCE             30 0C
       (with-current-buffer view-buffer
         (x509-mode-kill-buffer)))))
 
+(ert-deftest x509-dwim-navigation-tracks-viewed-pem ()
+  "Navigate from the viewed block after source edits and cursor movement."
+  (let ((source (generate-new-buffer " *x509-navigation-source*"))
+        view)
+    (unwind-protect
+        (progn
+          (with-current-buffer source
+            (insert-file-contents-literally (find-testfile "multi.pem"))
+            (goto-char (point-min))
+            (setq view (x509-viewcert)))
+          (check-content-helper view "Certificate:")
+          (with-current-buffer source
+            (goto-char (point-min))
+            (insert "Text inserted before the certificate\n")
+            (goto-char (point-max)))
+          (with-current-buffer view
+            (let ((next-view (x509-dwim-next)))
+              (should (buffer-live-p next-view))
+              (setq view next-view)))
+          (check-content-helper view "Certificate Request:")
+          (kill-buffer source)
+          (with-current-buffer view
+            (should-not (x509-dwim-prev)))
+          (should (buffer-live-p view)))
+      (when (buffer-live-p view)
+        (kill-buffer view))
+      (when (buffer-live-p source)
+        (kill-buffer source)))))
+
 (ert-deftest x509-dwim-next-or-prev-asn1 ()
   "Go forward and backward in `x509-asn1-mode'."
   (with-temp-buffer

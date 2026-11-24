@@ -663,6 +663,11 @@ Make it persist during major mode change."
  x509--src-buffer "Original buffer where x509 view command was run.")
 
 (x509-defvar-local-persistent
+ x509--src-pem-region-start
+ "Marker (position) at the start of the PEM block.
+Used for navigating to the previous and next PEM block.")
+
+(x509-defvar-local-persistent
  x509--shadow-buffer "Input buffer used for OpenSSL command.")
 
 (x509-defvar-local-persistent
@@ -802,6 +807,12 @@ non-'nil', use that instead of creating a new one.
 
 Switch to resulting buffer and return it."
   (let* ((src-buffer (current-buffer))
+         (pem-region
+          (unless input-buf
+            (x509--pem-region)))
+         (pem-region-start
+          (when pem-region
+            (copy-marker (car pem-region) t)))
          (in-buf (or input-buf (x509--generate-input-buffer)))
          (encoding (x509--buffer-encoding in-buf))
          (initial (x509--add-inform-spec default encoding))
@@ -813,7 +824,9 @@ Switch to resulting buffer and return it."
     (unless (bound-and-true-p x509--src-buffer)
       ;; Remember the original source buffer unless already set.
       ;; Which is can be if toggling between modes.
-      (setq x509--src-buffer src-buffer))
+      (setq
+       x509--src-buffer src-buffer
+       x509--src-pem-region-start pem-region-start))
     ;; Remember what arguments where used.
     (if (eq mode 'x509-mode)
         (setq x509--x509-mode-shadow-arguments args)
@@ -1131,15 +1144,29 @@ If no next/prev region, leave point unchanged."
             new-region)))))
 
 (defun x509--dwim-next-or-prev (direction)
-  "Look for a PEM region before of after the current one.
+  "Look for a PEM region before or after the current one.
 DIRECTION is either \\='next or \\='prev
 If found, kill current buffer, switch to src buffer and call `x509-dwim'.
 Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
-  (if (not (bound-and-true-p x509--src-buffer))
-      (message "Not in an x509 buffer")
-    ;; Find prev region in original buffer
-    (let* ((new-region
-            (x509--pem-region-next-or-prev x509--src-buffer direction))
+  (cond
+   ((not (bound-and-true-p x509--src-buffer))
+    (message "Not in an x509 buffer")
+    nil)
+   ((not (buffer-live-p x509--src-buffer))
+    (message "The source buffer is gone")
+    nil)
+   (t
+    (let* ((src-buffer x509--src-buffer)
+           (start
+            (and x509--src-pem-region-start
+                 (marker-position x509--src-pem-region-start)))
+           (new-region
+            (with-current-buffer src-buffer
+              (save-excursion
+                (when (and start (<= (point-min) start (point-max)))
+                  (goto-char start)
+                  (when (looking-at-p "-----BEGIN ")
+                    (x509--pem-region-next-or-prev src-buffer direction))))))
            (name
             (if (eq direction 'next)
                 "next"
@@ -1148,8 +1175,7 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
           (progn
             (message "No %s" name)
             nil)
-        (let ((src-buffer x509--src-buffer)
-              (current-mode major-mode))
+        (let ((current-mode major-mode))
           (x509-mode-kill-buffer)
           (with-current-buffer src-buffer
             (goto-char (car new-region))
@@ -1161,7 +1187,7 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
                  'x509--viewasn1-history 'x509-asn1-mode)
               ;; Else determine type and do x509-mode. Only consider PEM
               ;; regions.
-              (x509--do-dwim t))))))))
+              (x509--do-dwim t)))))))))
 
 ;; ---------------------------------------------------------------------------
 ;;;###autoload

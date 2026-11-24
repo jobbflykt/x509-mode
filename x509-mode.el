@@ -783,20 +783,28 @@ Return argument string."
 
 (defun x509--add-inform-spec (arguments encoding)
   "Add or modify \"-inform ENCODING\" in ARGUMENTS."
-  ;; pkeyparam is an exception. It only accepts PEM coding and doesn't support
-  ;; an -inform parameter.
-  (if (string-match-p "pkeyparam" arguments)
-      arguments
-    (if (string-match "-inform \\(PEM\\|DER\\)" arguments)
-        (replace-match encoding nil nil arguments 1)
-      ;; Put the -inform PEM after the first argument (the command). It's
-      ;; usually not meaningful to change it when editing the argument.
-      (let ((args (split-string arguments)))
-        (string-trim
-         (format "%s -inform %s %s"
-                 (or (car args) "")
-                 encoding
-                 (mapconcat #'identity (cdr args) " ")))))))
+  (let ((args (split-string-and-unquote arguments)))
+    ;; pkeyparam only accepts PEM and does not support -inform.
+    (if (equal (car args) "pkeyparam")
+        arguments
+      (let ((inform (member "-inform" (cdr args))))
+        (if inform
+            (setcdr inform (cons encoding (cddr inform)))
+          (setq args
+                (append
+                 (and args (list (car args)))
+                 (list "-inform" encoding)
+                 (cdr args)))))
+      ;; Quote only arguments that needs it to keep the command line clean
+      ;; looking.
+      (mapconcat (lambda (arg)
+                   ;; is empty or contains ", \ or whitespace -> quote
+                   (if (or (equal arg "")
+                           (string-match-p (rx (or space "\\" "\"")) arg))
+                       (prin1-to-string arg)
+                     arg))
+                 args
+                 " "))))
 
 (defun x509--generic-view (default history mode &optional input-buf output-buf)
   "Prepare an input buffer for data to be processed.

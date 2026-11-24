@@ -1063,6 +1063,28 @@ SEQUENCE             30 0C
       (with-current-buffer view-buffer
         (x509-mode-kill-buffer)))))
 
+(ert-deftest x509-dwim-navigation-from-outside-known-pem ()
+  "Open the first recognized block and navigate from it."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "multi.pem"))
+    (goto-char (point-min))
+    (forward-line 24)
+    (let* ((source (current-buffer))
+           (start (point))
+           (view (x509-dwim)))
+      (unwind-protect
+          (progn
+            (check-content-helper view "Certificate:")
+            (with-current-buffer source
+              (should (= (point) start)))
+            (with-current-buffer view
+              (let ((next-view (x509-dwim-next)))
+                (should (buffer-live-p next-view))
+                (setq view next-view)))
+            (check-content-helper view "Certificate Request:"))
+        (when (buffer-live-p view)
+          (kill-buffer view))))))
+
 (ert-deftest x509-dwim-navigation-tracks-viewed-pem ()
   "Navigate from the viewed block after source edits and cursor movement."
   (let ((source (generate-new-buffer " *x509-navigation-source*"))

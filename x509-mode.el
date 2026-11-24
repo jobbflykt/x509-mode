@@ -572,6 +572,18 @@ Ex \"CERTIFICATE\" or \"DH PARAMETERS\""
             (if (re-search-forward "-----BEGIN \\(.*?\\)-----" (cdr region) t)
                 (match-string-no-properties 1)))))))
 
+(defun x509--first-pem-region ()
+  "Return the first recognized PEM region in the accessible buffer."
+  (save-excursion
+    (save-match-data
+      (goto-char (point-min))
+      (let (region)
+        (while (and (not region) (search-forward "-----BEGIN " nil t))
+          (goto-char (match-beginning 0))
+          (setq region (x509--pem-region))
+          (forward-char 1))
+        region))))
+
 (defun x509--pem-clean-diff ()
   "Remove '+' and '-' from beginning of lines.
 
@@ -1298,9 +1310,25 @@ Return the output buffer or nil"
 ;; ---------------------------------------------------------------------------
 ;;;###autoload
 (defun x509-dwim ()
-  "Guess the type of object and call the corresponding view-function."
+  "Guess the type of object and call the corresponding view-function.
+Use the recognized PEM block at point, or the first recognized PEM block
+if point is outside one.  When there is no such block, probe the buffer
+with OpenSSL."
   (interactive)
-  (x509--do-dwim nil))
+  (let ((region
+         (unless (x509--pem-region)
+           (x509--first-pem-region))))
+    (if region
+        (let ((source (current-buffer))
+              (source-point (point)))
+          (unwind-protect
+              (progn
+                (goto-char (car region))
+                (x509--do-dwim t))
+            (when (buffer-live-p source)
+              (with-current-buffer source
+                (goto-char source-point)))))
+      (x509--do-dwim nil))))
 
 ;; ---------------------------------------------------------------------------
 ;;;###autoload

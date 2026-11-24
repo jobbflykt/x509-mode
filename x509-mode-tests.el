@@ -371,6 +371,28 @@ Assuming starting at a pem region."
      (equal args (x509--read-arguments "PROMPT" args 'x509--test-history)))
     (should (equal x509--test-history (list args)))))
 
+(ert-deftest x509--add-inform-spec ()
+  "Rewrite only the input format option and preserve other argument values."
+  (dolist (test
+           '(("x509 -in \"My  Certificate.pem\" -passin \"\"" ("x509"
+               "-inform"
+               "DER"
+               "-in"
+               "My  Certificate.pem"
+               "-passin"
+               ""))
+             ("x509 -in \"pkeyparam -inform PEM.pem\""
+              ("x509" "-inform" "DER" "-in" "pkeyparam -inform PEM.pem"))
+             ("x509 -in \"a	b\" -inform \"PEM\" -noout"
+              ("x509" "-in" "a\tb" "-inform" "DER" "-noout"))
+             ("pkeyparam -in \"My  Parameters.pem\""
+              ("pkeyparam" "-in" "My  Parameters.pem"))))
+    (should
+     (equal
+      (split-string-and-unquote
+       (x509--add-inform-spec (car test) "DER"))
+      (cadr test)))))
+
 (ert-deftest x509--generic-view ()
   "Test creating a view buffer."
   (let ((expanded-args

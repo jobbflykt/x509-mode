@@ -800,7 +800,7 @@ Return argument string."
       (mapconcat (lambda (arg)
                    ;; is empty or contains ", \ or whitespace -> quote
                    (if (or (equal arg "")
-                           (string-match-p "[\"\\\\]\\|\\s-" arg))
+                           (string-match-p (rx (or space "\\" "\"")) arg))
                        (prin1-to-string arg)
                      arg))
                  args

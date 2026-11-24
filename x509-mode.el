@@ -487,6 +487,16 @@ Skip blank lines and comment lines.  Return list."
   (set-buffer-modified-p nil)
   (kill-buffer))
 
+(defvar x509-mode-map
+  (let ((map (make-sparse-keymap)))
+    (keymap-set map "q" #'x509-mode-kill-buffer)
+    (keymap-set map "t" #'x509-toggle-mode)
+    (keymap-set map "e" #'x509-edit-params)
+    (keymap-set map "n" #'x509-dwim-next)
+    (keymap-set map "p" #'x509-dwim-prev)
+    map)
+  "Keymap for `x509-mode'.")
+
 ;;;###autoload
 (define-derived-mode x509-mode fundamental-mode "x509"
   "Major mode for displaying OpenSSL output.
@@ -496,11 +506,6 @@ Skip blank lines and comment lines.  Return list."
   :group
   'x509
   (set (make-local-variable 'font-lock-defaults) '(x509-font-lock-keywords t))
-  (keymap-set x509-mode-map "q" #'x509-mode-kill-buffer)
-  (keymap-set x509-mode-map "t" #'x509-toggle-mode)
-  (keymap-set x509-mode-map "e" #'x509-edit-params)
-  (keymap-set x509-mode-map "n" #'x509-dwim-next)
-  (keymap-set x509-mode-map "p" #'x509-dwim-prev)
   (x509--mark-browse-http-links)
   (x509--mark-browse-oid))
 
@@ -1301,9 +1306,14 @@ Return view buffer on success."
         (progn
           (switch-to-buffer swoop-buffer)
           (x509-mode)
-          ;; Un-bind keys that doesn't work in s swoop buffer.
-          (dolist (key '("t" "e" "n" "p"))
-            (define-key x509-mode-map (kbd key) nil))
+          ;; The swoop-buffer has no single input file so most commands does
+          ;; not work. Create a local key map with those commands removed. We
+          ;; must not modify the mode key map since that is used in "normal"
+          ;; x509 mode buffers.
+          (let ((map (copy-keymap (current-local-map))))
+            (dolist (key '("t" "e" "n" "p"))
+              (keymap-set map key nil))
+            (use-local-map map))
           (goto-char (point-min))
           (set-buffer-modified-p nil)
           (setq buffer-read-only t)

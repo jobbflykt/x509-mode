@@ -148,8 +148,8 @@ When `x509-warn-near-expire-days' is nil."
   (with-temp-buffer
     (let* ((oid "1.2.898")
            (expected-url (format x509-query-oid-url-format oid))
-           (invalid "4.5.6")            ; Starts with 4 which is illegal.
-           (too-short  "1.0")
+           (invalid "4.5.6") ; Starts with 4 which is illegal.
+           (too-short "1.0")
            button)
       (insert "xxx " invalid "  " too-short "  " oid " yyy")
       (x509--mark-browse-oid)
@@ -1036,6 +1036,37 @@ SEQUENCE             30 0C
   (with-temp-buffer
     (insert "-----BEGIN nothing----- -----END nothing-----")
     (should-not (x509-swoop))))
+
+(ert-deftest x509-swoop-keeps-view-bindings ()
+  "Disable view commands only in the swoop buffers."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "multi.pem"))
+    (goto-char (point-min))
+    (let ((source (current-buffer))
+          view-buffer
+          swoop-buffer)
+      (unwind-protect
+          (progn
+            (setq view-buffer (x509-viewcert))
+            (with-current-buffer source
+              (setq swoop-buffer (x509-swoop)))
+            (dolist (binding
+                     '(("t" . x509-toggle-mode)
+                       ("e" . x509-edit-params)
+                       ("n" . x509-dwim-next)
+                       ("p" . x509-dwim-prev)))
+              (with-current-buffer view-buffer
+                (should
+                 (eq (local-key-binding (kbd (car binding))) (cdr binding))))
+              (with-current-buffer swoop-buffer
+                (should-not (local-key-binding (kbd (car binding))))))
+            (with-current-buffer swoop-buffer
+              (should
+               (eq (local-key-binding (kbd "q")) 'x509-mode-kill-buffer))))
+        (when (buffer-live-p swoop-buffer)
+          (kill-buffer swoop-buffer))
+        (when (buffer-live-p view-buffer)
+          (kill-buffer view-buffer))))))
 
 (ert-deftest x509--asn1-read-bin-from-pem ()
   "Populate a buffer with binary data and read it as bytes."

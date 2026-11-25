@@ -732,54 +732,59 @@ Also kill any hexl buffer."
              (buffer-live-p x509-asn1--hexl-buffer))
     (kill-buffer x509-asn1--hexl-buffer)))
 
+(define-error 'x509-openssl-error "OpenSSL failed" 'user-error)
+
 (defun x509--process-buffer
     (input-buf openssl-arguments &optional output-buf no-hooks)
   "Create new buffer named \"*x-[buffer-name]*\".
 
-Pass content INPUT-BUF to openssl with
-OPENSSL-ARGUMENTS. E.g. x509 -text.  If OUTPUT-BUF is non-'nil',
-out to that buffer instead of generating a new one.
+Pass content INPUT-BUF to openssl with OPENSSL-ARGUMENTS. E.g. x509
+-text.  If OUTPUT-BUF is non-'nil', out to that buffer instead of
+generating a new one.
 
-When NO-HOOKS is not nil, `kill-buffer-hook' and
-`x509--shadow-buffer' are not set. Can be used when decoding
-base64 and result buffer does not need special hooks or
-variables.  NO-HOOKS also ensures that process output isn't
-decoded, i.e. data is inserted into buffer as binary.
+When NO-HOOKS is not nil, `kill-buffer-hook' and `x509--shadow-buffer'
+are not set. Can be used when decoding base64 and result buffer does not
+need special hooks or variables.  NO-HOOKS also ensures that process
+output isn't decoded, i.e. data is inserted into buffer as binary.
 
-Return output buffer."
-  (let* ((buf
-          (or output-buf
-              (generate-new-buffer
-               (generate-new-buffer-name (format "*x-%s*" (buffer-name))))))
-         ;; Operate on whole buffer. Output to buf
-         (args
-          (append
-           (list nil nil x509-openssl-cmd nil buf nil) openssl-arguments)))
-    (with-current-buffer buf
-      (setq buffer-read-only nil)
-      (erase-buffer)
-      (unless no-hooks
-        ;; Remember input-buffer and arguments.
-        (setq x509--shadow-buffer input-buf)
-        (add-hook 'kill-buffer-hook #'x509--kill-shadow-buffer nil t))
-      (with-current-buffer input-buf
-        (if no-hooks
-            (let ((coding-system-for-read 'no-conversion)
-                  (coding-system-for-write 'no-conversion))
-              (apply #'call-process-region args))
-          (apply #'call-process-region args)))
-      ;; Since OpenSSL 3, there is a warning when reading input from stdin and
-      ;; not from a file specified by an -in parameter. Delete that warning
-      ;; line from the output. "Warning: Reading certificate from stdin since
-      ;; no -in or -new option is given". Also seen:
-      ;; "Warning: Will read cert request from stdin since no -in option is
-      ;; given"
-      (goto-char (point-min))
-      (if (looking-at-p "Warning: .*stdin")
-          (delete-line))
-      (set-buffer-modified-p nil)
-      (setq buffer-read-only t))
-    buf))
+Signal `x509-openssl-error' on a nonzero exit or signal from OpenSSL."
+  (let ((name (format "*x-%s*" (buffer-name))))
+    (with-temp-buffer
+      (when no-hooks
+        (set-buffer-multibyte nil))
+      (let* ((staging-buffer (current-buffer))
+             (args (append (list nil nil x509-openssl-cmd nil staging-buffer nil)
+                           openssl-arguments))
+             (status (with-current-buffer input-buf
+                       (if no-hooks
+                           (let ((coding-system-for-read 'no-conversion)
+                                 (coding-system-for-write 'no-conversion))
+                             (apply #'call-process-region args))
+                         (apply #'call-process-region args)))))
+        (unless (eq status 0)
+          (let ((diagnostic (string-trim (buffer-string))))
+            (signal 'x509-openssl-error
+                    (list (format "openssl %s failed (%s)%s"
+                                  (car openssl-arguments) status
+                                  (if (equal diagnostic "") ""
+                                    (concat ": " diagnostic)))))))
+        (unless no-hooks
+          ;; OpenSSL 3 and later can warn about reading from stdin.
+          (goto-char (point-min))
+          (when (looking-at-p "Warning: .*stdin")
+            (delete-line)))
+        (let ((buf (or output-buf (generate-new-buffer name))))
+          (with-current-buffer buf
+            (let ((inhibit-read-only t))
+              (erase-buffer)
+              (insert-buffer-substring staging-buffer))
+            (unless no-hooks
+              (setq x509--shadow-buffer input-buf)
+              (add-hook 'kill-buffer-hook #'x509--kill-shadow-buffer nil t))
+            (goto-char (point-min))
+            (set-buffer-modified-p nil)
+            (setq buffer-read-only t))
+          buf)))))
 
 (defun x509--read-arguments (prompt default history)
   "Prompt, using PROMPT, for arguments if \\[universal-argument] prefix.
@@ -832,39 +837,45 @@ non-'nil', use that instead of creating a new one.
 
 Switch to resulting buffer and return it."
   (let* ((src-buffer (current-buffer))
-         (pem-region
-          (unless input-buf
-            (x509--pem-region)))
-         (pem-region-start
-          (when pem-region
-            (copy-marker (car pem-region) t)))
+         (pem-region (unless input-buf (x509--pem-region)))
+         (pem-region-start (when pem-region (copy-marker (car pem-region) t)))
          (in-buf (or input-buf (x509--generate-input-buffer)))
-         (encoding (x509--buffer-encoding in-buf))
-         (initial (x509--add-inform-spec default encoding))
-         (args (x509--read-arguments "arguments: " initial history))
-         (result-buffer
-          (x509--process-buffer in-buf (split-string-and-unquote args)
-                                output-buf)))
-    (switch-to-buffer result-buffer)
-    (unless (bound-and-true-p x509--src-buffer)
-      ;; Remember the original source buffer unless already set.
-      ;; Which is can be if toggling between modes.
-      (setq
-       x509--src-buffer src-buffer
-       x509--src-pem-region-start pem-region-start))
-    ;; Remember what arguments where used.
-    (if (eq mode 'x509-mode)
-        (setq x509--x509-mode-shadow-arguments args)
-      (setq x509--x509-asn1-mode-shadow-arguments args))
-    (funcall mode)
-    ;; If we have a hexl buffer, (re-)add hook that updates overlays.
-    ;; The post-command-hook seems to be reset when changing mode.
-    ;; Is there a way to make it persist mode changes?
-    ;; Also re-set last point so that overlay is updated.
-    (when (bound-and-true-p x509-asn1--hexl-buffer)
-      (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
-      (setq x509-asn1--last-point nil))
-    result-buffer))
+         result-buffer complete)
+    (unwind-protect
+        (let* ((encoding (x509--buffer-encoding in-buf))
+               (initial (x509--add-inform-spec default encoding))
+               (args (x509--read-arguments "arguments: " initial history)))
+          (setq result-buffer
+                (x509--process-buffer in-buf (split-string-and-unquote args)
+                                      output-buf))
+          (with-current-buffer result-buffer
+            (unless (bound-and-true-p x509--src-buffer)
+              ;; Remember the original source buffer unless already set.
+              ;; Which is can be if toggling between modes.
+              (setq x509--src-buffer src-buffer
+                    x509--src-pem-region-start pem-region-start))
+            ;; Remember what arguments where used.
+            (if (eq mode 'x509-mode)
+                (setq x509--x509-mode-shadow-arguments args)
+              (setq x509--x509-asn1-mode-shadow-arguments args))
+            (funcall mode)
+            ;; If we have a hexl buffer, (re-)add hook that updates overlays.
+            ;; The post-command-hook seems to be reset when changing mode.
+            ;; Is there a way to make it persist mode changes?
+            ;; Also re-set last point so that overlay is updated.
+            (when (bound-and-true-p x509-asn1--hexl-buffer)
+              (add-hook 'post-command-hook #'x509-asn1--post-command-hook nil t)
+              (setq x509-asn1--last-point nil)))
+          (switch-to-buffer result-buffer)
+          (setq complete t)
+          result-buffer)
+      (unless complete
+        (when (and (not output-buf) (buffer-live-p result-buffer))
+          (with-current-buffer result-buffer
+            (remove-hook 'kill-buffer-hook #'x509--kill-shadow-buffer t))
+          (kill-buffer result-buffer))
+        (unless input-buf
+          (kill-buffer in-buf))))))
 
 (defun x509--get-x509-toggle-mode-args ()
   "Ask user for command and return default arguments for that command."
@@ -1244,18 +1255,13 @@ Intended to be called in a `x509-mode' or `x509-asn1-mode' buffer."
   "Test running OPENSSL-COMMAND-ARGS in current buffer.
 Return t if return status is 0, otherwise nil.  Use to determine
 if the buffer contains data of certain type."
-  (let* ((in-buf (x509--generate-input-buffer))
-         (encoding (x509--buffer-encoding in-buf))
-         (args (x509--add-inform-spec openssl-command-args encoding))
-         ;; Arguments to `call-process-region'. Just run the command and
-         ;; discard the output.
-         (proc-args
-          (append
-           (list nil nil x509-openssl-cmd nil nil nil)
-           (split-string-and-unquote args))))
-    (prog1 (= 0
-              (with-current-buffer in-buf
-                (apply #'call-process-region proc-args)))
+  (let ((in-buf (x509--generate-input-buffer)))
+    (unwind-protect
+        (with-current-buffer in-buf
+          (let* ((encoding (x509--buffer-encoding in-buf))
+                 (args (x509--add-inform-spec openssl-command-args encoding)))
+            (eq 0 (apply #'call-process-region nil nil x509-openssl-cmd
+                         nil nil nil (split-string-and-unquote args)))))
       (kill-buffer in-buf))))
 
 (defun x509--do-dwim (only-pem-region)
@@ -1342,57 +1348,53 @@ toggling to and from `x509-asn1-mode'.  The buffer is for static viewing only.
 
 Return view buffer on success."
   (interactive)
-  (let* ((src-buffer (current-buffer))
-         (orig-point (point))
-         (swoop-buffer
-          (generate-new-buffer
-           (generate-new-buffer-name
-            (format "*x-%s*" (buffer-name src-buffer))))))
-    (goto-char (point-min))
-    (while (re-search-forward "-----BEGIN" nil t)
-      (goto-char (match-beginning 0))
-      ;; Call x509--do-dwim. Only consider valid PEM-regions.
-      (when-let* ((tmp-output-buffer (x509--do-dwim t)))
-        (with-current-buffer tmp-output-buffer
-          ;; Only consider x509-mode output. We don't want asn1.
-          (if (derived-mode-p 'x509-mode)
-              (let ((new-content
-                     (buffer-substring-no-properties (point-min) (point-max))))
-                (with-current-buffer swoop-buffer
-                  (if (> (buffer-size (current-buffer)) 0)
-                      (insert x509-swoop-separator "\n"))
-                  (insert new-content)
-                  (x509--normalize-buffer-end swoop-buffer)
-                  (goto-char (point-max))))))
-        (kill-buffer tmp-output-buffer))
-      ;; switch back to src-buffer
-      (switch-to-buffer src-buffer)
-      ;; Go forward and look for next region
-      (forward-char 1))
-    ;; Restore point in src-buffer
-    (goto-char orig-point)
-    ;; If there is data in the output buffer, switch to it.
-    (if (> (buffer-size swoop-buffer) 0)
+  (let ((swoop-buffer (generate-new-buffer (format "*x-%s*" (buffer-name))))
+        parse-error complete)
+    (unwind-protect
         (progn
-          (switch-to-buffer swoop-buffer)
-          (x509-mode)
-          ;; The swoop-buffer has no single input file so most commands does
-          ;; not work. Create a local key map with those commands removed. We
-          ;; must not modify the mode key map since that is used in "normal"
-          ;; x509 mode buffers.
-          (let ((map (copy-keymap (current-local-map))))
-            (dolist (key '("t" "e" "n" "p"))
-              (keymap-set map key nil))
-            (use-local-map map))
-          (goto-char (point-min))
-          (set-buffer-modified-p nil)
-          (setq buffer-read-only t)
-          ;; Return buffer
-          swoop-buffer)
-      (kill-buffer swoop-buffer)
-      (message "No BEGIN/END regions found.")
-      ;; Return nil
-      nil)))
+          (save-window-excursion
+            (save-excursion
+              (goto-char (point-min))
+              (while (re-search-forward "-----BEGIN" nil t)
+                (goto-char (match-beginning 0))
+                (let ((view (save-current-buffer
+                              (condition-case err
+                                  (x509--do-dwim t)
+                                (x509-openssl-error
+                                 (setq parse-error (error-message-string err))
+                                 (message "%s" parse-error)
+                                 nil)))))
+                  (when view
+                    (unwind-protect
+                        (when (with-current-buffer view
+                                (derived-mode-p 'x509-mode))
+                          (with-current-buffer swoop-buffer
+                            (unless (zerop (buffer-size))
+                              (insert x509-swoop-separator "\n"))
+                            (insert-buffer-substring-no-properties view)
+                            (x509--normalize-buffer-end swoop-buffer)
+                            (goto-char (point-max))))
+                      (kill-buffer view))))
+                (forward-char 1))))
+          (if (zerop (buffer-size swoop-buffer))
+              (progn
+                (unless parse-error
+                  (message "No BEGIN/END regions found."))
+                nil)
+            (switch-to-buffer swoop-buffer)
+            (x509-mode)
+            ;; The aggregate view has no single input to navigate or reparse.
+            (let ((map (copy-keymap (current-local-map))))
+              (dolist (key '("t" "e" "n" "p"))
+                (keymap-set map key nil))
+              (use-local-map map))
+            (goto-char (point-min))
+            (set-buffer-modified-p nil)
+            (setq buffer-read-only t
+                  complete t)
+            swoop-buffer))
+      (unless complete
+        (kill-buffer swoop-buffer)))))
 
 ;; ----------------------------------------------------------------------------
 ;; asn1-mode
@@ -1629,12 +1631,14 @@ For \"-strparse\", use the absolute offset of the selected item's header."
            (or x509--x509-asn1-mode-shadow-arguments
                x509-asn1parse-default-arg)
            command new-offset)))
-    (if (> new-offset 0)
-        (push (list command new-offset header-len (point))
-              x509--x509-asn1-mode-offset-stack))
-    (x509--generic-view new-args 'x509--viewasn1-history 'x509-asn1-mode
-                        x509--shadow-buffer
-                        (current-buffer))
+    (let ((stack (if (> new-offset 0)
+                     (cons (list command new-offset header-len (point))
+                           x509--x509-asn1-mode-offset-stack)
+                   x509--x509-asn1-mode-offset-stack)))
+      (let ((x509--x509-asn1-mode-offset-stack stack))
+        (x509--generic-view new-args 'x509--viewasn1-history 'x509-asn1-mode
+                            x509--shadow-buffer (current-buffer)))
+      (setq x509--x509-asn1-mode-offset-stack stack))
     (x509--asn1-update-mode-line)))
 
 (defun x509-asn1-offset-down ()
@@ -1653,9 +1657,10 @@ Offset is calculated from offset on current line."
   "Pop offset and redisplay."
   (interactive)
   (when (bound-and-true-p x509--x509-asn1-mode-offset-stack)
-    (let* ((current (pop x509--x509-asn1-mode-offset-stack))
+    (let* ((current (car x509--x509-asn1-mode-offset-stack))
            (point (nth 3 current))
-           (up (car x509--x509-asn1-mode-offset-stack))
+           (stack (cdr x509--x509-asn1-mode-offset-stack))
+           (up (car stack))
            (command
             (if up
                 (nth 0 up)
@@ -1669,9 +1674,10 @@ Offset is calculated from offset on current line."
              (or x509--x509-asn1-mode-shadow-arguments
                  x509-asn1parse-default-arg)
              command offset)))
-      (x509--generic-view new-args 'x509--viewasn1-history 'x509-asn1-mode
-                          x509--shadow-buffer
-                          (current-buffer))
+      (let ((x509--x509-asn1-mode-offset-stack stack))
+        (x509--generic-view new-args 'x509--viewasn1-history 'x509-asn1-mode
+                            x509--shadow-buffer (current-buffer)))
+      (setq x509--x509-asn1-mode-offset-stack stack)
       (goto-char point)
       (x509--asn1-update-mode-line))))
 

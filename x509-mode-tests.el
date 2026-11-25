@@ -363,6 +363,48 @@ Assuming starting at a pem region."
           ;; Shadow buffer should be killed in hook
           (should-not (buffer-live-p shadow-buffer)))))))
 
+(ert-deftest x509-view-cleans-up-after-failure ()
+  "Release new buffers when argument editing or OpenSSL fails."
+  (with-temp-buffer
+    (insert "invalid certificate")
+    (let ((buffers (buffer-list)))
+      (cl-letf (((symbol-function 'x509--read-arguments)
+                 (lambda (&rest _) (signal 'quit nil))))
+        (should (eq 'cancelled
+                    (condition-case nil
+                        (x509-viewcert)
+                      (quit 'cancelled)))))
+      (should-not (cl-set-difference (buffer-list) buffers))
+      (let ((x509-openssl-cmd (make-temp-name
+                               (expand-file-name "missing-openssl-"
+                                                 temporary-file-directory))))
+        (should-error (x509-viewcert) :type 'file-missing)
+        (should-error (x509-dwim) :type 'file-missing))
+      (should-not (cl-set-difference (buffer-list) buffers))
+      (let ((err (should-error (x509-viewcert) :type 'x509-openssl-error)))
+        (should (string-match-p "OpenSSL x509 failed ([0-9]+): ."
+                                (error-message-string err))))
+      (should-not (cl-set-difference (buffer-list) buffers)))))
+
+(ert-deftest x509-asn1-failed-navigation-preserves-view ()
+  "Keep the current ASN.1 output and navigation state on failure."
+  (with-temp-buffer
+    (insert-file-contents-literally (find-testfile "nested.der"))
+    (let ((view (x509-viewasn1)))
+      (unwind-protect
+          (with-current-buffer view
+            (let ((contents (buffer-string))
+                  (shadow x509--shadow-buffer)
+                  (args x509--x509-asn1-mode-shadow-arguments))
+              (cl-letf (((symbol-function 'call-process-region)
+                         (lambda (&rest _) 1)))
+                (should-error (x509-asn1-offset-down) :type 'x509-openssl-error))
+              (should (equal contents (buffer-string)))
+              (should (buffer-live-p shadow))
+              (should (equal args x509--x509-asn1-mode-shadow-arguments))
+              (should-not x509--x509-asn1-mode-offset-stack)))
+        (kill-buffer view)))))
+
 (ert-deftest x509--read-arguments ()
   "Ensure that argument is added to history."
   (let ((args "my args"))
@@ -1160,6 +1202,23 @@ SEQUENCE             30 0C
           (kill-buffer swoop-buffer))
         (when (buffer-live-p view-buffer)
           (kill-buffer view-buffer))))))
+
+(ert-deftest x509-swoop-skips-failed-parses ()
+  "Keep valid PEM views and exclude OpenSSL errors from the aggregate."
+  (with-temp-buffer
+    (insert "-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----\n")
+    (goto-char (point-max))
+    (insert-file-contents-literally (find-testfile "multi.pem"))
+    (let* ((buffers (buffer-list))
+           (view (x509-swoop)))
+      (should (buffer-live-p view))
+      (unwind-protect
+          (with-current-buffer view
+            (should (looking-at "Certificate:"))
+            (should-not (search-forward "OpenSSL x509 failed" nil t))
+            (should (search-forward "Certificate Request:" nil t)))
+        (kill-buffer view))
+      (should-not (cl-set-difference (buffer-list) buffers)))))
 
 (ert-deftest x509--asn1-read-bin-from-pem ()
   "Populate a buffer with binary data and read it as bytes."

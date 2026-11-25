@@ -1112,15 +1112,23 @@ produces intermediate output, not the certificates and key themselves."
   (let ((pem-buffer
          (generate-new-buffer
           (generate-new-buffer-name (format "*x-%s*" (buffer-name))))))
-    (call-process-region nil nil x509-openssl-cmd
-                         nil
-                         pem-buffer
-                         nil
-                         "pkcs12"
-                         "-noenc"
-                         "-passin"
-                         (format "pass:%s" password))
-    (clear-string password)
+    (unwind-protect
+        ;; Set password in a temporary environment variable and name that
+        ;; variable in -passin env:
+        ;; Password in environment is arguably slightly better than in argv.
+        ;; But it's still exposed. Password sent in a pipe would be better but
+        ;; it's cumbersome and support on Windows is limited.
+        (let ((process-environment (copy-sequence process-environment)))
+          (setenv "X509_MODE_PKCS12_PASSWORD" password)
+          (call-process-region nil nil x509-openssl-cmd
+                               nil
+                               pem-buffer
+                               nil
+                               "pkcs12"
+                               "-noenc"
+                               "-passin"
+                               "env:X509_MODE_PKCS12_PASSWORD"))
+      (clear-string password))
     (switch-to-buffer pem-buffer)
     (setq buffer-read-only t)
     ;; Set some local keys for convenience.
